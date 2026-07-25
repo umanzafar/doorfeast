@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoorFeast — Good Food, Delivered Fair</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#A40203;
+    --red-dark:#7C0202;
+    --gold:#D9A441;
+    --cream:#FAF7F2;
+    --card:#FFFFFF;
+    --ink:#262220;
+    --body:#6E6860;
+    --line:#E8E1D4;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Poppins',sans-serif; margin:0;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  img{max-width:100%; display:block;}
+  :focus-visible{outline:2.5px solid var(--red); outline-offset:2px;}
+
+  /* ============ PASSWORD GATE ============ */
+  #passwordGate{
+    position:fixed; inset:0; z-index:999;
+    background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .gate-card{
+    background:var(--cream);
+    border-radius:20px;
+    padding:44px 36px;
+    max-width:380px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);
+  }
+  .gate-card img{width:96px; margin:0 auto 20px; border-radius:14px;}
+  .gate-card h2{font-size:20px; margin-bottom:8px;}
+  .gate-card p{font-size:13.5px; color:var(--body); margin:0 0 20px; line-height:1.5;}
+  .gate-card input{
+    width:100%; border:1.5px solid var(--line); border-radius:10px;
+    padding:12px 14px; font-size:14.5px; margin-bottom:12px; text-align:center;
+    letter-spacing:1px;
+  }
+  .gate-card input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(164,2,3,0.12);}
+  .gate-card button{
+    width:100%; border:none; border-radius:999px; padding:13px;
+    background:var(--red); color:#fff; font-weight:700; font-size:14.5px;
+    cursor:pointer; transition:background .15s;
+  }
+  .gate-card button:hover{background:var(--red-dark);}
+  .gate-error{color:var(--red); font-size:12.5px; margin-top:10px; display:none;}
+  .gate-error.show{display:block;}
+  body.gate-open{overflow:hidden;}
+
+  /* ============ NAV ============ */
+  header.nav{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(250,247,242,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 28px;
+  }
+  .nav-logo{display:flex; align-items:center; gap:10px;}
+  .nav-logo img{width:38px; border-radius:9px;}
+  .nav-logo span{font-family:'Poppins',sans-serif; font-weight:800; font-size:18px;}
+  .nav-links{display:flex; align-items:center; gap:8px;}
+  .nav-links a{
+    text-decoration:none; font-size:14px; font-weight:600; color:var(--ink);
+    padding:9px 16px; border-radius:999px; transition:background .15s;
+  }
+  .nav-links a:hover{background:rgba(38,34,32,0.06);}
+  .nav-links .btn-signup{
+    background:var(--red); color:#fff; position:relative;
+  }
+  .nav-links .btn-signup:hover{background:var(--red-dark);}
+  .signup-dropdown{position:relative;}
+  .signup-menu{
+    position:absolute; top:calc(100% + 8px); right:0;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 16px 32px -12px rgba(38,34,32,0.25);
+    padding:8px; min-width:220px;
+    opacity:0; pointer-events:none; transform:translateY(-6px);
+    transition:opacity .15s, transform .15s;
+  }
+  .signup-dropdown:hover .signup-menu,
+  .signup-dropdown:focus-within .signup-menu{
+    opacity:1; pointer-events:auto; transform:translateY(0);
+  }
+  .signup-menu a{
+    display:block; color:var(--ink); background:none; padding:11px 12px; border-radius:9px; font-size:13.5px;
+  }
+  .signup-menu a:hover{background:rgba(38,34,32,0.06);}
+  .signup-menu .desc{display:block; font-size:11.5px; color:var(--body); font-weight:400; margin-top:1px;}
+
+  @media (max-width:640px){
+    .nav-logo span{display:none;}
+    header.nav{padding:10px 16px;}
+  }
+
+  /* ============ BANNER CAROUSEL ============ */
+  .carousel{
+    position:relative;
+    margin-top:64px;
+    height:min(72vh, 560px);
+    min-height:380px;
+    overflow:hidden;
+  }
+  .slide{
+    position:absolute; inset:0;
+    display:flex; align-items:center;
+    opacity:0; transition:opacity .6s ease;
+    background-size:cover; background-position:center;
+  }
+  .slide.active{opacity:1;}
+  .slide::after{
+    content:"";
+    position:absolute; inset:0;
+    background:linear-gradient(90deg, rgba(38,34,32,0.72) 0%, rgba(38,34,32,0.32) 55%, rgba(38,34,32,0.08) 100%);
+  }
+  .slide-content{
+    position:relative; z-index:2;
+    max-width:640px;
+    padding:0 8vw;
+    color:#fff;
+  }
+  .slide-eyebrow{
+    display:inline-block;
+    font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+    background:rgba(255,255,255,0.15);
+    padding:6px 14px; border-radius:999px;
+    margin-bottom:16px;
+  }
+  .slide-content h1{font-size:clamp(28px,4.5vw,46px); line-height:1.15; margin-bottom:14px;}
+  .slide-content p{font-size:15.5px; line-height:1.6; color:rgba(255,255,255,0.88); margin:0 0 22px; max-width:440px;}
+  .slide-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--gold); color:var(--ink); font-weight:700; font-size:14.5px;
+    padding:12px 22px; border-radius:999px; text-decoration:none;
+    transition:transform .15s;
+  }
+  .slide-btn:hover{transform:translateY(-2px);}
+
+  .carousel-arrows button{
+    position:absolute; top:50%; transform:translateY(-50%);
+    z-index:3; width:42px; height:42px; border-radius:50%;
+    background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.4);
+    color:#fff; font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .15s;
+  }
+  .carousel-arrows button:hover{background:rgba(255,255,255,0.32);}
+  .arrow-prev{left:20px;}
+  .arrow-next{right:20px;}
+
+  .carousel-dots{
+    position:absolute; bottom:22px; left:0; right:0; z-index:3;
+    display:flex; justify-content:center; gap:8px;
+  }
+  .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:rgba(255,255,255,0.45); border:none; cursor:pointer;
+    transition:background .15s, width .2s;
+  }
+  .dot.active{background:#fff; width:22px; border-radius:5px;}
+
+  @media (max-width:640px){
+    .carousel{height:64vh; min-height:420px;}
+    .slide-content{padding:0 24px;}
+    .carousel-arrows{display:none;}
+  }
+
+  /* ============ POSTCODE SEARCH ============ */
+  .search-wrap{
+    position:relative;
+    max-width:760px;
+    margin:-46px auto 0;
+    padding:0 20px;
+    z-index:10;
+  }
+  .search-card{
+    background:var(--card);
+    border-radius:20px;
+    padding:26px 26px;
+    box-shadow:0 24px 50px -20px rgba(38,34,32,0.35);
+    border:1px solid var(--line);
+  }
+  .search-card p.search-label{
+    font-family:'Poppins',sans-serif; font-weight:700; font-size:15px;
+    margin:0 0 14px; text-align:center;
+  }
+  .search-row{display:flex; gap:10px;}
+  .search-row input{
+    flex:1;
+    border:1.5px solid var(--line); border-radius:12px;
+    padding:14px 16px; font-size:15px; color:var(--ink);
+    text-transform:uppercase;
+  }
+  .search-row input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(164,2,3,0.12);}
+  .search-row button{
+    border:none; border-radius:12px;
+    background:var(--red); color:#fff; font-weight:700; font-size:14.5px;
+    padding:0 24px; cursor:pointer; white-space:nowrap;
+    transition:background .15s;
+    display:flex; align-items:center; gap:8px;
+  }
+  .search-row button:hover{background:var(--red-dark);}
+  .search-row button:disabled{opacity:0.6; cursor:not-allowed;}
+  .search-hint{font-size:12px; color:var(--body); text-align:center; margin:10px 0 0;}
+
+  @media (max-width:520px){
+    .search-row{flex-direction:column;}
+    .search-row button{padding:13px;}
+  }
+
+  /* connecting path from search down into results — the signature element */
+  .path-connector{
+    max-width:760px; margin:0 auto; padding:0 20px;
+    height:64px;
+    position:relative;
+  }
+  .path-connector svg{position:absolute; left:50%; transform:translateX(-50%); top:0; height:100%;}
+
+  /* ============ RESULTS SECTION ============ */
+  .results-section{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 24px 80px;
+  }
+  .results-prompt{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--body);
+    font-size:15px;
+  }
+  .results-prompt svg{width:48px; height:48px; margin:0 auto 14px; opacity:0.4;}
+
+  .results-heading{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .results-heading h2{font-size:20px;}
+  .results-heading span{font-size:13px; color:var(--body);}
+
+  .restaurant-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:20px;
+  }
+  @media (max-width:900px){ .restaurant-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:600px){ .restaurant-grid{grid-template-columns:1fr;} }
+
+  .r-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    text-decoration:none;
+    color:var(--ink);
+    transition:transform .15s, box-shadow .15s;
+    display:block;
+  }
+  .r-card:hover{transform:translateY(-3px); box-shadow:0 16px 30px -16px rgba(38,34,32,0.3);}
+  .r-card .thumb{
+    height:120px;
+    background:linear-gradient(135deg, var(--gold), var(--red));
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:26px;
+  }
+  .r-card .body{padding:16px 16px 18px;}
+  .r-card .name{font-family:'Poppins',sans-serif; font-weight:700; font-size:15.5px; margin-bottom:4px;}
+  .r-card .meta{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--body);}
+  .r-card .dot-sep::before{content:"•"; margin:0 2px;}
+  .r-card .rating{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11.5px; font-weight:700; color:var(--red);
+    background:rgba(164,2,3,0.08); padding:3px 9px; border-radius:999px;
+    margin-top:10px;
+  }
+
+  .no-coverage{
+    text-align:center;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:44px 30px;
+    max-width:480px;
+    margin:0 auto;
+  }
+  .no-coverage h3{font-size:19px; margin-bottom:8px;}
+  .no-coverage p{font-size:14px; color:var(--body); line-height:1.55; margin:0 0 22px;}
+  .notify-row{display:flex; gap:8px; max-width:360px; margin:0 auto;}
+  .notify-row input{
+    flex:1; border:1.5px solid var(--line); border-radius:10px; padding:11px 14px; font-size:14px;
+  }
+  .notify-row input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(164,2,3,0.12);}
+  .notify-row button{
+    border:none; border-radius:10px; background:var(--ink); color:#fff;
+    font-weight:700; font-size:13.5px; padding:0 18px; cursor:pointer;
+  }
+  .notify-row button:hover{background:#000;}
+  .notify-msg{font-size:12.5px; margin-top:12px; display:none;}
+  .notify-msg.show{display:block;}
+
+  /* ============ LOWER STRIP ============ */
+  .lower-strip{
+    background:var(--ink);
+    color:#fff;
+    padding:64px 24px;
+  }
+  .lower-inner{
+    max-width:1000px; margin:0 auto;
+    display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center;
+  }
+  .lower-inner h2{font-size:26px; line-height:1.3; margin-bottom:14px;}
+  .lower-inner .hl{
+    background-image:linear-gradient(rgba(217,164,65,0.5), rgba(217,164,65,0.5));
+    background-repeat:no-repeat; background-size:100% 40%; background-position:0 78%;
+    padding:0 2px;
+  }
+  .lower-inner p{color:rgba(255,255,255,0.75); font-size:14.5px; line-height:1.65; margin:0 0 22px;}
+  .lower-points{display:flex; flex-direction:column; gap:12px;}
+  .lower-points div{display:flex; gap:10px; align-items:flex-start; font-size:13.5px; color:rgba(255,255,255,0.85);}
+  .lower-points .ic{
+    flex-shrink:0; width:20px; height:20px; border-radius:50%;
+    background:var(--gold); color:var(--ink); font-size:11px; font-weight:800;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lower-visual{
+    background:linear-gradient(135deg, rgba(217,164,65,0.18), rgba(164,2,3,0.25));
+    border-radius:20px; height:260px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lower-visual img{width:150px; border-radius:16px;}
+  @media (max-width:760px){
+    .lower-inner{grid-template-columns:1fr;}
+    .lower-visual{order:-1; height:200px;}
+  }
+
+  /* ============ FOOTER ============ */
+  footer{
+    text-align:center; padding:28px 20px; font-size:12px; color:var(--body);
+  }
+</style>
+</head>
+<body class="gate-open">
+
+<!-- ============ PASSWORD GATE ============ -->
+<div id="passwordGate">
+  <div class="gate-card">
+    <img src="logo.png" alt="DoorFeast">
+    <h2>We're not public yet</h2>
+    <p>DoorFeast is in private preview while we onboard our first takeaways. Enter the access password to continue.</p>
+    <input type="password" id="gateInput" placeholder="Access password" autocomplete="off">
+    <button id="gateSubmit">Enter site</button>
+    <p class="gate-error" id="gateError">That password isn't right — try again.</p>
+  </div>
+</div>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="nav-logo">
+    <img src="logo.png" alt="DoorFeast">
+    <span>DoorFeast</span>
+  </div>
+  <div class="nav-links">
+    <a href="#login">Log in</a>
+    <div class="signup-dropdown" tabindex="0">
+      <a href="#" class="btn-signup" onclick="return false;">Sign up</a>
+      <div class="signup-menu">
+        <a href="/customer/index.html">
+          Sign up as a customer
+          <span class="desc">Get £5 off your first order</span>
+        </a>
+        <a href="/partner/index.html">
+          Sign up as a takeaway partner
+          <span class="desc">Grow your business with lower fees</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ BANNER CAROUSEL ============ -->
+<section class="carousel" id="carousel">
+  <div class="slide active" style="background-image:linear-gradient(135deg, rgba(164,2,3,0.9), rgba(38,34,32,0.9))">
+    <div class="slide-content">
+      <span class="slide-eyebrow">The Neighbourhood Takeaway Network</span>
+      <h1>Good food, delivered fair.</h1>
+      <p>Order directly from your local independent takeaways. Fair fees for them, hot food for you — no middle-man taking the biggest bite.</p>
+      <a href="#search" class="slide-btn">Find takeaways near you →</a>
+    </div>
+  </div>
+  <div class="slide" style="background-image:linear-gradient(135deg, rgba(38,34,32,0.9), rgba(164,2,3,0.85))">
+    <div class="slide-content">
+      <span class="slide-eyebrow">Launching in Stoke-on-Trent</span>
+      <h1>Your local takeaway, one tap away.</h1>
+      <p>We're building DoorFeast city by city, starting right here — supporting the restaurants that make your neighbourhood taste like home.</p>
+      <a href="#search" class="slide-btn">See what's nearby →</a>
+    </div>
+  </div>
+  <div class="slide" style="background-image:linear-gradient(135deg, rgba(217,164,65,0.55), rgba(38,34,32,0.92))">
+    <div class="slide-content">
+      <span class="slide-eyebrow">For Restaurant Owners</span>
+      <h1>Keep more of every order.</h1>
+      <p>Lower fees than the big platforms, no lock-in, and a real person to talk to — join our launch partner list today.</p>
+      <a href="/partner/index.html" class="slide-btn">Partner with us →</a>
+    </div>
+  </div>
+
+  <div class="carousel-arrows">
+    <button class="arrow-prev" aria-label="Previous slide">‹</button>
+    <button class="arrow-next" aria-label="Next slide">›</button>
+  </div>
+  <div class="carousel-dots" id="carouselDots"></div>
+</section>
+
+<!-- ============ POSTCODE SEARCH ============ -->
+<div class="search-wrap" id="search">
+  <div class="search-card">
+    <p class="search-label">Find takeaways near you</p>
+    <div class="search-row">
+      <input type="text" id="postcodeInput" placeholder="Enter your postcode, e.g. ST1 1AA" maxlength="8">
+      <button id="postcodeBtn">
+        <span id="postcodeBtnText">Find takeaways near you</span>
+      </button>
+    </div>
+    <p class="search-hint" id="searchHint">We're currently live in Stoke-on-Trent (ST postcodes), with more cities coming soon.</p>
+  </div>
+</div>
+
+<div class="path-connector">
+  <svg width="4" height="64" viewBox="0 0 4 64"><path d="M2 0 V64" stroke="#D9A441" stroke-width="2" stroke-dasharray="1 8" stroke-linecap="round"/></svg>
+</div>
+
+<!-- ============ RESULTS SECTION ============ -->
+<section class="results-section">
+
+  <!-- STATE 1: before search -->
+  <div class="results-prompt" id="stateEmpty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <p>Enter your postcode above to see what's nearby.</p>
+  </div>
+
+  <!-- STATE 2: results found -->
+  <div id="stateResults" style="display:none;">
+    <div class="results-heading">
+      <h2 id="resultsTitle">Takeaways near you</h2>
+      <span id="resultsCount"></span>
+    </div>
+    <div class="restaurant-grid" id="restaurantGrid"></div>
+  </div>
+
+  <!-- STATE 3: no coverage -->
+  <div id="stateNoCoverage" style="display:none;">
+    <div class="no-coverage">
+      <h3>We're not in your area yet</h3>
+      <p>DoorFeast is currently only live in Stoke-on-Trent, but we're expanding fast. Leave your email and we'll let you know the moment we launch near you.</p>
+      <div class="notify-row">
+        <input type="email" id="notifyEmail" placeholder="you@example.com">
+        <button id="notifyBtn">Notify me</button>
+      </div>
+      <p class="notify-msg" id="notifyMsg"></p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============ LOWER STRIP ============ -->
+<section class="lower-strip">
+  <div class="lower-inner">
+    <div>
+      <h2>Built for the takeaway <span class="hl">on your corner</span>, not the chain three cities over.</h2>
+      <p>DoorFeast exists because independent takeaways deserve a fairer deal than the big platforms offer. Here's what that means in practice.</p>
+      <div class="lower-points">
+        <div><span class="ic">✓</span><span>Lower commission than Just Eat, Uber Eats, or Deliveroo</span></div>
+        <div><span class="ic">✓</span><span>Local-first — we only list takeaways in the neighbourhoods we serve</span></div>
+        <div><span class="ic">✓</span><span>Real support, from a real person, whenever you need it</span></div>
+      </div>
+    </div>
+    <div class="lower-visual">
+      <img src="logo.png" alt="DoorFeast">
+    </div>
+  </div>
+</section>
+
+<footer>
+  © 2026 DoorFeast. The neighbourhood takeaway network.
+</footer>
+
+<script>
+/* ============ PASSWORD GATE ============ */
+// 👉 Change this to whatever access password you want to use for the pre-launch gate.
+const SITE_PASSWORD = "doorfeast2026";
+
+const gate = document.getElementById('passwordGate');
+const gateInput = document.getElementById('gateInput');
+const gateSubmit = document.getElementById('gateSubmit');
+const gateError = document.getElementById('gateError');
+
+function tryUnlock(){
+  if(gateInput.value === SITE_PASSWORD){
+    gate.style.display = 'none';
+    document.body.classList.remove('gate-open');
+  } else {
+    gateError.classList.add('show');
+    gateInput.focus();
+    gateInput.select();
+  }
+}
+gateSubmit.addEventListener('click', tryUnlock);
+gateInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+
+/* ============ CAROUSEL ============ */
+const slides = document.querySelectorAll('.slide');
+const dotsWrap = document.getElementById('carouselDots');
+let current = 0;
+let autoTimer;
+
+slides.forEach((_, i) => {
+  const dot = document.createElement('button');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.addEventListener('click', () => goTo(i));
+  dotsWrap.appendChild(dot);
+});
+const dots = dotsWrap.querySelectorAll('.dot');
+
+function goTo(i){
+  slides[current].classList.remove('active');
+  dots[current].classList.remove('active');
+  current = (i + slides.length) % slides.length;
+  slides[current].classList.add('active');
+  dots[current].classList.add('active');
+}
+document.querySelector('.arrow-prev').addEventListener('click', () => { goTo(current - 1); restartAuto(); });
+document.querySelector('.arrow-next').addEventListener('click', () => { goTo(current + 1); restartAuto(); });
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function startAuto(){
+  if(prefersReducedMotion) return;
+  autoTimer = setInterval(() => goTo(current + 1), 5500);
+}
+function restartAuto(){ clearInterval(autoTimer); startAuto(); }
+startAuto();
+
+/* ============ POSTCODE SEARCH ============ */
+// Sample/demo restaurant data for Stoke-on-Trent — replace with real data once available.
+const DEMO_RESTAURANTS = [
+  { name: "Spice Villa", cuisine: "Indian", lat: 53.0027, lng: -2.1794, rating: null },
+  { name: "Golden Dragon", cuisine: "Chinese", lat: 53.0090, lng: -2.1850, rating: null },
+  { name: "Mario's Pizzeria", cuisine: "Pizza", lat: 52.9980, lng: -2.1700, rating: 4.6 },
+  { name: "Kebab House", cuisine: "Kebab", lat: 53.0120, lng: -2.1650, rating: null },
+];
+const COVERAGE_RADIUS_KM = 8;
+
+function haversineKm(lat1, lon1, lat2, lon2){
+  const toRad = d => d * Math.PI / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+const postcodeInput = document.getElementById('postcodeInput');
+const postcodeBtn = document.getElementById('postcodeBtn');
+const postcodeBtnText = document.getElementById('postcodeBtnText');
+const stateEmpty = document.getElementById('stateEmpty');
+const stateResults = document.getElementById('stateResults');
+const stateNoCoverage = document.getElementById('stateNoCoverage');
+const restaurantGrid = document.getElementById('restaurantGrid');
+const resultsTitle = document.getElementById('resultsTitle');
+const resultsCount = document.getElementById('resultsCount');
+
+function showState(state){
+  stateEmpty.style.display = state === 'empty' ? 'block' : 'none';
+  stateResults.style.display = state === 'results' ? 'block' : 'none';
+  stateNoCoverage.style.display = state === 'nocoverage' ? 'block' : 'none';
+}
+
+function renderResults(list, postcode){
+  restaurantGrid.innerHTML = '';
+  list.forEach(r => {
+    const card = document.createElement('a');
+    card.className = 'r-card';
+    card.href = '#'; // 👉 point this to the real restaurant page once it exists
+    card.innerHTML = `
+      <div class="thumb">${r.name.charAt(0)}</div>
+      <div class="body">
+        <div class="name">${r.name}</div>
+        <div class="meta">${r.cuisine}<span class="dot-sep"></span>${r.distanceLabel}</div>
+        <div class="rating">${r.rating ? '★ ' + r.rating : 'New'}</div>
+      </div>`;
+    restaurantGrid.appendChild(card);
+  });
+  resultsTitle.textContent = `Takeaways near ${postcode.toUpperCase()}`;
+  resultsCount.textContent = `${list.length} found`;
+  showState('results');
+}
+
+async function handleSearch(){
+  const postcode = postcodeInput.value.trim();
+  if(!postcode) return;
+
+  postcodeBtn.disabled = true;
+  postcodeBtnText.textContent = 'Searching…';
+
+  try {
+    const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+    const data = await res.json();
+
+    if(data.status !== 200 || !data.result){
+      throw new Error('invalid postcode');
+    }
+
+    const { latitude, longitude } = data.result;
+
+    const withDistance = DEMO_RESTAURANTS
+      .map(r => ({ ...r, distanceKm: haversineKm(latitude, longitude, r.lat, r.lng) }))
+      .filter(r => r.distanceKm <= COVERAGE_RADIUS_KM)
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .map(r => ({ ...r, distanceLabel: r.distanceKm < 1 ? `${Math.round(r.distanceKm*1000)}m` : `${r.distanceKm.toFixed(1)}mi` }));
+
+    if(withDistance.length === 0){
+      showState('nocoverage');
+    } else {
+      renderResults(withDistance, postcode);
+    }
+
+  } catch(err){
+    // Invalid postcode or out of coverage — treat as "not in your area yet"
+    showState('nocoverage');
+  } finally {
+    postcodeBtn.disabled = false;
+    postcodeBtnText.textContent = 'Find takeaways near you';
+  }
+}
+
+postcodeBtn.addEventListener('click', handleSearch);
+postcodeInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') handleSearch(); });
+
+/* ============ NOTIFY ME (out of coverage) ============ */
+// 👉 Reuse your customer waitlist Apps Script URL here to feed these emails into the same Sheet.
+const NOTIFY_APPS_SCRIPT_URL = "PASTE_YOUR_CUSTOMER_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+document.getElementById('notifyBtn').addEventListener('click', async () => {
+  const emailInput = document.getElementById('notifyEmail');
+  const msg = document.getElementById('notifyMsg');
+  const email = emailInput.value.trim();
+
+  if(!email || !email.includes('@')){
+    msg.textContent = "Please enter a valid email address.";
+    msg.style.color = 'var(--red)';
+    msg.classList.add('show');
+    return;
+  }
+
+  try {
+    if(!NOTIFY_APPS_SCRIPT_URL.includes("PASTE_YOUR")){
+      await fetch(NOTIFY_APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ name: "", contact: email, area: postcodeInput.value.trim(), platform: "", frustrations: "", favoriteTakeaways: "", wouldTry: "Yes — outside coverage area", wishlist: "" })
+      });
+    }
+    msg.textContent = "You're on the list — we'll email you when we launch nearby.";
+    msg.style.color = 'var(--ink)';
+    msg.classList.add('show');
+    emailInput.value = '';
+  } catch(err){
+    msg.textContent = "Something went wrong — please try again.";
+    msg.style.color = 'var(--red)';
+    msg.classList.add('show');
+  }
+});
+</script>
+</body>
+</html>
