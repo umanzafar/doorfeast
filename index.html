@@ -386,6 +386,31 @@
   .calc-pitch h2{font-size:27px; line-height:1.3; margin-bottom:14px;}
   .hl-red{color:var(--gold);}
   .calc-pitch p{color:rgba(255,255,255,0.75); font-size:14.5px; line-height:1.65; margin:0;}
+  .calc-points{
+    list-style:none;
+    margin:22px 0 0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .calc-points li{
+    position:relative;
+    padding-left:22px;
+    font-size:14px;
+    line-height:1.5;
+    color:rgba(255,255,255,0.85);
+  }
+  .calc-points li::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:7px;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--gold);
+  }
 
   .calc-card{
     background:var(--cream);
@@ -655,9 +680,14 @@
     <div class="calc-pitch reveal">
       <span class="calc-eyebrow">For Takeaway Owners</span>
       <h2>See exactly what you'd <span class="hl-red">take home</span> on DoorFeast.</h2>
-      <p>No sales call, no guesswork — type in an order value below and watch the real numbers move. This is the same commission and fee structure every partner gets from day one, whether you're doing five orders a week or fifty.</p>
+      <p>Type an order value — or your rough weekly total — and watch the numbers update as you type. No hidden fees, no bundled marketing charges, no surprise deductions.</p>
+      <ul class="calc-points">
+       <li>12% flat commission — the same for every order</li>
+       <li>Payment processing shown as a clear line, not baked in</li>
+       <li>Payouts to your bank on a predictable schedule</li>
+       </ul>
     </div>
-
+    
     <div class="calc-card reveal" style="transition-delay:0.1s">
       <label class="calc-label" for="calcInput">Order value (£)</label>
       <input type="number" id="calcInput" class="calc-input" placeholder="e.g. 25.00" min="0" step="0.01">
