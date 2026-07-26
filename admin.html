@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoorFeast — Application Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --green:#2E7D46; --line:#E4DFD2;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink);}
+
+  /* ============ PASSWORD GATE ============ */
+  #passwordGate{position:fixed; inset:0; z-index:999; background:var(--ink); display:flex; align-items:center; justify-content:center; padding:24px;}
+  .gate-card{background:var(--cream); border-radius:20px; padding:40px 34px; max-width:360px; width:100%; text-align:center; box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);}
+  .gate-card h2{font-family:'Poppins',sans-serif; font-size:19px; margin-bottom:8px;}
+  .gate-card p{font-size:13px; color:var(--body); margin:0 0 18px;}
+  .gate-card input{width:100%; border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; font-size:14px; margin-bottom:12px; text-align:center;}
+  .gate-card input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
+  .gate-card button{width:100%; border:none; border-radius:999px; padding:12px; background:var(--red); color:#fff; font-weight:700; font-size:14px; cursor:pointer;}
+  .gate-card button:hover{background:var(--red-dark);}
+  .gate-error{color:var(--red); font-size:12px; margin-top:10px; display:none;}
+  .gate-error.show{display:block;}
+
+  /* ============ LAYOUT ============ */
+  .topbar{
+    background:var(--card); border-bottom:1px solid var(--line);
+    padding:16px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  .topbar h1{font-family:'Poppins',sans-serif; font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;}
+  .topbar h1 img{width:28px; border-radius:7px;}
+  .refresh-btn{
+    border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:8px 16px;
+    font-size:13px; font-weight:600; cursor:pointer; color:var(--ink); display:flex; align-items:center; gap:6px;
+  }
+  .refresh-btn:hover{border-color:var(--red); color:var(--red);}
+  .refresh-btn.spinning svg{animation:spin 0.8s linear infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .tabs{display:flex; gap:8px; padding:20px 28px 0; max-width:1100px; margin:0 auto;}
+  .tab{
+    border:none; background:none; padding:10px 18px; font-size:14px; font-weight:600;
+    color:var(--body); cursor:pointer; border-bottom:2.5px solid transparent; display:flex; align-items:center; gap:8px;
+  }
+  .tab.active{color:var(--red); border-bottom-color:var(--red);}
+  .tab .count{
+    background:rgba(38,34,32,0.08); color:var(--ink); font-size:11.5px; font-weight:700;
+    padding:2px 8px; border-radius:999px;
+  }
+  .tab.active .count{background:var(--red); color:#fff;}
+
+  .content{max-width:1100px; margin:0 auto; padding:24px 28px 80px;}
+  .app-list{display:flex; flex-direction:column; gap:16px;}
+  .empty-state{text-align:center; padding:60px 20px; color:var(--body); font-size:14px;}
+
+  .app-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 24px;
+  }
+  .app-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:14px;}
+  .app-title{font-family:'Poppins',sans-serif; font-weight:700; font-size:16.5px; margin:0 0 3px;}
+  .app-sub{font-size:12.5px; color:var(--body);}
+  .status-badge{
+    font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap;
+  }
+  .status-approved{background:rgba(46,125,70,0.12); color:var(--green);}
+  .status-rejected{background:rgba(166,30,30,0.1); color:var(--red);}
+  .status-pending{background:rgba(217,164,65,0.18); color:#8A6414;}
+
+  .app-grid{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px 20px;
+    font-size:13px; margin-bottom:16px;
+  }
+  .app-field-label{font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--body); margin-bottom:2px;}
+  .app-field-value{font-weight:600; color:var(--ink); word-break:break-word;}
+
+  .doc-links{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+  .doc-link{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600;
+    color:var(--red); text-decoration:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px;
+  }
+  .doc-link:hover{border-color:var(--red); background:rgba(166,30,30,0.04);}
+
+  .reject-reason-box{
+    background:rgba(166,30,30,0.05); border:1px solid rgba(166,30,30,0.2); border-radius:10px;
+    padding:10px 14px; font-size:12.5px; color:var(--ink); margin-bottom:14px;
+  }
+  .reject-reason-box b{color:var(--red);}
+
+  .action-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn{
+    border:none; border-radius:999px; padding:10px 20px; font-size:13.5px; font-weight:700; cursor:pointer;
+  }
+  .btn-approve{background:var(--green); color:#fff;}
+  .btn-approve:hover{background:#245c37;}
+  .btn-reject{background:#fff; color:var(--red); border:1.5px solid var(--red);}
+  .btn-reject:hover{background:rgba(166,30,30,0.06);}
+  .btn:disabled{opacity:0.6; cursor:not-allowed;}
+
+  .reject-form{
+    display:none; margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);
+  }
+  .reject-form.show{display:block;}
+  .reject-form textarea{
+    width:100%; min-height:70px; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-family:inherit; font-size:13px; resize:vertical; margin-bottom:10px;
+  }
+  .reject-form textarea:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.1);}
+  .reject-form-actions{display:flex; gap:10px;}
+  .btn-cancel{background:none; color:var(--body); border:1px solid var(--line);}
+  .btn-cancel:hover{background:rgba(38,34,32,0.05);}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; font-size:13.5px; font-weight:600;
+    padding:12px 22px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:200;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:600px){
+    .topbar, .tabs, .content{padding-left:16px; padding-right:16px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ PASSWORD GATE ============ -->
+<div id="passwordGate">
+  <div class="gate-card">
+    <h2>Internal access only</h2>
+    <p>This page reviews live takeaway applications. Enter the team password to continue.</p>
+    <input type="password" id="gateInput" placeholder="Access password" autocomplete="off">
+    <button id="gateSubmit">Enter</button>
+    <p class="gate-error" id="gateError">That password isn't right — try again.</p>
+  </div>
+</div>
+
+<!-- ============ TOPBAR ============ -->
+<div class="topbar">
+  <h1><img src="logo.png" alt="DoorFeast"> Application Review</h1>
+  <button class="refresh-btn" id="refreshBtn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+    Refresh
+  </button>
+</div>
+
+<!-- ============ TABS ============ -->
+<div class="tabs">
+  <button class="tab active" data-tab="pending">Pending <span class="count" id="countPending">0</span></button>
+  <button class="tab" data-tab="approved">Approved <span class="count" id="countApproved">0</span></button>
+  <button class="tab" data-tab="rejected">Rejected <span class="count" id="countRejected">0</span></button>
+</div>
+
+<!-- ============ CONTENT ============ -->
+<div class="content">
+  <div class="app-list" id="appList">
+    <div class="empty-state">Loading applications…</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ PASSWORD GATE ============ */
+// 👉 Change this to your own internal team password.
+const SITE_PASSWORD = "doorfeast-review-2026";
+
+const gate = document.getElementById('passwordGate');
+const gateInput = document.getElementById('gateInput');
+const gateError = document.getElementById('gateError');
+document.getElementById('gateSubmit').addEventListener('click', tryUnlock);
+gateInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+function tryUnlock(){
+  if(gateInput.value === SITE_PASSWORD){
+    gate.style.display = 'none';
+    loadApplications();
+  } else {
+    gateError.classList.add('show');
+    gateInput.focus(); gateInput.select();
+  }
+}
+
+/* ============ CONFIG ============ */
+// 👉 Paste your Applications Apps Script Web App URL here (same one used in application.html)
+const APPS_SCRIPT_URL = "PASTE_YOUR_APPLICATIONS_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* ============ JSONP FETCH (Apps Script doesn't reliably support cross-domain fetch reads) ============ */
+function jsonpFetch(url){
+  return new Promise((resolve, reject) => {
+    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    window[cbName] = (data) => {
+      resolve(data);
+      delete window[cbName];
+      script.remove();
+    };
+    const script = document.createElement('script');
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = () => reject(new Error('Failed to load applications'));
+    document.body.appendChild(script);
+  });
+}
+
+/* ============ STATE ============ */
+let appData = { pending: [], approved: [], rejected: [] };
+let currentTab = 'pending';
+
+const appList = document.getElementById('appList');
+const refreshBtn = document.getElementById('refreshBtn');
+const toast = document.getElementById('toast');
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function docLink(url, name, label){
+  if(!url) return `<span class="doc-link" style="opacity:0.4;">${label}: none</span>`;
+  return `<a class="doc-link" href="${url}" target="_blank" rel="noopener">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+    ${label}
+  </a>`;
+}
+
+/* ============ LOAD & RENDER ============ */
+async function loadApplications(){
+  refreshBtn.classList.add('spinning');
+  try {
+    if(APPS_SCRIPT_URL.includes("PASTE_YOUR")){
+      appList.innerHTML = '<div class="empty-state">Backend not configured yet — paste your Apps Script URL into admin.html.</div>';
+      return;
+    }
+    appData = await jsonpFetch(APPS_SCRIPT_URL);
+    document.getElementById('countPending').textContent = appData.pending.length;
+    document.getElementById('countApproved').textContent = appData.approved.length;
+    document.getElementById('countRejected').textContent = appData.rejected.length;
+    renderTab();
+  } catch(err){
+    appList.innerHTML = '<div class="empty-state">Couldn\'t load applications. Check your Apps Script URL and deployment, then hit Refresh.</div>';
+  } finally {
+    refreshBtn.classList.remove('spinning');
+  }
+}
+
+function renderTab(){
+  const list = appData[currentTab] || [];
+  if(list.length === 0){
+    const label = currentTab === 'pending' ? 'No pending applications right now.'
+      : currentTab === 'approved' ? 'No approved takeaways yet.'
+      : 'No rejected applications yet.';
+    appList.innerHTML = `<div class="empty-state">${label}</div>`;
+    return;
+  }
+
+  appList.innerHTML = list.map(app => {
+    const statusClass = currentTab === 'approved' ? 'status-approved' : currentTab === 'rejected' ? 'status-rejected' : 'status-pending';
+    const statusLabel = currentTab === 'approved' ? app.status : currentTab === 'rejected' ? 'Rejected' : 'Pending review';
+
+    return `
+    <div class="app-card" data-id="${app.id}">
+      <div class="app-card-top">
+        <div>
+          <p class="app-title">${escapeHtml(app.businessName)}</p>
+          <p class="app-sub">Submitted ${fmtDate(app.timestamp)}</p>
+        </div>
+        <span class="status-badge ${statusClass}">${escapeHtml(statusLabel)}</span>
+      </div>
+
+      <div class="app-grid">
+        <div><div class="app-field-label">Owner</div><div class="app-field-value">${escapeHtml(app.ownerName)}</div></div>
+        <div><div class="app-field-label">Phone</div><div class="app-field-value">${escapeHtml(app.phone)}</div></div>
+        <div><div class="app-field-label">Email</div><div class="app-field-value">${escapeHtml(app.email)}</div></div>
+        <div><div class="app-field-label">Cuisine</div><div class="app-field-value">${escapeHtml(app.cuisine)}</div></div>
+        <div style="grid-column:1/-1;"><div class="app-field-label">Address</div><div class="app-field-value">${escapeHtml(app.address)}</div></div>
+      </div>
+
+      <div class="doc-links">
+        ${docLink(app.hygieneUrl, app.hygieneName, 'Hygiene Certificate')}
+        ${docLink(app.bizRegUrl, app.bizRegName, 'Business Registration')}
+        ${docLink(app.idUrl, app.idName, 'ID Document')}
+      </div>
+
+      ${currentTab === 'rejected' && app.rejectReason ? `
+        <div class="reject-reason-box"><b>Reason sent to applicant:</b> ${escapeHtml(app.rejectReason)}</div>
+      ` : ''}
+
+      ${currentTab === 'pending' ? `
+        <div class="action-row">
+          <button class="btn btn-approve" onclick="handleApprove('${app.id}', this)">Approve</button>
+          <button class="btn btn-reject" onclick="toggleRejectForm('${app.id}')">Reject</button>
+        </div>
+        <div class="reject-form" id="reject-form-${app.id}">
+          <textarea id="reject-reason-${app.id}" placeholder="Reason for rejection — this gets emailed to the applicant (e.g. expired certificate, mismatched name, missing document)"></textarea>
+          <div class="reject-form-actions">
+            <button class="btn btn-reject" id="reject-confirm-${app.id}" disabled onclick="handleReject('${app.id}', this)">Confirm reject</button>
+            <button class="btn btn-cancel" onclick="toggleRejectForm('${app.id}')">Cancel</button>
+          </div>
+        </div>
+      ` : ''}
+    </div>`;
+  }).join('');
+
+  list.forEach(app => {
+    const textarea = document.getElementById(`reject-reason-${app.id}`);
+    const confirmBtn = document.getElementById(`reject-confirm-${app.id}`);
+    if(textarea && confirmBtn){
+      textarea.addEventListener('input', () => {
+        confirmBtn.disabled = textarea.value.trim().length === 0;
+      });
+    }
+  });
+}
+
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============ TABS ============ */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    renderTab();
+  });
+});
+
+refreshBtn.addEventListener('click', loadApplications);
+
+/* ============ ACTIONS ============ */
+function moveApp(id, fromTab, toTab, updates){
+  const idx = appData[fromTab].findIndex(a => a.id === id);
+  if(idx === -1) return;
+  const [app] = appData[fromTab].splice(idx, 1);
+  Object.assign(app, updates);
+  appData[toTab].unshift(app);
+  document.getElementById('countPending').textContent = appData.pending.length;
+  document.getElementById('countApproved').textContent = appData.approved.length;
+  document.getElementById('countRejected').textContent = appData.rejected.length;
+}
+
+async function sendDecision(id, action, reason){
+  await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ type: "decision", id, action, reason: reason || "" })
+  });
+}
+
+async function handleApprove(id, btn){
+  btn.disabled = true;
+  btn.textContent = "Approving…";
+  try {
+    await sendDecision(id, "approve", "");
+    moveApp(id, 'pending', 'approved', { status: "Approved, payouts pending setup" });
+    renderTab();
+    showToast("Approved — confirmation email sent to the applicant.");
+  } catch(err){
+    showToast("Something went wrong — please try again.");
+    btn.disabled = false;
+    btn.textContent = "Approve";
+  }
+}
+
+function toggleRejectForm(id){
+  const form = document.getElementById(`reject-form-${id}`);
+  form.classList.toggle('show');
+}
+
+async function handleReject(id, btn){
+  const textarea = document.getElementById(`reject-reason-${id}`);
+  const reason = textarea.value.trim();
+  if(!reason) return;
+
+  btn.disabled = true;
+  btn.textContent = "Rejecting…";
+  try {
+    await sendDecision(id, "reject", reason);
+    moveApp(id, 'pending', 'rejected', { status: "Rejected", rejectReason: reason });
+    renderTab();
+    showToast("Rejected — reason emailed to the applicant.");
+  } catch(err){
+    showToast("Something went wrong — please try again.");
+    btn.disabled = false;
+    btn.textContent = "Confirm reject";
+  }
+}
+</script>
+</body>
+</html>
