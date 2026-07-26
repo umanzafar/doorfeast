@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Application received — DoorFeast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62; --red:#A61E1E; --line:#E4DFD2;}
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 20px;}
+  .panel{max-width:480px; width:100%; text-align:center;}
+  .logo-img{width:130px; height:auto; border-radius:16px; box-shadow:0 16px 34px -14px rgba(27,24,21,0.3); margin-bottom:24px;}
+  h1{font-family:'Poppins',sans-serif; font-weight:800; font-size:27px; margin:0 0 14px;}
+  p.lead{font-size:15px; line-height:1.65; color:var(--body); margin:0 0 24px;}
+  .promise-card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 24px; text-align:left;}
+  .promise-card .row{display:flex; gap:12px; align-items:flex-start; font-size:14px; color:var(--ink); line-height:1.55;}
+  .promise-card .row + .row{margin-top:14px;}
+  .promise-card .icon{flex-shrink:0; width:22px; height:22px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--red); color:#fff; font-weight:700; font-size:12px;}
+</style>
+</head>
+<body>
+<div class="panel">
+  <img src="logo.png" alt="DoorFeast" class="logo-img">
+  <h1>Application received</h1>
+  <p class="lead">Thanks for applying to list your takeaway on DoorFeast. Our team reviews every application by hand.</p>
+  <div class="promise-card">
+    <div class="row"><span class="icon">✓</span><span>We'll check your documents and details against our onboarding checklist.</span></div>
+    <div class="row"><span class="icon">✓</span><span>You'll get an email either way — approved, or with clear feedback if something needs fixing.</span></div>
+    <div class="row"><span class="icon">✓</span><span>No need to follow up in the meantime — we'll come to you.</span></div>
+  </div>
+</div>
+</body>
+</html>
