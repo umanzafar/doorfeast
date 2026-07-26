@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoorFeast — Apply as a Takeaway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --line:#E4DFD2;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; justify-content:center; padding:56px 20px 80px;}
+  .wrap{width:100%; max-width:640px;}
+  .brandbar{display:flex; justify-content:center; margin-bottom:26px;}
+  .brandbar .logo-img{width:120px; height:auto; border-radius:14px; box-shadow:0 14px 30px -10px rgba(0,0,0,0.25);}
+  .hero{text-align:center; margin-bottom:30px;}
+  .hero h1{font-family:'Poppins',sans-serif; font-weight:800; font-size:28px; line-height:1.28; margin:0 0 12px;}
+  .hero p{font-size:15px; line-height:1.6; color:var(--body); margin:0; max-width:480px; margin:0 auto;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:40px 36px 34px; box-shadow:0 20px 45px -25px rgba(27,24,21,0.25);}
+  .qpath{position:relative; padding-left:34px;}
+  .qpath::before{content:""; position:absolute; left:10px; top:6px; bottom:6px; width:2px; background:linear-gradient(var(--red), var(--line));}
+  .question{position:relative; margin-bottom:26px;}
+  .question::before{content:attr(data-step); position:absolute; left:-34px; top:0; width:22px; height:22px; border-radius:50%; background:var(--card); border:2px solid var(--red); color:var(--red); font-family:'Poppins',sans-serif; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center;}
+  label.qlabel{display:block; font-family:'Poppins',sans-serif; font-weight:600; font-size:15px; margin-bottom:8px;}
+  .qhint{font-size:12px; color:var(--body); margin:-4px 0 10px;}
+  input[type="text"], input[type="email"]{width:100%; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:14.5px; color:var(--ink);}
+  input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
+  .option-list{display:flex; flex-direction:column; gap:9px;}
+  .option{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line); border-radius:10px; padding:11px 14px; background:#fff; cursor:pointer; font-size:14.5px;}
+  .option:hover{border-color:var(--red);}
+  .option input{accent-color:var(--red); width:16px; height:16px;}
+  .option input:checked + span{font-weight:600; color:var(--red);}
+  .option:has(input:checked){background:rgba(166,30,30,0.06); border-color:var(--red);}
+
+  .file-drop{
+    border:1.5px dashed var(--line); border-radius:12px; padding:18px;
+    text-align:center; cursor:pointer; transition:border-color .15s, background .15s;
+    position:relative;
+  }
+  .file-drop:hover{border-color:var(--red); background:rgba(166,30,30,0.03);}
+  .file-drop input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+  .file-drop .fd-label{font-size:13.5px; font-weight:600; color:var(--ink);}
+  .file-drop .fd-hint{font-size:11.5px; color:var(--body); margin-top:4px;}
+  .file-drop.has-file{border-color:var(--red); border-style:solid; background:rgba(166,30,30,0.04);}
+  .file-drop .fd-filename{font-size:12.5px; color:var(--red); font-weight:600; margin-top:6px; word-break:break-all;}
+
+  .submit-row{padding-left:34px; margin-top:8px;}
+  button.submit-btn{width:100%; border:none; border-radius:999px; padding:15px 20px; font-family:'Poppins',sans-serif; font-weight:700; font-size:16px; color:#fff; background:var(--red); cursor:pointer; box-shadow:0 12px 24px -8px rgba(166,30,30,0.45);}
+  button.submit-btn:hover{background:var(--red-dark);}
+  button.submit-btn:disabled{opacity:0.65; cursor:not-allowed;}
+  .privacy-note{text-align:center; font-size:11.5px; color:var(--body); margin-top:14px; padding-left:34px;}
+  .error-banner{display:none; background:#FBE7E5; border:1px solid #D8534B; color:#8A2E28; font-size:13px; padding:10px 14px; border-radius:10px; margin-bottom:20px;}
+  .error-banner.show{display:block;}
+  @media (max-width:480px){ .card{padding:26px 22px 24px;} .hero h1{font-size:23px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brandbar"><img src="logo.png" alt="DoorFeast" class="logo-img"></div>
+  <div class="hero">
+    <h1>Apply to list your takeaway on DoorFeast</h1>
+    <p>Fill this in once — our team reviews every application by hand and emails you the decision.</p>
+  </div>
+
+  <div class="card">
+    <div id="errorBanner" class="error-banner">Something went wrong sending your application. Please try again in a moment.</div>
+
+    <form id="applicationForm">
+      <div class="qpath">
+
+        <div class="question" data-step="1">
+          <label class="qlabel">Business name</label>
+          <input type="text" id="businessName" required>
+        </div>
+
+        <div class="question" data-step="2">
+          <label class="qlabel">Owner name</label>
+          <input type="text" id="ownerName" required>
+        </div>
+
+        <div class="question" data-step="3">
+          <label class="qlabel">Phone number</label>
+          <input type="text" id="phone" required>
+        </div>
+
+        <div class="question" data-step="4">
+          <label class="qlabel">Email</label>
+          <input type="email" id="email" required placeholder="you@example.com">
+        </div>
+
+        <div class="question" data-step="5">
+          <label class="qlabel">Business address</label>
+          <input type="text" id="address" required>
+        </div>
+
+        <div class="question" data-step="6">
+          <label class="qlabel">Cuisine type</label>
+          <div class="option-list">
+            <label class="option"><input type="radio" name="cuisine" value="Indian" required><span>Indian</span></label>
+            <label class="option"><input type="radio" name="cuisine" value="Chinese"><span>Chinese</span></label>
+            <label class="option"><input type="radio" name="cuisine" value="Pizza"><span>Pizza</span></label>
+            <label class="option"><input type="radio" name="cuisine" value="Kebab"><span>Kebab</span></label>
+            <label class="option"><input type="radio" name="cuisine" value="Fast Food"><span>Fast Food</span></label>
+            <label class="option"><input type="radio" id="cuisineOtherCheck" name="cuisine" value="Other"><span>Other</span></label>
+          </div>
+        </div>
+
+        <div class="question" data-step="7">
+          <label class="qlabel">Food hygiene certificate</label>
+          <p class="qhint">Photo or PDF of your current certificate</p>
+          <label class="file-drop" id="dropHygiene">
+            <input type="file" id="hygieneCert" accept="image/*,application/pdf" required>
+            <div class="fd-label">Click to upload</div>
+            <div class="fd-hint">JPG, PNG or PDF</div>
+            <div class="fd-filename"></div>
+          </label>
+        </div>
+
+        <div class="question" data-step="8">
+          <label class="qlabel">Proof of business registration</label>
+          <p class="qhint">e.g. Companies House registration, VAT certificate, or council business registration</p>
+          <label class="file-drop" id="dropBizReg">
+            <input type="file" id="businessReg" accept="image/*,application/pdf" required>
+            <div class="fd-label">Click to upload</div>
+            <div class="fd-hint">JPG, PNG or PDF</div>
+            <div class="fd-filename"></div>
+          </label>
+        </div>
+
+        <div class="question" data-step="9">
+          <label class="qlabel">ID of the account holder</label>
+          <p class="qhint">Passport, driving licence, or national ID — for the person who'll manage payouts</p>
+          <label class="file-drop" id="dropIdDoc">
+            <input type="file" id="idDoc" accept="image/*,application/pdf" required>
+            <div class="fd-label">Click to upload</div>
+            <div class="fd-hint">JPG, PNG or PDF</div>
+            <div class="fd-filename"></div>
+          </label>
+        </div>
+
+      </div>
+
+      <div class="submit-row">
+        <button type="submit" class="submit-btn" id="submitBtn">Submit application →</button>
+      </div>
+      <p class="privacy-note">Your documents are used only to verify your business and are never shared publicly.</p>
+    </form>
+  </div>
+</div>
+
+<script>
+  // 👉 Paste your Applications Apps Script Web App URL here (see ADMIN_SETUP.md)
+  const APPS_SCRIPT_URL = "PASTE_YOUR_APPLICATIONS_APPS_SCRIPT_WEB_APP_URL_HERE";
+  const MAX_FILE_MB = 8;
+
+  function wireFileDrop(dropId, inputId){
+    const drop = document.getElementById(dropId);
+    const input = document.getElementById(inputId);
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      const nameEl = drop.querySelector('.fd-filename');
+      if(file){
+        if(file.size > MAX_FILE_MB * 1024 * 1024){
+          nameEl.textContent = `File too large (max ${MAX_FILE_MB}MB) — please choose a smaller file.`;
+          drop.classList.remove('has-file');
+          input.value = '';
+          return;
+        }
+        drop.classList.add('has-file');
+        nameEl.textContent = file.name;
+      }
+    });
+  }
+  wireFileDrop('dropHygiene', 'hygieneCert');
+  wireFileDrop('dropBizReg', 'businessReg');
+  wireFileDrop('dropIdDoc', 'idDoc');
+
+  function fileToPayload(input){
+    return new Promise((resolve, reject) => {
+      const file = input.files[0];
+      if(!file){ resolve(null); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve({
+        data: reader.result.split(',')[1],
+        mimeType: file.type || 'application/octet-stream',
+        name: file.name
+      });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const form = document.getElementById('applicationForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const errorBanner = document.getElementById('errorBanner');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBanner.classList.remove('show');
+
+    const cuisine = (document.querySelector('input[name="cuisine"]:checked') || {}).value || "";
+    const hygieneInput = document.getElementById('hygieneCert');
+    const bizRegInput = document.getElementById('businessReg');
+    const idInput = document.getElementById('idDoc');
+
+    if(!hygieneInput.files[0] || !bizRegInput.files[0] || !idInput.files[0] || !cuisine){
+      errorBanner.textContent = "Please fill in all required fields and upload all three documents.";
+      errorBanner.classList.add('show');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Uploading…";
+
+    try {
+      if(APPS_SCRIPT_URL.includes("PASTE_YOUR")){
+        throw new Error("Backend not configured yet");
+      }
+
+      const [hygieneCert, businessReg, idDoc] = await Promise.all([
+        fileToPayload(hygieneInput), fileToPayload(bizRegInput), fileToPayload(idInput)
+      ]);
+
+      const payload = {
+        type: "application",
+        businessName: document.getElementById('businessName').value.trim(),
+        ownerName: document.getElementById('ownerName').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        cuisine: cuisine,
+        hygieneCert, businessReg, idDoc
+      };
+
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+
+      window.location.href = "application-thankyou.html";
+
+    } catch (err) {
+      console.error(err);
+      errorBanner.textContent = "Something went wrong sending your application. Please try again in a moment.";
+      errorBanner.classList.add('show');
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit application →";
+    }
+  });
+</script>
+</body>
+</html>
