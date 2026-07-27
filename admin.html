@@ -241,7 +241,7 @@ function docLink(url, name, label){
 async function loadApplications(){
   refreshBtn.classList.add('spinning');
   try {
-    if(APPS_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbxq89dx0icMr4yvhFKrZviqCIFGuCi26oIDkl5Uj-geHn3HG5smp5VKe4wLtyfi2pu_/exec")){
+    if(!APPS_SCRIPT_URL.startsWith("https://script.google.com/macros/")){
       appList.innerHTML = '<div class="empty-state">Backend not configured yet — paste your Apps Script URL into admin.html.</div>';
       return;
     }
