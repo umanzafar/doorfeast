@@ -58,6 +58,11 @@
   @media (max-width:480px){ .card{padding:26px 22px 24px;} .hero h1{font-size:23px;} }
 </style>
 </head>
+  <script>
+  if(!new URLSearchParams(window.location.search).get('uid')){
+    window.location.replace('signup.html');
+  }
+</script>
 <body>
 <div class="wrap">
   <div class="brandbar"><img src="logo.png" alt="DoorFeast" class="logo-img"></div>
@@ -164,19 +169,16 @@
   const firebaseUid = urlParams.get('uid');
   const firebaseEmail = urlParams.get('email');
 
-  if (!firebaseUid) {
-    window.location.href = 'signup.html';
-  } else {
-    window.addEventListener('DOMContentLoaded', () => {
-      const emailInput = document.getElementById('email');
-      if (emailInput && firebaseEmail) {
-        emailInput.value = firebaseEmail;
-        emailInput.readOnly = true;
-        emailInput.style.background = '#f2efe8';
-        emailInput.style.cursor = 'not-allowed';
+  window.addEventListener('DOMContentLoaded', () => {
+    const emailInput = document.getElementById('email');
+       if (emailInput && firebaseEmail) {
+       emailInput.value = firebaseEmail;
+      emailInput.readOnly = true;
+      emailInput.style.background = '#f2efe8';
+      emailInput.style.cursor = 'not-allowed';
       }
     });
-  }
+   }
 
   function wireFileDrop(dropId, inputId){
     const drop = document.getElementById(dropId);
