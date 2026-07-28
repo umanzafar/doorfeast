@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  // Runs before the page paints — no uid means they skipped signup, send them there immediately.
+  if(!new URLSearchParams(window.location.search).get('uid')){
+    window.location.replace('signup.html');
+  }
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DoorFeast — Apply as a Takeaway</title>
@@ -58,11 +64,6 @@
   @media (max-width:480px){ .card{padding:26px 22px 24px;} .hero h1{font-size:23px;} }
 </style>
 </head>
-  <script>
-  if(!new URLSearchParams(window.location.search).get('uid')){
-    window.location.replace('signup.html');
-  }
-</script>
 <body>
 <div class="wrap">
   <div class="brandbar"><img src="logo.png" alt="DoorFeast" class="logo-img"></div>
@@ -159,26 +160,24 @@
 
 <script>
   // 👉 Paste your Applications Apps Script Web App URL here (see ADMIN_SETUP.md)
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3ZrVGl01LpHnL7ucYyYT-vBFV2vaWIhzZlCW_o6kOmKzppAN0mCunfnb8l64_m3x7/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz35vcPmEyHIZYGHucfufMBIaBvronJR1xWm5mTX-zo0QvAawANxJWn5NMwH5quHRwv/exec";
   const MAX_FILE_MB = 8;
 
-  // ============ REQUIRE SIGNUP FIRST ============
-  // This page should only be reached via signup.html, which passes the
-  // Firebase UID + email in the URL. No uid = no account = send them back.
+  // ============ SIGNED-IN USER DETAILS ============
+  // uid presence is already guaranteed by the <head> check above.
   const urlParams = new URLSearchParams(window.location.search);
   const firebaseUid = urlParams.get('uid');
   const firebaseEmail = urlParams.get('email');
 
   window.addEventListener('DOMContentLoaded', () => {
     const emailInput = document.getElementById('email');
-       if (emailInput && firebaseEmail) {
-       emailInput.value = firebaseEmail;
+    if (emailInput && firebaseEmail) {
+      emailInput.value = firebaseEmail;
       emailInput.readOnly = true;
       emailInput.style.background = '#f2efe8';
       emailInput.style.cursor = 'not-allowed';
-      }
-    });
-   }
+    }
+  });
 
   function wireFileDrop(dropId, inputId){
     const drop = document.getElementById(dropId);
