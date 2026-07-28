@@ -157,6 +157,27 @@
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby3ZrVGl01LpHnL7ucYyYT-vBFV2vaWIhzZlCW_o6kOmKzppAN0mCunfnb8l64_m3x7/exec";
   const MAX_FILE_MB = 8;
 
+  // ============ REQUIRE SIGNUP FIRST ============
+  // This page should only be reached via signup.html, which passes the
+  // Firebase UID + email in the URL. No uid = no account = send them back.
+  const urlParams = new URLSearchParams(window.location.search);
+  const firebaseUid = urlParams.get('uid');
+  const firebaseEmail = urlParams.get('email');
+
+  if (!firebaseUid) {
+    window.location.href = 'signup.html';
+  } else {
+    window.addEventListener('DOMContentLoaded', () => {
+      const emailInput = document.getElementById('email');
+      if (emailInput && firebaseEmail) {
+        emailInput.value = firebaseEmail;
+        emailInput.readOnly = true;
+        emailInput.style.background = '#f2efe8';
+        emailInput.style.cursor = 'not-allowed';
+      }
+    });
+  }
+
   function wireFileDrop(dropId, inputId){
     const drop = document.getElementById(dropId);
     const input = document.getElementById(inputId);
@@ -217,7 +238,7 @@
     submitBtn.textContent = "Uploading…";
 
     try {
-      if(APPS_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbxq89dx0icMr4yvhFKrZviqCIFGuCi26oIDkl5Uj-geHn3HG5smp5VKe4wLtyfi2pu_/exec")){
+      if(APPS_SCRIPT_URL.includes("PASTE_YOUR")){
         throw new Error("Backend not configured yet");
       }
 
@@ -233,7 +254,8 @@
         email: document.getElementById('email').value.trim(),
         address: document.getElementById('address').value.trim(),
         cuisine: cuisine,
-        hygieneCert, businessReg, idDoc
+        hygieneCert, businessReg, idDoc,
+        uid: firebaseUid
       };
 
       await fetch(APPS_SCRIPT_URL, {
