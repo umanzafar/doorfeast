@@ -61,7 +61,6 @@
 </style>
 </head>
 <body>
-
 <div class="card">
   <img src="logo.png" alt="DoorFeast">
   <h1 id="formTitle">Become a DoorFeast Partner</h1>
@@ -80,7 +79,10 @@
     <label for="email">Email</label>
     <input type="email" id="email" required autocomplete="email">
     <label for="password">Password</label>
-    <input type="password" id="password" required autocomplete="new-password" minlength="6">
+    <div style="position:relative;">
+      <input type="password" id="password" required autocomplete="new-password" minlength="6" style="padding-right:44px;">
+      <button type="button" id="togglePw" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:12px; font-weight:600; color:var(--body);">Show</button>
+    </div>
     <button type="submit" class="btn btn-primary" id="submitBtn">Create account</button>
   </form>
 
@@ -164,7 +166,12 @@
     // re-bind since innerHTML was replaced
     document.getElementById('toggleLink').addEventListener('click', () => toggleLink.click());
   });
-
+  document.getElementById('togglePw').addEventListener('click', (e) => {
+  const pw = document.getElementById('password');
+  const isHidden = pw.type === 'password';
+  pw.type = isHidden ? 'text' : 'password';
+  e.target.textContent = isHidden ? 'Hide' : 'Show';
+  });
   emailForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearError();
