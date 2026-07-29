@@ -154,11 +154,21 @@
   // New signups (no application yet) always go to the onboarding form.
   // Existing logins get routed based on their application's current status.
   async function goToOnboarding(user){
-    if(mode === 'signup'){
-      const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
-      window.location.href = `application.html?${params.toString()}`;
-      return;
-    }
+   try {
+     const data = await jsonpFetch(`${APPS_SCRIPT_URL}?action=status&uid=${encodeURIComponent(user.uid)}`);
+     if(data.found && (data.status || '').toLowerCase().indexOf('approved') === 0){
+       window.location.href = `dashboard.html?uid=${encodeURIComponent(user.uid)}`;
+     } else if(data.found){
+       window.location.href = `application-thankyou.html?uid=${encodeURIComponent(user.uid)}`;
+     } else {
+       const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
+       window.location.href = `application.html?${params.toString()}`;
+     }
+   } catch(err){
+    const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
+    window.location.href = `application.html?${params.toString()}`;
+   }
+  }
     try {
       const data = await jsonpFetch(`${APPS_SCRIPT_URL}?action=status&uid=${encodeURIComponent(user.uid)}`);
       if(data.found && (data.status || '').toLowerCase().indexOf('approved') === 0){
