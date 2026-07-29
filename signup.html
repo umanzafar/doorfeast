@@ -61,6 +61,7 @@
 </style>
 </head>
 <body>
+
 <div class="card">
   <img src="logo.png" alt="DoorFeast">
   <h1 id="formTitle">Become a DoorFeast Partner</h1>
@@ -79,10 +80,7 @@
     <label for="email">Email</label>
     <input type="email" id="email" required autocomplete="email">
     <label for="password">Password</label>
-    <div style="position:relative;">
-      <input type="password" id="password" required autocomplete="new-password" minlength="6" style="padding-right:44px;">
-      <button type="button" id="togglePw" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:12px; font-weight:600; color:var(--body);">Show</button>
-    </div>
+    <input type="password" id="password" required autocomplete="new-password" minlength="6">
     <button type="submit" class="btn btn-primary" id="submitBtn">Create account</button>
   </form>
 
@@ -140,12 +138,42 @@
     return "Something went wrong — please try again.";
   }
 
-  // After successful auth, send the user to the onboarding/application form
-  // with their Firebase UID and email attached, so the application record
-  // links back to this exact account.
-  function goToOnboarding(user){
-    const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
-    window.location.href = `application.html?${params.toString()}`;
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz35vcPmEyHIZYGHucfufMBIaBvronJR1xWm5mTX-zo0QvAawANxJWn5NMwH5quHRwv/exec";
+
+  function jsonpFetch(url){
+    return new Promise((resolve, reject) => {
+      const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+      window[cbName] = (data) => { resolve(data); delete window[cbName]; script.remove(); };
+      const script = document.createElement('script');
+      script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+      script.onerror = () => reject(new Error('failed'));
+      document.body.appendChild(script);
+    });
+  }
+
+  // New signups (no application yet) always go to the onboarding form.
+  // Existing logins get routed based on their application's current status.
+  async function goToOnboarding(user){
+    if(mode === 'signup'){
+      const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
+      window.location.href = `application.html?${params.toString()}`;
+      return;
+    }
+    try {
+      const data = await jsonpFetch(`${APPS_SCRIPT_URL}?action=status&uid=${encodeURIComponent(user.uid)}`);
+      if(data.found && (data.status || '').toLowerCase().indexOf('approved') === 0){
+        // 👉 dashboard.html doesn't exist yet — this is a placeholder redirect.
+        window.location.href = `dashboard.html?uid=${encodeURIComponent(user.uid)}`;
+      } else if(data.found){
+        window.location.href = `application-thankyou.html?uid=${encodeURIComponent(user.uid)}`;
+      } else {
+        // Logged in but never submitted an application — send them to fill it in.
+        const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
+        window.location.href = `application.html?${params.toString()}`;
+      }
+    } catch(err){
+      window.location.href = `application-thankyou.html?uid=${encodeURIComponent(user.uid)}`;
+    }
   }
 
   toggleLink.addEventListener('click', () => {
@@ -166,12 +194,7 @@
     // re-bind since innerHTML was replaced
     document.getElementById('toggleLink').addEventListener('click', () => toggleLink.click());
   });
-  document.getElementById('togglePw').addEventListener('click', (e) => {
-  const pw = document.getElementById('password');
-  const isHidden = pw.type === 'password';
-  pw.type = isHidden ? 'text' : 'password';
-  e.target.textContent = isHidden ? 'Hide' : 'Show';
-  });
+
   emailForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearError();
