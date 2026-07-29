@@ -151,24 +151,10 @@
     });
   }
 
-  // New signups (no application yet) always go to the onboarding form.
-  // Existing logins get routed based on their application's current status.
+  // Always check application status by uid — works the same whether this was
+  // a brand-new signup (no application found yet -> onboarding form) or an
+  // existing login (found -> route by pending/approved/rejected status).
   async function goToOnboarding(user){
-   try {
-     const data = await jsonpFetch(`${APPS_SCRIPT_URL}?action=status&uid=${encodeURIComponent(user.uid)}`);
-     if(data.found && (data.status || '').toLowerCase().indexOf('approved') === 0){
-       window.location.href = `dashboard.html?uid=${encodeURIComponent(user.uid)}`;
-     } else if(data.found){
-       window.location.href = `application-thankyou.html?uid=${encodeURIComponent(user.uid)}`;
-     } else {
-       const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
-       window.location.href = `application.html?${params.toString()}`;
-     }
-   } catch(err){
-    const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
-    window.location.href = `application.html?${params.toString()}`;
-   }
-  }
     try {
       const data = await jsonpFetch(`${APPS_SCRIPT_URL}?action=status&uid=${encodeURIComponent(user.uid)}`);
       if(data.found && (data.status || '').toLowerCase().indexOf('approved') === 0){
@@ -177,12 +163,12 @@
       } else if(data.found){
         window.location.href = `application-thankyou.html?uid=${encodeURIComponent(user.uid)}`;
       } else {
-        // Logged in but never submitted an application — send them to fill it in.
         const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
         window.location.href = `application.html?${params.toString()}`;
       }
     } catch(err){
-      window.location.href = `application-thankyou.html?uid=${encodeURIComponent(user.uid)}`;
+      const params = new URLSearchParams({ uid: user.uid, email: user.email || '' });
+      window.location.href = `application.html?${params.toString()}`;
     }
   }
 
