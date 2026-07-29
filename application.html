@@ -266,7 +266,7 @@
         body: JSON.stringify(payload)
       });
 
-      window.location.href = "application-thankyou.html";
+      window.location.href = "application-thankyou.html?uid=" + encodeURIComponent(firebaseUid);
 
     } catch (err) {
       console.error(err);
