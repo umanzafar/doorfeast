@@ -222,10 +222,8 @@
         <div class="section-head">
           <div><h2>Business info</h2><p>Manage your business name, address, hours, and cuisine type.</p></div>
         </div>
-        <div class="placeholder-card">
-          <div class="ph-icon">🏪</div>
-          <b>Business Info settings — coming next.</b><br>
-          This will let you edit your business name, address, phone, opening hours, and cuisine type directly.
+        <div id="businessInfoWrap">
+          <div class="empty-state">Loading your business info…</div>
         </div>
       </div>
 
@@ -233,10 +231,14 @@
         <div class="section-head">
           <div><h2>Order inbox</h2><p>Live orders will appear here once payments go live.</p></div>
         </div>
-        <div class="placeholder-card">
-          <div class="ph-icon">🔔</div>
-          <b>Order Inbox will go live once Stripe payments are connected.</b><br>
-          You'll get a sound alert for new orders, and can accept, reject, or set a prep time — with status updates through Preparing, Ready, and Out for Delivery. Before marking an order Ready or Out for Delivery, you'll be required to upload a photo of the completed order — this becomes your evidence if a customer disputes a refund.
+        <div class="placeholder-card" style="text-align:left; padding:34px 32px;">
+          <div style="text-align:center;"><div class="ph-icon">🔔</div><b>Structure is in place now — real use once Stripe payments are live.</b></div>
+          <ul style="margin:20px 0 0; padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--ink);">
+            <li>Incoming order alert with sound</li>
+            <li>Accept or reject order, set estimated prep time</li>
+            <li>Status updates: Preparing, Ready or Out for Delivery, Completed</li>
+            <li>Before Ready/Out for Delivery: required photo of the completed order — evidence for refund disputes</li>
+          </ul>
         </div>
       </div>
 
@@ -244,10 +246,12 @@
         <div class="section-head">
           <div><h2>Order history</h2><p>Search and filter past orders once you start receiving them.</p></div>
         </div>
-        <div class="placeholder-card">
-          <div class="ph-icon">🧾</div>
-          <b>No order history yet.</b><br>
-          Once orders start coming in, you'll see date, value, and status here — with the commission and fee breakdown shown per order, not just as a total.
+        <div class="placeholder-card" style="text-align:left; padding:34px 32px;">
+          <div style="text-align:center;"><div class="ph-icon">🧾</div><b>No order history yet — this fills in once orders start coming in.</b></div>
+          <ul style="margin:20px 0 0; padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--ink);">
+            <li>Searchable, filterable list of past orders: date, value, status</li>
+            <li>Commission and fee breakdown shown per order, not just as a total — matches our transparent pricing positioning</li>
+          </ul>
         </div>
       </div>
 
@@ -265,10 +269,15 @@
         <div class="section-head">
           <div><h2>Reports</h2><p>Understand how your restaurant is performing on DoorFeast.</p></div>
         </div>
-        <div class="placeholder-card">
-          <div class="ph-icon">📊</div>
-          <b>Reports will populate once you have real order volume.</b><br>
-          You'll see total orders and revenue, commission taken by DoorFeast, best-selling items, busiest days and times, and your repeat customer rate.
+        <div class="placeholder-card" style="text-align:left; padding:34px 32px;">
+          <div style="text-align:center;"><div class="ph-icon">📊</div><b>Basic version — grows once real order volume exists.</b></div>
+          <ul style="margin:20px 0 0; padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--ink);">
+            <li>Total orders and revenue over a selected period</li>
+            <li>Commission taken by DoorFeast, shown clearly</li>
+            <li>Best selling items</li>
+            <li>Busiest days and times</li>
+            <li>Repeat customer rate for your restaurant specifically</li>
+          </ul>
         </div>
       </div>
 
@@ -278,7 +287,8 @@
         </div>
         <div class="placeholder-card">
           <div class="ph-icon">🎯</div>
-          <b>Promotions — coming soon.</b>
+          <b>Promotions, coming soon.</b>
+          <p style="font-size:12.5px; margin-top:14px; color:var(--body);">Not decided yet whether this means restaurant-run discounts, DoorFeast-paid visibility boosts, or both — won't default to both.</p>
         </div>
       </div>
 
@@ -321,6 +331,13 @@
         <option>Kebab</option><option>Fast Food</option><option>Other</option>
       </select>
 
+      <label>Menu section</label>
+      <select id="itemSubCategory">
+        <option value="">No section</option>
+        <option>Starters</option><option>Mains</option><option>Sides</option>
+        <option>Desserts</option><option>Drinks</option><option>Set Meals</option>
+      </select>
+
       <label>Allergen information</label>
       <textarea id="itemAllergens" placeholder="e.g. Contains nuts, dairy, gluten. Required — cannot be left blank." required></textarea>
       <p class="required-note">Required — every item must list allergens before it can be saved.</p>
@@ -342,7 +359,9 @@ const uid = new URLSearchParams(window.location.search).get('uid');
 if(!uid){ window.location.href = 'signup.html'; }
 
 // 👉 Paste your Menu Items Apps Script Web App URL here (see Code-Menu.gs)
-const MENU_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwrrfCqxyzSBj7v4zsFYpJfn0mwqut_RcA25vICe4yYxZEez-PFd3H0JbpmuJ40UH8Z/exec";
+const MENU_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQcOOiMB-Cka7duS3_e4occi89hkwLJJo5Y5uKW-LAqs2-7oX6ygOmpPSlke-jbDTJ/exec";
+// 👉 Paste your Applications Apps Script Web App URL here (same one used in application.html / admin.html)
+const APPLICATIONS_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIdGeaKvSVGDU7yb9rrlWCzOLZJ26ps15pCrJFpjig6mrBvhWpWa13I46f2pyqEyUS/exec";
 
 function jsonpFetch(url){
   return new Promise((resolve, reject) => {
@@ -381,8 +400,85 @@ document.querySelectorAll('.nav-item').forEach(item => {
     document.getElementById('section-' + key).classList.add('active');
     document.getElementById('topbarTitle').textContent = sectionMeta[key].title;
     document.getElementById('topbarSub').textContent = sectionMeta[key].sub;
+    if(key === 'business' && !businessInfoLoaded){
+      loadBusinessInfo();
+    }
   });
 });
+
+// ============ BUSINESS INFO ============
+let businessInfoLoaded = false;
+const businessInfoWrap = document.getElementById('businessInfoWrap');
+
+async function loadBusinessInfo(){
+  if(APPLICATIONS_APPS_SCRIPT_URL.includes('PASTE_YOUR')){
+    businessInfoWrap.innerHTML = '<div class="empty-state">Business info backend not configured yet — paste your Applications Apps Script URL into dashboard.html.</div>';
+    return;
+  }
+  try {
+    const data = await jsonpFetch(`${APPLICATIONS_APPS_SCRIPT_URL}?action=business&uid=${encodeURIComponent(uid)}`);
+    businessInfoLoaded = true;
+    if(!data.found){
+      businessInfoWrap.innerHTML = '<div class="empty-state">No business record found for this account yet.</div>';
+      return;
+    }
+    renderBusinessInfoForm(data);
+  } catch(err){
+    businessInfoWrap.innerHTML = '<div class="empty-state">Couldn\'t load your business info. Please try again.</div>';
+  }
+}
+
+function renderBusinessInfoForm(data){
+  businessInfoWrap.innerHTML = `
+    <div class="card-form" style="background:var(--card); border:1px solid var(--line); border-radius:16px; padding:26px 28px; max-width:520px;">
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business name</label>
+      <input type="text" id="biz-name" value="${escapeHtml(data.businessName)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Phone number</label>
+      <input type="text" id="biz-phone" value="${escapeHtml(data.phone)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business address</label>
+      <input type="text" id="biz-address" value="${escapeHtml(data.address)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Cuisine type</label>
+      <select id="biz-cuisine" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+        ${['Indian','Chinese','Pizza','Kebab','Fast Food','Other'].map(c => `<option ${data.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
+      </select>
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Opening hours</label>
+      <textarea id="biz-hours" placeholder="e.g. Mon–Sat 12pm–10pm, Sun 4pm–10pm" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:18px; min-height:60px; font-family:inherit;">${escapeHtml(data.openingHours)}</textarea>
+
+      <button class="btn btn-primary" id="saveBizBtn">Save changes</button>
+    </div>
+  `;
+
+  document.getElementById('saveBizBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('saveBizBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      await fetch(APPLICATIONS_APPS_SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'updateBusinessInfo',
+          uid,
+          businessName: document.getElementById('biz-name').value.trim(),
+          phone: document.getElementById('biz-phone').value.trim(),
+          address: document.getElementById('biz-address').value.trim(),
+          cuisine: document.getElementById('biz-cuisine').value,
+          openingHours: document.getElementById('biz-hours').value.trim()
+        })
+      });
+      showToast('Business info saved.');
+    } catch(err){
+      showToast('Something went wrong — please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save changes';
+    }
+  });
+}
 
 const menuGrid = document.getElementById('menuGrid');
 const itemModalOverlay = document.getElementById('itemModalOverlay');
@@ -440,6 +536,7 @@ function renderMenu(){
           <span class="mi-title">${escapeHtml(item.name)}</span>
           <span class="mi-price">£${Number(item.price).toFixed(2)}</span>
           ${item.cuisineCategory ? `<span class="mi-tag">${escapeHtml(item.cuisineCategory)}</span>` : ''}
+          ${item.subCategory ? `<span class="mi-tag" style="background:rgba(166,30,30,0.08); border-color:rgba(166,30,30,0.25); color:var(--red);">${escapeHtml(item.subCategory)}</span>` : ''}
         </div>
         ${item.description ? `<p class="mi-desc">${escapeHtml(item.description)}</p>` : ''}
         <span class="mi-allergens">Allergens: ${escapeHtml(item.allergens)}</span>
@@ -482,6 +579,7 @@ function openEditModal(id){
   document.getElementById('itemPrice').value = item.price;
   document.getElementById('itemDescription').value = item.description || '';
   document.getElementById('itemCuisine').value = item.cuisineCategory || '';
+  document.getElementById('itemSubCategory').value = item.subCategory || '';
   document.getElementById('itemAllergens').value = item.allergens;
   const preview = document.getElementById('currentPhotoPreview');
   if(item.photoUrl){
@@ -514,6 +612,7 @@ itemForm.addEventListener('submit', async (e) => {
     price: parseFloat(document.getElementById('itemPrice').value),
     description: document.getElementById('itemDescription').value.trim(),
     cuisineCategory: document.getElementById('itemCuisine').value,
+    subCategory: document.getElementById('itemSubCategory').value,
     allergens,
     photo
   };
