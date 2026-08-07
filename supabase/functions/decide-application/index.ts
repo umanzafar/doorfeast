@@ -1,6 +1,6 @@
 // Supabase Edge Function: decide-application
-// Deploy via the Supabase Dashboard: Edge Functions -> Create a function ->
-// name it "decide-application" -> paste this file's contents -> Deploy.
+// Deploy via the Supabase Dashboard: Edge Functions -> decide-application ->
+// paste this file's contents (replacing everything) -> Deploy.
 //
 // Called by admin.html when an admin clicks Approve/Reject. Verifies the
 // caller is a real admin (checked server-side against the `admins` table,
@@ -14,15 +14,35 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Browsers preflight cross-origin POSTs with an OPTIONS request — every
+// response (including errors) needs these headers or the browser blocks
+// the whole request before your JS ever sees a response.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     if (req.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+      return json({ error: 'Method not allowed' }, 405);
     }
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization' }), { status: 401 });
+      return json({ error: 'Missing authorization' }, 401);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -35,7 +55,7 @@ Deno.serve(async (req) => {
     });
     const { data: { user }, error: userError } = await callerClient.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Not authenticated' }), { status: 401 });
+      return json({ error: 'Not authenticated' }, 401);
     }
 
     // service_role — bypasses RLS. Only used after the admin check below.
@@ -48,17 +68,17 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!adminRow) {
-      return new Response(JSON.stringify({ error: 'Not an admin' }), { status: 403 });
+      return json({ error: 'Not an admin' }, 403);
     }
 
     const body = await req.json();
     const { application_id, action, reject_reason } = body;
 
     if (!application_id || !['approve', 'reject'].includes(action)) {
-      return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400 });
+      return json({ error: 'Invalid request' }, 400);
     }
     if (action === 'reject' && !reject_reason) {
-      return new Response(JSON.stringify({ error: 'reject_reason is required' }), { status: 400 });
+      return json({ error: 'reject_reason is required' }, 400);
     }
 
     const { data: application, error: appError } = await adminClient
@@ -68,10 +88,10 @@ Deno.serve(async (req) => {
       .single();
 
     if (appError || !application) {
-      return new Response(JSON.stringify({ error: 'Application not found' }), { status: 404 });
+      return json({ error: 'Application not found' }, 404);
     }
     if (application.status !== 'pending') {
-      return new Response(JSON.stringify({ error: 'Application already decided' }), { status: 409 });
+      return json({ error: 'Application already decided' }, 409);
     }
 
     let restaurantId: string | null = null;
@@ -112,7 +132,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (restaurantError) {
-        return new Response(JSON.stringify({ error: restaurantError.message }), { status: 500 });
+        return json({ error: restaurantError.message }, 500);
       }
       restaurantId = newRestaurant.id;
     }
@@ -128,18 +148,15 @@ Deno.serve(async (req) => {
       .eq('id', application_id);
 
     if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
+      return json({ error: updateError.message }, 500);
     }
 
     // TODO: send the applicant a decision email once an email provider
     // (e.g. Resend) is set up. Not blocking — the app already reflects the
     // decision on application-thankyou.html the next time they check.
 
-    return new Response(JSON.stringify({ success: true, restaurant_id: restaurantId }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return json({ success: true, restaurant_id: restaurantId });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }), { status: 500 });
+    return json({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
   }
 });
