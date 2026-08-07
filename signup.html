@@ -118,6 +118,8 @@
 
   function friendlyError(err){
     const msg = (err && err.message || '').toLowerCase();
+    const status = err && err.status;
+    if(status === 429 || msg.includes('rate limit') || msg.includes('too many requests')) return "Too many attempts right now — please wait a few minutes and try again.";
     if(msg.includes('already registered')) return "That email's already registered — try logging in instead.";
     if(msg.includes('invalid login credentials')) return "Email or password is incorrect.";
     if(msg.includes('password should be at least')) return "Password should be at least 6 characters.";
