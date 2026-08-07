@@ -15,17 +15,19 @@
   *{box-sizing:border-box;} html,body{margin:0;padding:0;}
   body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink);}
 
-  /* ============ PASSWORD GATE ============ */
-  #passwordGate{position:fixed; inset:0; z-index:999; background:var(--ink); display:flex; align-items:center; justify-content:center; padding:24px;}
-  .gate-card{background:var(--cream); border-radius:20px; padding:40px 34px; max-width:360px; width:100%; text-align:center; box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);}
-  .gate-card h2{font-family:'Poppins',sans-serif; font-size:19px; margin-bottom:8px;}
-  .gate-card p{font-size:13px; color:var(--body); margin:0 0 18px;}
-  .gate-card input{width:100%; border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; font-size:14px; margin-bottom:12px; text-align:center;}
-  .gate-card input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
-  .gate-card button{width:100%; border:none; border-radius:999px; padding:12px; background:var(--red); color:#fff; font-weight:700; font-size:14px; cursor:pointer;}
-  .gate-card button:hover{background:var(--red-dark);}
-  .gate-error{color:var(--red); font-size:12px; margin-top:10px; display:none;}
-  .gate-error.show{display:block;}
+  /* ============ LOGIN ============ */
+  #loginScreen{position:fixed; inset:0; z-index:999; background:var(--ink); display:flex; align-items:center; justify-content:center; padding:24px;}
+  .login-card{background:var(--cream); border-radius:20px; padding:40px 34px; max-width:360px; width:100%; text-align:center; box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);}
+  .login-card h2{font-family:'Poppins',sans-serif; font-size:19px; margin-bottom:8px;}
+  .login-card p{font-size:13px; color:var(--body); margin:0 0 18px;}
+  .login-card input{width:100%; border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; font-size:14px; margin-bottom:12px; text-align:left;}
+  .login-card input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
+  .login-card button{width:100%; border:none; border-radius:999px; padding:12px; background:var(--red); color:#fff; font-weight:700; font-size:14px; cursor:pointer;}
+  .login-card button:hover{background:var(--red-dark);}
+  .login-card button:disabled{opacity:0.6; cursor:not-allowed;}
+  .login-error{color:var(--red); font-size:12px; margin-top:10px; display:none;}
+  .login-error.show{display:block;}
+  .not-admin-note{color:var(--body); font-size:12.5px; margin-top:14px; line-height:1.5;}
 
   /* ============ LAYOUT ============ */
   .topbar{
@@ -34,11 +36,12 @@
   }
   .topbar h1{font-family:'Poppins',sans-serif; font-size:18px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px;}
   .topbar h1 img{width:28px; border-radius:7px;}
-  .refresh-btn{
+  .topbar-actions{display:flex; gap:10px;}
+  .refresh-btn, .logout-btn{
     border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:8px 16px;
     font-size:13px; font-weight:600; cursor:pointer; color:var(--ink); display:flex; align-items:center; gap:6px;
   }
-  .refresh-btn:hover{border-color:var(--red); color:var(--red);}
+  .refresh-btn:hover, .logout-btn:hover{border-color:var(--red); color:var(--red);}
   .refresh-btn.spinning svg{animation:spin 0.8s linear infinite;}
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
@@ -82,8 +85,10 @@
   .doc-link{
     display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600;
     color:var(--red); text-decoration:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px;
+    background:none; cursor:pointer; font-family:inherit;
   }
   .doc-link:hover{border-color:var(--red); background:rgba(166,30,30,0.04);}
+  .doc-link:disabled{opacity:0.5; cursor:not-allowed;}
 
   .reject-reason-box{
     background:rgba(166,30,30,0.05); border:1px solid rgba(166,30,30,0.2); border-radius:10px;
@@ -129,279 +134,317 @@
 </head>
 <body>
 
-<!-- ============ PASSWORD GATE ============ -->
-<div id="passwordGate">
-  <div class="gate-card">
-    <h2>Internal access only</h2>
-    <p>This page reviews live takeaway applications. Enter the team password to continue.</p>
-    <input type="password" id="gateInput" placeholder="Access password" autocomplete="off">
-    <button id="gateSubmit">Enter</button>
-    <p class="gate-error" id="gateError">That password isn't right — try again.</p>
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h2>Admin login</h2>
+    <p>This page reviews live takeaway applications. Log in with your admin account.</p>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <button id="loginSubmit">Log in</button>
+    <p class="login-error" id="loginError"></p>
   </div>
 </div>
 
 <!-- ============ TOPBAR ============ -->
-<div class="topbar">
+<div class="topbar" style="display:none;" id="appShell">
   <h1><img src="logo.png" alt="DoorFeast"> Application Review</h1>
-  <button class="refresh-btn" id="refreshBtn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
-    Refresh
-  </button>
+  <div class="topbar-actions">
+    <button class="refresh-btn" id="refreshBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+      Refresh
+    </button>
+    <button class="logout-btn" id="logoutBtn">Log out</button>
+  </div>
 </div>
 
-<!-- ============ TABS ============ -->
-<div class="tabs">
-  <button class="tab active" data-tab="pending">Pending <span class="count" id="countPending">0</span></button>
-  <button class="tab" data-tab="approved">Approved <span class="count" id="countApproved">0</span></button>
-  <button class="tab" data-tab="rejected">Rejected <span class="count" id="countRejected">0</span></button>
-</div>
+<div id="tabsAndContent" style="display:none;">
+  <!-- ============ TABS ============ -->
+  <div class="tabs">
+    <button class="tab active" data-tab="pending">Pending <span class="count" id="countPending">0</span></button>
+    <button class="tab" data-tab="approved">Approved <span class="count" id="countApproved">0</span></button>
+    <button class="tab" data-tab="rejected">Rejected <span class="count" id="countRejected">0</span></button>
+  </div>
 
-<!-- ============ CONTENT ============ -->
-<div class="content">
-  <div class="app-list" id="appList">
-    <div class="empty-state">Loading applications…</div>
+  <!-- ============ CONTENT ============ -->
+  <div class="content">
+    <div class="app-list" id="appList">
+      <div class="empty-state">Loading applications…</div>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script>
-/* ============ PASSWORD GATE ============ */
-// 👉 Change this to your own internal team password.
-const SITE_PASSWORD = "doorfeast-review-2026";
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const gate = document.getElementById('passwordGate');
-const gateInput = document.getElementById('gateInput');
-const gateError = document.getElementById('gateError');
-document.getElementById('gateSubmit').addEventListener('click', tryUnlock);
-gateInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
-function tryUnlock(){
-  if(gateInput.value === SITE_PASSWORD){
-    gate.style.display = 'none';
-    loadApplications();
-  } else {
-    gateError.classList.add('show');
-    gateInput.focus(); gateInput.select();
+  const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginScreen = document.getElementById('loginScreen');
+  const appShell = document.getElementById('appShell');
+  const tabsAndContent = document.getElementById('tabsAndContent');
+  const loginEmail = document.getElementById('loginEmail');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginError = document.getElementById('loginError');
+  const loginSubmit = document.getElementById('loginSubmit');
+
+  function showLoginError(msg){
+    loginError.textContent = msg;
+    loginError.classList.add('show');
   }
-}
 
-/* ============ CONFIG ============ */
-// 👉 Paste your Applications Apps Script Web App URL here (same one used in application.html)
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIdGeaKvSVGDU7yb9rrlWCzOLZJ26ps15pCrJFpjig6mrBvhWpWa13I46f2pyqEyUS/exec";
-// 👉 Must match ADMIN_KEY in Code-Applications.gs EXACTLY. This is what actually
-// protects your data — the password screen above is just a UI convenience.
-const ADMIN_KEY = "db7f2a91-4c3e-bhdv3eeby347g-cehuefuf";
+  async function tryLogin(){
+    loginError.classList.remove('show');
+    loginSubmit.disabled = true;
+    loginSubmit.textContent = 'Logging in…';
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail.value.trim(),
+        password: loginPassword.value
+      });
+      if(error) throw error;
+      await checkAdminAndEnter();
+    } catch(err){
+      showLoginError(err.message && err.message.toLowerCase().includes('invalid') ? 'Email or password is incorrect.' : 'Something went wrong — please try again.');
+    } finally {
+      loginSubmit.disabled = false;
+      loginSubmit.textContent = 'Log in';
+    }
+  }
+  loginSubmit.addEventListener('click', tryLogin);
+  loginPassword.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryLogin(); });
 
-/* ============ JSONP FETCH (Apps Script doesn't reliably support cross-domain fetch reads) ============ */
-function jsonpFetch(url){
-  return new Promise((resolve, reject) => {
-    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    window[cbName] = (data) => {
-      if(data && data.error){ reject(new Error(data.error)); return; }
-      resolve(data);
-      delete window[cbName];
-      script.remove();
-    };
-    const script = document.createElement('script');
-    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName + '&key=' + encodeURIComponent(ADMIN_KEY);
-    script.onerror = () => reject(new Error('Failed to load applications'));
-    document.body.appendChild(script);
-  });
-}
-
-/* ============ STATE ============ */
-let appData = { pending: [], approved: [], rejected: [] };
-let currentTab = 'pending';
-
-const appList = document.getElementById('appList');
-const refreshBtn = document.getElementById('refreshBtn');
-const toast = document.getElementById('toast');
-
-function showToast(msg){
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2600);
-}
-
-function fmtDate(iso){
-  if(!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-}
-
-function docLink(url, name, label){
-  if(!url) return `<span class="doc-link" style="opacity:0.4;">${label}: none</span>`;
-  return `<a class="doc-link" href="${url}" target="_blank" rel="noopener">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-    ${label}
-  </a>`;
-}
-
-/* ============ LOAD & RENDER ============ */
-async function loadApplications(){
-  refreshBtn.classList.add('spinning');
-  try {
-    if(!APPS_SCRIPT_URL.startsWith("https://script.google.com/macros/")){
-      appList.innerHTML = '<div class="empty-state">Backend not configured yet — paste your Apps Script URL into admin.html.</div>';
+  // Real protection: even if this client-side check were somehow bypassed,
+  // RLS on restaurant_applications only lets rows through to users who are
+  // actually rows in the admins table — enforced by Postgres, not this JS.
+  async function checkAdminAndEnter(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){
+      loginScreen.style.display = 'flex';
       return;
     }
-    appData = await jsonpFetch(APPS_SCRIPT_URL);
-    document.getElementById('countPending').textContent = appData.pending.length;
-    document.getElementById('countApproved').textContent = appData.approved.length;
-    document.getElementById('countRejected').textContent = appData.rejected.length;
-    renderTab();
-  } catch(err){
-    appList.innerHTML = '<div class="empty-state">Couldn\'t load applications. Check your Apps Script URL and deployment, then hit Refresh.</div>';
-  } finally {
-    refreshBtn.classList.remove('spinning');
-  }
-}
+    const { data: adminRow } = await supabase
+      .from('admins')
+      .select('user_id')
+      .maybeSingle();
 
-function renderTab(){
-  const list = appData[currentTab] || [];
-  if(list.length === 0){
-    const label = currentTab === 'pending' ? 'No pending applications right now.'
-      : currentTab === 'approved' ? 'No approved takeaways yet.'
-      : 'No rejected applications yet.';
-    appList.innerHTML = `<div class="empty-state">${label}</div>`;
-    return;
-  }
-
-  appList.innerHTML = list.map(app => {
-    const statusClass = currentTab === 'approved' ? 'status-approved' : currentTab === 'rejected' ? 'status-rejected' : 'status-pending';
-    const statusLabel = currentTab === 'approved' ? app.status : currentTab === 'rejected' ? 'Rejected' : 'Pending review';
-
-    return `
-    <div class="app-card" data-id="${app.id}">
-      <div class="app-card-top">
-        <div>
-          <p class="app-title">${escapeHtml(app.businessName)}</p>
-          <p class="app-sub">Submitted ${fmtDate(app.timestamp)}</p>
-        </div>
-        <span class="status-badge ${statusClass}">${escapeHtml(statusLabel)}</span>
-      </div>
-
-      <div class="app-grid">
-        <div><div class="app-field-label">Owner</div><div class="app-field-value">${escapeHtml(app.ownerName)}</div></div>
-        <div><div class="app-field-label">Phone</div><div class="app-field-value">${escapeHtml(app.phone)}</div></div>
-        <div><div class="app-field-label">Email</div><div class="app-field-value">${escapeHtml(app.email)}</div></div>
-        <div><div class="app-field-label">Cuisine</div><div class="app-field-value">${escapeHtml(app.cuisine)}</div></div>
-        <div style="grid-column:1/-1;"><div class="app-field-label">Address</div><div class="app-field-value">${escapeHtml(app.address)}</div></div>
-      </div>
-
-      <div class="doc-links">
-        ${docLink(app.hygieneUrl, app.hygieneName, 'Hygiene Certificate')}
-        ${docLink(app.bizRegUrl, app.bizRegName, 'Business Registration')}
-        ${docLink(app.idUrl, app.idName, 'ID Document')}
-      </div>
-
-      ${currentTab === 'rejected' && app.rejectReason ? `
-        <div class="reject-reason-box"><b>Reason sent to applicant:</b> ${escapeHtml(app.rejectReason)}</div>
-      ` : ''}
-
-      ${currentTab === 'pending' ? `
-        <div class="action-row">
-          <button class="btn btn-approve" onclick="handleApprove('${app.id}', this)">Approve</button>
-          <button class="btn btn-reject" onclick="toggleRejectForm('${app.id}')">Reject</button>
-        </div>
-        <div class="reject-form" id="reject-form-${app.id}">
-          <textarea id="reject-reason-${app.id}" placeholder="Reason for rejection — this gets emailed to the applicant (e.g. expired certificate, mismatched name, missing document)"></textarea>
-          <div class="reject-form-actions">
-            <button class="btn btn-reject" id="reject-confirm-${app.id}" disabled onclick="handleReject('${app.id}', this)">Confirm reject</button>
-            <button class="btn btn-cancel" onclick="toggleRejectForm('${app.id}')">Cancel</button>
-          </div>
-        </div>
-      ` : ''}
-    </div>`;
-  }).join('');
-
-  list.forEach(app => {
-    const textarea = document.getElementById(`reject-reason-${app.id}`);
-    const confirmBtn = document.getElementById(`reject-confirm-${app.id}`);
-    if(textarea && confirmBtn){
-      textarea.addEventListener('input', () => {
-        confirmBtn.disabled = textarea.value.trim().length === 0;
-      });
+    if(!adminRow){
+      showLoginError('This account is not an admin.');
+      await supabase.auth.signOut();
+      return;
     }
-  });
-}
 
-function escapeHtml(str){
-  if(!str) return '';
-  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-/* ============ TABS ============ */
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentTab = tab.dataset.tab;
-    renderTab();
-  });
-});
-
-refreshBtn.addEventListener('click', loadApplications);
-
-/* ============ ACTIONS ============ */
-function moveApp(id, fromTab, toTab, updates){
-  const idx = appData[fromTab].findIndex(a => a.id === id);
-  if(idx === -1) return;
-  const [app] = appData[fromTab].splice(idx, 1);
-  Object.assign(app, updates);
-  appData[toTab].unshift(app);
-  document.getElementById('countPending').textContent = appData.pending.length;
-  document.getElementById('countApproved').textContent = appData.approved.length;
-  document.getElementById('countRejected').textContent = appData.rejected.length;
-}
-
-async function sendDecision(id, action, reason){
-  await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ type: "decision", id, action, reason: reason || "", key: ADMIN_KEY })
-  });
-}
-
-async function handleApprove(id, btn){
-  btn.disabled = true;
-  btn.textContent = "Approving…";
-  try {
-    await sendDecision(id, "approve", "");
-    moveApp(id, 'pending', 'approved', { status: "Approved, payouts pending setup" });
-    renderTab();
-    showToast("Approved — confirmation email sent to the applicant.");
-  } catch(err){
-    showToast("Something went wrong — please try again.");
-    btn.disabled = false;
-    btn.textContent = "Approve";
+    loginScreen.style.display = 'none';
+    appShell.style.display = 'flex';
+    tabsAndContent.style.display = 'block';
+    loadApplications();
   }
-}
 
-function toggleRejectForm(id){
-  const form = document.getElementById(`reject-form-${id}`);
-  form.classList.toggle('show');
-}
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  });
 
-async function handleReject(id, btn){
-  const textarea = document.getElementById(`reject-reason-${id}`);
-  const reason = textarea.value.trim();
-  if(!reason) return;
+  /* ============ STATE ============ */
+  let appData = { pending: [], approved: [], rejected: [] };
+  let currentTab = 'pending';
 
-  btn.disabled = true;
-  btn.textContent = "Rejecting…";
-  try {
-    await sendDecision(id, "reject", reason);
-    moveApp(id, 'pending', 'rejected', { status: "Rejected", rejectReason: reason });
-    renderTab();
-    showToast("Rejected — reason emailed to the applicant.");
-  } catch(err){
-    showToast("Something went wrong — please try again.");
-    btn.disabled = false;
-    btn.textContent = "Confirm reject";
+  const appList = document.getElementById('appList');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const toast = document.getElementById('toast');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2600);
   }
-}
+
+  function fmtDate(iso){
+    if(!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function escapeHtml(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Documents live in a private bucket — a signed URL is generated on
+  // demand (valid 5 minutes), rather than ever storing a public link.
+  async function openDocument(path, label){
+    if(!path){ showToast(`No ${label} on file.`); return; }
+    const { data, error } = await supabase.storage.from('application-documents').createSignedUrl(path, 300);
+    if(error || !data){ showToast(`Couldn't open ${label}.`); return; }
+    window.open(data.signedUrl, '_blank', 'noopener');
+  }
+  window.openDocument = openDocument;
+
+  /* ============ LOAD & RENDER ============ */
+  async function loadApplications(){
+    refreshBtn.classList.add('spinning');
+    try {
+      const { data, error } = await supabase
+        .from('restaurant_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if(error) throw error;
+
+      appData = { pending: [], approved: [], rejected: [] };
+      (data || []).forEach(app => {
+        if(appData[app.status]) appData[app.status].push(app);
+      });
+
+      document.getElementById('countPending').textContent = appData.pending.length;
+      document.getElementById('countApproved').textContent = appData.approved.length;
+      document.getElementById('countRejected').textContent = appData.rejected.length;
+      renderTab();
+    } catch(err){
+      console.error(err);
+      appList.innerHTML = '<div class="empty-state">Couldn\'t load applications. Hit Refresh to try again.</div>';
+    } finally {
+      refreshBtn.classList.remove('spinning');
+    }
+  }
+
+  function renderTab(){
+    const list = appData[currentTab] || [];
+    if(list.length === 0){
+      const label = currentTab === 'pending' ? 'No pending applications right now.'
+        : currentTab === 'approved' ? 'No approved takeaways yet.'
+        : 'No rejected applications yet.';
+      appList.innerHTML = `<div class="empty-state">${label}</div>`;
+      return;
+    }
+
+    appList.innerHTML = list.map(app => {
+      const statusClass = currentTab === 'approved' ? 'status-approved' : currentTab === 'rejected' ? 'status-rejected' : 'status-pending';
+      const statusLabel = currentTab === 'approved' ? 'Approved' : currentTab === 'rejected' ? 'Rejected' : 'Pending review';
+
+      return `
+      <div class="app-card" data-id="${app.id}">
+        <div class="app-card-top">
+          <div>
+            <p class="app-title">${escapeHtml(app.business_name)}</p>
+            <p class="app-sub">Submitted ${fmtDate(app.created_at)}</p>
+          </div>
+          <span class="status-badge ${statusClass}">${escapeHtml(statusLabel)}</span>
+        </div>
+
+        <div class="app-grid">
+          <div><div class="app-field-label">Owner</div><div class="app-field-value">${escapeHtml(app.owner_name)}</div></div>
+          <div><div class="app-field-label">Phone</div><div class="app-field-value">${escapeHtml(app.phone)}</div></div>
+          <div><div class="app-field-label">Email</div><div class="app-field-value">${escapeHtml(app.email)}</div></div>
+          <div><div class="app-field-label">Cuisine</div><div class="app-field-value">${escapeHtml(app.cuisine)}</div></div>
+          <div style="grid-column:1/-1;"><div class="app-field-label">Address</div><div class="app-field-value">${escapeHtml(app.address)}</div></div>
+        </div>
+
+        <div class="doc-links">
+          <button class="doc-link" onclick="openDocument('${app.hygiene_cert_path}', 'Hygiene Certificate')">Hygiene Certificate</button>
+          <button class="doc-link" onclick="openDocument('${app.business_reg_path}', 'Business Registration')">Business Registration</button>
+          <button class="doc-link" onclick="openDocument('${app.id_doc_path}', 'ID Document')">ID Document</button>
+        </div>
+
+        ${currentTab === 'rejected' && app.reject_reason ? `
+          <div class="reject-reason-box"><b>Reason sent to applicant:</b> ${escapeHtml(app.reject_reason)}</div>
+        ` : ''}
+
+        ${currentTab === 'pending' ? `
+          <div class="action-row">
+            <button class="btn btn-approve" onclick="handleApprove('${app.id}', this)">Approve</button>
+            <button class="btn btn-reject" onclick="toggleRejectForm('${app.id}')">Reject</button>
+          </div>
+          <div class="reject-form" id="reject-form-${app.id}">
+            <textarea id="reject-reason-${app.id}" placeholder="Reason for rejection — this gets emailed to the applicant (e.g. expired certificate, mismatched name, missing document)"></textarea>
+            <div class="reject-form-actions">
+              <button class="btn btn-reject" id="reject-confirm-${app.id}" disabled onclick="handleReject('${app.id}', this)">Confirm reject</button>
+              <button class="btn btn-cancel" onclick="toggleRejectForm('${app.id}')">Cancel</button>
+            </div>
+          </div>
+        ` : ''}
+      </div>`;
+    }).join('');
+
+    list.forEach(app => {
+      const textarea = document.getElementById(`reject-reason-${app.id}`);
+      const confirmBtn = document.getElementById(`reject-confirm-${app.id}`);
+      if(textarea && confirmBtn){
+        textarea.addEventListener('input', () => {
+          confirmBtn.disabled = textarea.value.trim().length === 0;
+        });
+      }
+    });
+  }
+
+  /* ============ TABS ============ */
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.tab;
+      renderTab();
+    });
+  });
+
+  refreshBtn.addEventListener('click', loadApplications);
+
+  /* ============ ACTIONS — both call the decide-application Edge Function,
+     which verifies admin status server-side and does the actual writes
+     with service_role. Nothing here can be spoofed from devtools. ============ */
+  async function sendDecision(id, action, reason){
+    const { data, error } = await supabase.functions.invoke('decide-application', {
+      body: { application_id: id, action, reject_reason: reason || undefined }
+    });
+    if(error) throw error;
+    if(data && data.error) throw new Error(data.error);
+    return data;
+  }
+  window.sendDecision = sendDecision;
+
+  window.handleApprove = async function(id, btn){
+    btn.disabled = true;
+    btn.textContent = "Approving…";
+    try {
+      await sendDecision(id, "approve", "");
+      showToast("Approved — restaurant record created (not live yet until its details are filled in).");
+      await loadApplications();
+    } catch(err){
+      console.error(err);
+      showToast("Something went wrong — please try again.");
+      btn.disabled = false;
+      btn.textContent = "Approve";
+    }
+  };
+
+  window.toggleRejectForm = function(id){
+    const form = document.getElementById(`reject-form-${id}`);
+    form.classList.toggle('show');
+  };
+
+  window.handleReject = async function(id, btn){
+    const textarea = document.getElementById(`reject-reason-${id}`);
+    const reason = textarea.value.trim();
+    if(!reason) return;
+
+    btn.disabled = true;
+    btn.textContent = "Rejecting…";
+    try {
+      await sendDecision(id, "reject", reason);
+      showToast("Rejected.");
+      await loadApplications();
+    } catch(err){
+      console.error(err);
+      showToast("Something went wrong — please try again.");
+      btn.disabled = false;
+      btn.textContent = "Confirm reject";
+    }
+  };
+
+  /* ============ BOOT ============ */
+  checkAdminAndEnter();
 </script>
 </body>
 </html>
