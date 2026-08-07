@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoorFeast — Partner Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --green:#2E7D46; --amber:#8A6414;
+    --line:#E4DFD2; --sidebar:#1B1815;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink);}
+  a{color:inherit;}
+
+  .shell{display:flex; min-height:100vh;}
+
+  .sidebar{
+    width:240px; flex-shrink:0; background:var(--sidebar); color:#fff;
+    display:flex; flex-direction:column; padding:26px 0;
+  }
+  .sidebar .brand{display:flex; align-items:center; gap:10px; padding:0 22px 24px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:14px;}
+  .sidebar .brand img{width:30px; border-radius:8px;}
+  .sidebar .brand span{font-family:'Poppins',sans-serif; font-weight:700; font-size:16px;}
+  .nav-item{
+    display:flex; align-items:center; gap:12px; padding:12px 22px; font-size:14px; font-weight:600;
+    color:rgba(255,255,255,0.65); cursor:pointer; border-left:3px solid transparent;
+  }
+  .nav-item:hover{color:#fff; background:rgba(255,255,255,0.04);}
+  .nav-item.active{color:#fff; background:rgba(166,30,30,0.18); border-left-color:var(--red);}
+  .nav-item svg{flex-shrink:0;}
+  .sidebar-footer{margin-top:auto; padding:16px 22px 0; font-size:11.5px; color:rgba(255,255,255,0.4);}
+
+  .main{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .topbar{
+    background:var(--card); border-bottom:1px solid var(--line); padding:18px 32px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  .topbar h1{font-family:'Poppins',sans-serif; font-size:19px; font-weight:800; margin:0;}
+  .topbar p{font-size:12.5px; color:var(--body); margin:2px 0 0;}
+  .restaurant-pill{
+    display:flex; align-items:center; gap:8px; background:var(--cream); border:1px solid var(--line);
+    border-radius:999px; padding:6px 14px 6px 6px; font-size:12.5px; font-weight:600;
+  }
+  .restaurant-pill .dot{width:8px; height:8px; border-radius:50%; background:var(--green);}
+
+  .content{flex:1; padding:28px 32px 60px; max-width:1100px; width:100%; margin:0 auto;}
+
+  .section{display:none;}
+  .section.active{display:block;}
+
+  .section-head{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:22px;}
+  .section-head h2{font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 6px;}
+  .section-head p{font-size:13.5px; color:var(--body); margin:0; max-width:480px;}
+
+  .btn{border:none; border-radius:999px; padding:11px 20px; font-size:13.5px; font-weight:700; cursor:pointer;}
+  .btn-primary{background:var(--red); color:#fff;}
+  .btn-primary:hover{background:var(--red-dark);}
+  .btn-secondary{background:#fff; border:1.5px solid var(--line); color:var(--ink);}
+  .btn-secondary:hover{border-color:var(--red); color:var(--red);}
+  .btn:disabled{opacity:0.6; cursor:not-allowed;}
+
+  .placeholder-card{
+    background:var(--card); border:1px dashed var(--line); border-radius:16px;
+    padding:50px 30px; text-align:center; color:var(--body); font-size:14px;
+  }
+  .placeholder-card .ph-icon{font-size:28px; margin-bottom:10px;}
+  .placeholder-card b{color:var(--ink);}
+
+  .menu-grid{display:flex; flex-direction:column; gap:14px;}
+  .menu-item-card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px;
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .menu-item-card.unavailable{opacity:0.55;}
+  .mi-left{flex:1; min-width:200px;}
+  .mi-title-row{display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-wrap:wrap;}
+  .mi-title{font-family:'Poppins',sans-serif; font-weight:700; font-size:15.5px;}
+  .mi-price{font-weight:700; color:var(--red); font-size:14px;}
+  .mi-tag{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; background:var(--cream); border:1px solid var(--line); border-radius:6px; padding:2px 8px; color:var(--body);}
+  .mi-desc{font-size:13px; color:var(--body); margin:6px 0 8px; max-width:520px;}
+  .mi-allergens{font-size:12px; color:var(--amber); background:rgba(217,164,65,0.12); display:inline-block; padding:4px 10px; border-radius:999px; font-weight:600;}
+  .mi-actions{display:flex; flex-direction:column; align-items:flex-end; gap:10px; flex-shrink:0;}
+  .mi-actions-row{display:flex; gap:8px;}
+  .icon-btn{border:1.5px solid var(--line); background:#fff; border-radius:8px; padding:7px 10px; font-size:12.5px; font-weight:600; cursor:pointer;}
+  .icon-btn:hover{border-color:var(--red); color:var(--red);}
+  .icon-btn.danger:hover{border-color:var(--red); background:rgba(166,30,30,0.06); color:var(--red);}
+
+  .toggle-switch{position:relative; display:inline-block; width:40px; height:22px;}
+  .toggle-switch input{opacity:0; width:0; height:0;}
+  .toggle-slider{position:absolute; cursor:pointer; inset:0; background:#d8d2c4; border-radius:999px; transition:.2s;}
+  .toggle-slider::before{content:""; position:absolute; width:16px; height:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s;}
+  .toggle-switch input:checked + .toggle-slider{background:var(--green);}
+  .toggle-switch input:checked + .toggle-slider::before{transform:translateX(18px);}
+  .toggle-label{font-size:11.5px; color:var(--body); margin-top:4px;}
+
+  .empty-state{text-align:center; padding:60px 20px; color:var(--body); font-size:14px;}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(27,24,21,0.5); display:none;
+    align-items:center; justify-content:center; padding:20px; z-index:300;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--card); border-radius:18px; padding:30px 28px; max-width:460px; width:100%; max-height:88vh; overflow-y:auto;}
+  .modal h3{font-family:'Poppins',sans-serif; font-size:18px; margin:0 0 18px;}
+  .modal label{font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;}
+  .modal input, .modal textarea, .modal select{
+    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px;
+    font-size:14px; margin-bottom:14px; font-family:inherit;
+  }
+  .modal input:focus, .modal textarea:focus, .modal select:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.1);}
+  .modal textarea{min-height:70px; resize:vertical;}
+  .required-note{color:var(--red); font-size:11px; margin:-10px 0 14px;}
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+
+  .photo-note{
+    background:rgba(217,164,65,0.1); border:1px solid rgba(217,164,65,0.3); border-radius:10px;
+    padding:12px 16px; font-size:12.5px; color:var(--amber); margin-bottom:20px;
+  }
+
+  .dash-footer{
+    border-top:1px solid var(--line); background:var(--card); padding:20px 32px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-size:12px; color:var(--body);
+  }
+  .dash-footer .flinks{display:flex; gap:18px;}
+  .dash-footer a{text-decoration:none; font-weight:600;}
+  .dash-footer a:hover{color:var(--red);}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; font-size:13.5px; font-weight:600;
+    padding:12px 22px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:400;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:820px){
+    .shell{flex-direction:column;}
+    .sidebar{width:100%; flex-direction:row; overflow-x:auto; padding:12px 0;}
+    .sidebar .brand{display:none;}
+    .nav-item{border-left:none; border-bottom:3px solid transparent; white-space:nowrap; padding:10px 16px;}
+    .nav-item.active{border-left:none; border-bottom-color:var(--red);}
+    .sidebar-footer{display:none;}
+    .content, .topbar, .dash-footer{padding-left:18px; padding-right:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <div class="sidebar">
+    <div class="brand"><img src="logo.png" alt="DoorFeast"><span>DoorFeast</span></div>
+
+    <div class="nav-item active" data-section="menu">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      Menu Management
+    </div>
+    <div class="nav-item" data-section="business">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+      Business Info
+    </div>
+    <div class="nav-item" data-section="orders">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 6l1 14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2l1-14"/></svg>
+      Order Inbox
+    </div>
+    <div class="nav-item" data-section="history">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5M3.05 13a9 9 0 1 0 2.13-8.36L3 8"/><path d="M12 7v5l4 2"/></svg>
+      Order History
+    </div>
+    <div class="nav-item" data-section="payouts">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Payouts
+    </div>
+    <div class="nav-item" data-section="reports">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      Reports
+    </div>
+    <div class="nav-item" data-section="promotions">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L4 3a1 1 0 0 0-1 1l.24 5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.82Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+      Promotions
+    </div>
+
+    <div class="sidebar-footer">Partner Dashboard v1</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="topbarTitle">Menu Management</h1>
+        <p id="topbarSub">Add, edit, and manage what customers see on your menu.</p>
+      </div>
+      <div class="restaurant-pill"><span class="dot"></span><span id="restaurantNamePill">Your restaurant</span></div>
+    </div>
+
+    <div class="content">
+
+      <div class="section active" id="section-menu">
+        <div class="section-head">
+          <div>
+            <h2>Your menu</h2>
+            <p>Every item needs allergen info before it can be saved — no exceptions, this protects you and your customers.</p>
+          </div>
+          <button class="btn btn-primary" id="addItemBtn">+ Add menu item</button>
+        </div>
+
+        <div class="photo-note">
+          <b>Coming with Order Inbox:</b> once live order handling is on, you'll be required to upload a photo of each completed order before marking it Ready or Out for Delivery — this becomes your evidence if a customer disputes a refund. Not active yet since orders aren't live.
+        </div>
+
+        <div class="menu-grid" id="menuGrid">
+          <div class="empty-state">Loading your menu…</div>
+        </div>
+      </div>
+
+      <div class="section" id="section-business">
+        <div class="section-head">
+          <div><h2>Business info</h2><p>Manage your business name, address, hours, and cuisine type.</p></div>
+        </div>
+        <div id="businessInfoWrap">
+          <div class="empty-state">Loading your business info…</div>
+        </div>
+      </div>
+
+      <div class="section" id="section-orders">
+        <div class="section-head">
+          <div><h2>Order inbox</h2><p>Live orders will appear here once payments go live.</p></div>
+        </div>
+        <div class="placeholder-card" style="text-align:left; padding:34px 32px;">
+          <div style="text-align:center;"><div class="ph-icon">🔔</div><b>Structure is in place now — real use once Stripe payments are live.</b></div>
+          <ul style="margin:20px 0 0; padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--ink);">
+            <li>Incoming order alert with sound</li>
+            <li>Accept or reject order, set estimated prep time</li>
+            <li>Status updates: Preparing, Ready or Out for Delivery, Completed</li>
+            <li>Before Ready/Out for Delivery: required photo of the completed order — evidence for refund disputes</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section" id="section-history">
+        <div class="section-head">
+          <div><h2>Order history</h2><p>Search and filter past orders once you start receiving them.</p></div>
+        </div>
+        <div class="placeholder-card" style="text-align:left; padding:34px 32px;">
+          <div style="text-align:center;"><div class="ph-icon">🧾</div><b>No order history yet — this fills in once orders start coming in.</b></div>
+          <ul style="margin:20px 0 0; padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--ink);">
+            <li>Searchable, filterable list of past orders: date, value, status</li>
+            <li>Commission and fee breakdown shown per order, not just as a total — matches our transparent pricing positioning</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section" id="section-payouts">
+        <div class="section-head">
+          <div><h2>Payouts</h2><p>Where your earnings will show up once payments are live.</p></div>
+        </div>
+        <div class="placeholder-card">
+          <div class="ph-icon">💳</div>
+          <b>Payouts will appear here once Stripe setup is complete.</b>
+        </div>
+      </div>
+
+      <div class="section" id="section-reports">
+        <div class="section-head">
+          <div><h2>Reports</h2><p>Understand how your restaurant is performing on DoorFeast.</p></div>
+        </div>
+        <div class="placeholder-card" style="text-align:left; padding:34px 32px;">
+          <div style="text-align:center;"><div class="ph-icon">📊</div><b>Basic version — grows once real order volume exists.</b></div>
+          <ul style="margin:20px 0 0; padding-left:20px; font-size:13.5px; line-height:1.9; color:var(--ink);">
+            <li>Total orders and revenue over a selected period</li>
+            <li>Commission taken by DoorFeast, shown clearly</li>
+            <li>Best selling items</li>
+            <li>Busiest days and times</li>
+            <li>Repeat customer rate for your restaurant specifically</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section" id="section-promotions">
+        <div class="section-head">
+          <div><h2>Promotions</h2><p></p></div>
+        </div>
+        <div class="placeholder-card">
+          <div class="ph-icon">🎯</div>
+          <b>Promotions, coming soon.</b>
+          <p style="font-size:12.5px; margin-top:14px; color:var(--body);">Not decided yet whether this means restaurant-run discounts, DoorFeast-paid visibility boosts, or both — won't default to both.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="dash-footer">
+      <span>© <span id="year"></span> DoorFeast. Fresh meals, delivered fast.</span>
+      <div class="flinks">
+        <a href="signup.html">Log out</a>
+        <a href="mailto:support@doorfeast.co.uk">Support</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="itemModalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add menu item</h3>
+    <form id="itemForm">
+      <label>Item name</label>
+      <input type="text" id="itemName" required>
+
+      <label>Dish photo</label>
+      <input type="file" id="itemPhoto" accept="image/*">
+      <div id="currentPhotoPreview" style="display:none; margin:-6px 0 14px;">
+        <img id="currentPhotoImg" src="" alt="Current photo" style="width:70px; height:70px; object-fit:cover; border-radius:8px; border:1px solid var(--line);">
+        <div style="font-size:11.5px; color:var(--body); margin-top:4px;">Current photo — upload a new one to replace it, or leave blank to keep it.</div>
+      </div>
+
+      <label>Price (£)</label>
+      <input type="number" id="itemPrice" step="0.01" min="0" required>
+
+      <label>Description</label>
+      <textarea id="itemDescription" placeholder="Optional short description"></textarea>
+
+      <label>Cuisine category</label>
+      <select id="itemCuisine" required>
+        <option value="">Select a category</option>
+        <option>Indian</option><option>Chinese</option><option>Pizza</option>
+        <option>Kebab</option><option>Fast Food</option><option>Other</option>
+      </select>
+
+      <label>Menu section</label>
+      <select id="itemSubCategory">
+        <option value="">No section</option>
+        <option>Starters</option><option>Mains</option><option>Sides</option>
+        <option>Desserts</option><option>Drinks</option><option>Set Meals</option>
+      </select>
+
+      <label>Allergen information</label>
+      <textarea id="itemAllergens" placeholder="e.g. Contains nuts, dairy, gluten. Required — cannot be left blank." required></textarea>
+      <p class="required-note">Required — every item must list allergens before it can be saved.</p>
+
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary" id="itemSaveBtn" style="flex:1;">Save item</button>
+        <button type="button" class="btn btn-secondary" id="itemCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+const uid = new URLSearchParams(window.location.search).get('uid');
+if(!uid){ window.location.href = 'signup.html'; }
+
+// 👉 Paste your Menu Items Apps Script Web App URL here (see Code-Menu.gs)
+const MENU_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQcOOiMB-Cka7duS3_e4occi89hkwLJJo5Y5uKW-LAqs2-7oX6ygOmpPSlke-jbDTJ/exec";
+// 👉 Paste your Applications Apps Script Web App URL here (same one used in application.html / admin.html)
+const APPLICATIONS_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIdGeaKvSVGDU7yb9rrlWCzOLZJ26ps15pCrJFpjig6mrBvhWpWa13I46f2pyqEyUS/exec";
+
+function jsonpFetch(url){
+  return new Promise((resolve, reject) => {
+    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    window[cbName] = (data) => { resolve(data); delete window[cbName]; script.remove(); };
+    const script = document.createElement('script');
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = () => reject(new Error('failed'));
+    document.body.appendChild(script);
+  });
+}
+
+const toast = document.getElementById('toast');
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+const sectionMeta = {
+  menu: { title: 'Menu Management', sub: 'Add, edit, and manage what customers see on your menu.' },
+  business: { title: 'Business Info', sub: 'Manage your business name, address, hours, and cuisine type.' },
+  orders: { title: 'Order Inbox', sub: 'Live orders will appear here once payments go live.' },
+  history: { title: 'Order History', sub: 'Search and filter past orders.' },
+  payouts: { title: 'Payouts', sub: 'Where your earnings will show up.' },
+  reports: { title: 'Reports', sub: 'Understand how your restaurant is performing.' },
+  promotions: { title: 'Promotions', sub: 'Discounts and visibility boosts — coming soon.' }
+};
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    item.classList.add('active');
+    const key = item.dataset.section;
+    document.getElementById('section-' + key).classList.add('active');
+    document.getElementById('topbarTitle').textContent = sectionMeta[key].title;
+    document.getElementById('topbarSub').textContent = sectionMeta[key].sub;
+    if(key === 'business' && !businessInfoLoaded){
+      loadBusinessInfo();
+    }
+  });
+});
+
+// ============ BUSINESS INFO ============
+let businessInfoLoaded = false;
+const businessInfoWrap = document.getElementById('businessInfoWrap');
+
+async function loadBusinessInfo(){
+  if(APPLICATIONS_APPS_SCRIPT_URL.includes('PASTE_YOUR')){
+    businessInfoWrap.innerHTML = '<div class="empty-state">Business info backend not configured yet — paste your Applications Apps Script URL into dashboard.html.</div>';
+    return;
+  }
+  try {
+    const data = await jsonpFetch(`${APPLICATIONS_APPS_SCRIPT_URL}?action=business&uid=${encodeURIComponent(uid)}`);
+    businessInfoLoaded = true;
+    if(!data.found){
+      businessInfoWrap.innerHTML = '<div class="empty-state">No business record found for this account yet.</div>';
+      return;
+    }
+    renderBusinessInfoForm(data);
+  } catch(err){
+    businessInfoWrap.innerHTML = '<div class="empty-state">Couldn\'t load your business info. Please try again.</div>';
+  }
+}
+
+function renderBusinessInfoForm(data){
+  businessInfoWrap.innerHTML = `
+    <div class="card-form" style="background:var(--card); border:1px solid var(--line); border-radius:16px; padding:26px 28px; max-width:520px;">
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business name</label>
+      <input type="text" id="biz-name" value="${escapeHtml(data.businessName)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Phone number</label>
+      <input type="text" id="biz-phone" value="${escapeHtml(data.phone)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business address</label>
+      <input type="text" id="biz-address" value="${escapeHtml(data.address)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Cuisine type</label>
+      <select id="biz-cuisine" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+        ${['Indian','Chinese','Pizza','Kebab','Fast Food','Other'].map(c => `<option ${data.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
+      </select>
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Opening hours</label>
+      <textarea id="biz-hours" placeholder="e.g. Mon–Sat 12pm–10pm, Sun 4pm–10pm" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:18px; min-height:60px; font-family:inherit;">${escapeHtml(data.openingHours)}</textarea>
+
+      <button class="btn btn-primary" id="saveBizBtn">Save changes</button>
+    </div>
+  `;
+
+  document.getElementById('saveBizBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('saveBizBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      await fetch(APPLICATIONS_APPS_SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'updateBusinessInfo',
+          uid,
+          businessName: document.getElementById('biz-name').value.trim(),
+          phone: document.getElementById('biz-phone').value.trim(),
+          address: document.getElementById('biz-address').value.trim(),
+          cuisine: document.getElementById('biz-cuisine').value,
+          openingHours: document.getElementById('biz-hours').value.trim()
+        })
+      });
+      showToast('Business info saved.');
+    } catch(err){
+      showToast('Something went wrong — please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save changes';
+    }
+  });
+}
+
+const menuGrid = document.getElementById('menuGrid');
+const itemModalOverlay = document.getElementById('itemModalOverlay');
+const itemForm = document.getElementById('itemForm');
+const modalTitle = document.getElementById('modalTitle');
+const itemSaveBtn = document.getElementById('itemSaveBtn');
+
+let menuItems = [];
+let editingId = null;
+
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function fileToPayload(input){
+  return new Promise((resolve, reject) => {
+    const file = input.files[0];
+    if(!file){ resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve({
+      data: reader.result.split(',')[1],
+      mimeType: file.type || 'application/octet-stream',
+      name: file.name
+    });
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadMenu(){
+  if(MENU_APPS_SCRIPT_URL.includes('PASTE_YOUR')){
+    menuGrid.innerHTML = '<div class="empty-state">Menu backend not configured yet — paste your Apps Script URL into dashboard.html.</div>';
+    return;
+  }
+  try {
+    const data = await jsonpFetch(`${MENU_APPS_SCRIPT_URL}?uid=${encodeURIComponent(uid)}`);
+    menuItems = data.items || [];
+    renderMenu();
+  } catch(err){
+    menuGrid.innerHTML = '<div class="empty-state">Couldn\'t load your menu. Check the Apps Script URL and try again.</div>';
+  }
+}
+
+function renderMenu(){
+  if(menuItems.length === 0){
+    menuGrid.innerHTML = '<div class="empty-state">No menu items yet — add your first one to get started.</div>';
+    return;
+  }
+  menuGrid.innerHTML = menuItems.map(item => `
+    <div class="menu-item-card ${item.available ? '' : 'unavailable'}" data-id="${item.id}">
+      ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${escapeHtml(item.name)}" style="width:64px; height:64px; object-fit:cover; border-radius:10px; flex-shrink:0;">` : `<div style="width:64px; height:64px; border-radius:10px; background:var(--cream); border:1px dashed var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--body); text-align:center;">No photo</div>`}
+      <div class="mi-left">
+        <div class="mi-title-row">
+          <span class="mi-title">${escapeHtml(item.name)}</span>
+          <span class="mi-price">£${Number(item.price).toFixed(2)}</span>
+          ${item.cuisineCategory ? `<span class="mi-tag">${escapeHtml(item.cuisineCategory)}</span>` : ''}
+          ${item.subCategory ? `<span class="mi-tag" style="background:rgba(166,30,30,0.08); border-color:rgba(166,30,30,0.25); color:var(--red);">${escapeHtml(item.subCategory)}</span>` : ''}
+        </div>
+        ${item.description ? `<p class="mi-desc">${escapeHtml(item.description)}</p>` : ''}
+        <span class="mi-allergens">Allergens: ${escapeHtml(item.allergens)}</span>
+      </div>
+      <div class="mi-actions">
+        <div>
+          <label class="toggle-switch">
+            <input type="checkbox" ${item.available ? 'checked' : ''} onchange="toggleAvailable('${item.id}', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-label">${item.available ? 'Available' : 'Sold out'}</div>
+        </div>
+        <div class="mi-actions-row">
+          <button class="icon-btn" onclick="openEditModal('${item.id}')">Edit</button>
+          <button class="icon-btn danger" onclick="deleteItem('${item.id}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('addItemBtn').addEventListener('click', () => {
+  editingId = null;
+  modalTitle.textContent = 'Add menu item';
+  itemForm.reset();
+  document.getElementById('currentPhotoPreview').style.display = 'none';
+  itemModalOverlay.classList.add('show');
+});
+
+document.getElementById('itemCancelBtn').addEventListener('click', () => {
+  itemModalOverlay.classList.remove('show');
+});
+
+function openEditModal(id){
+  const item = menuItems.find(i => i.id === id);
+  if(!item) return;
+  editingId = id;
+  modalTitle.textContent = 'Edit menu item';
+  document.getElementById('itemName').value = item.name;
+  document.getElementById('itemPrice').value = item.price;
+  document.getElementById('itemDescription').value = item.description || '';
+  document.getElementById('itemCuisine').value = item.cuisineCategory || '';
+  document.getElementById('itemSubCategory').value = item.subCategory || '';
+  document.getElementById('itemAllergens').value = item.allergens;
+  const preview = document.getElementById('currentPhotoPreview');
+  if(item.photoUrl){
+    document.getElementById('currentPhotoImg').src = item.photoUrl;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+  itemModalOverlay.classList.add('show');
+}
+
+itemForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const allergens = document.getElementById('itemAllergens').value.trim();
+  if(!allergens){
+    showToast('Allergen information is required.');
+    return;
+  }
+
+  itemSaveBtn.disabled = true;
+  itemSaveBtn.textContent = 'Saving…';
+
+  const photo = await fileToPayload(document.getElementById('itemPhoto'));
+
+  const payload = {
+    action: editingId ? 'edit' : 'add',
+    uid,
+    id: editingId || undefined,
+    name: document.getElementById('itemName').value.trim(),
+    price: parseFloat(document.getElementById('itemPrice').value),
+    description: document.getElementById('itemDescription').value.trim(),
+    cuisineCategory: document.getElementById('itemCuisine').value,
+    subCategory: document.getElementById('itemSubCategory').value,
+    allergens,
+    photo
+  };
+
+  try {
+    await fetch(MENU_APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    itemModalOverlay.classList.remove('show');
+    showToast(editingId ? 'Item updated.' : 'Item added.');
+    await loadMenu();
+  } catch(err){
+    showToast('Something went wrong — please try again.');
+  } finally {
+    itemSaveBtn.disabled = false;
+    itemSaveBtn.textContent = 'Save item';
+  }
+});
+
+async function deleteItem(id){
+  if(!confirm('Delete this menu item? This can\'t be undone.')) return;
+  try {
+    await fetch(MENU_APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', uid, id })
+    });
+    showToast('Item deleted.');
+    await loadMenu();
+  } catch(err){
+    showToast('Something went wrong — please try again.');
+  }
+}
+
+async function toggleAvailable(id, available){
+  try {
+    await fetch(MENU_APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'toggleAvailable', uid, id, available })
+    });
+    const item = menuItems.find(i => i.id === id);
+    if(item) item.available = available;
+    renderMenu();
+  } catch(err){
+    showToast('Couldn\'t update availability — please try again.');
+    await loadMenu();
+  }
+}
+
+loadMenu();
+</script>
+</body>
+</html>

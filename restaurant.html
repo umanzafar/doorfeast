@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoorFeast — Restaurant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#A40203; --red-dark:#7C0202; --gold:#D9A441;
+    --cream:#FAF7F2; --card:#FFFFFF; --ink:#262220; --body:#6E6860; --line:#E8E1D4;
+    --green:#2E7D46; --amber:#8A6414;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); -webkit-font-smoothing:antialiased; padding-bottom:90px;}
+  h1,h2,h3{font-family:'Poppins',sans-serif; margin:0;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit;}
+  img{max-width:100%; display:block;}
+
+  /* ============ NAV ============ */
+  header.nav{
+    position:sticky; top:0; z-index:100;
+    background:rgba(250,247,242,0.94); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px;
+  }
+  .nav-back{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:var(--ink);}
+  .nav-back svg{width:18px; height:18px;}
+  .nav-logo{display:flex; align-items:center; gap:8px;}
+  .nav-logo img{width:30px; border-radius:8px;}
+  .nav-logo span{font-family:'Poppins',sans-serif; font-weight:800; font-size:15px;}
+
+  /* ============ RESTAURANT HEADER ============ */
+  .r-header{
+    max-width:900px; margin:0 auto; padding:28px 24px 20px;
+  }
+  .r-header h1{font-size:clamp(24px,4vw,32px); margin-bottom:8px;}
+  .r-meta{display:flex; flex-wrap:wrap; gap:10px 18px; font-size:13.5px; color:var(--body); margin-bottom:14px;}
+  .r-meta span{display:flex; align-items:center; gap:6px;}
+  .r-meta svg{width:15px; height:15px; flex-shrink:0;}
+  .r-badges{display:flex; flex-wrap:wrap; gap:8px;}
+  .r-badge{
+    font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px;
+    background:rgba(164,2,3,0.08); color:var(--red);
+  }
+  .r-badge.closed{background:rgba(38,34,32,0.08); color:var(--body);}
+
+  /* ============ MENU ============ */
+  .menu-wrap{max-width:900px; margin:0 auto; padding:0 24px 60px;}
+  .menu-category{margin-top:34px;}
+  .menu-category h2{font-size:19px; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .menu-item{
+    display:flex; justify-content:space-between; gap:16px;
+    padding:16px 0; border-bottom:1px solid var(--line);
+  }
+  .menu-item:last-child{border-bottom:none;}
+  .menu-item.unavailable{opacity:0.5;}
+  .mi-info{flex:1; min-width:0;}
+  .mi-name{font-family:'Poppins',sans-serif; font-weight:700; font-size:15px; margin-bottom:3px;}
+  .mi-desc{font-size:13px; color:var(--body); line-height:1.5; margin:0 0 6px;}
+  .mi-allergens{
+    display:inline-block; font-size:11.5px; color:var(--amber); background:rgba(217,164,65,0.12);
+    padding:3px 9px; border-radius:999px; font-weight:600;
+  }
+  .mi-soldout-tag{
+    display:inline-block; font-size:11.5px; color:var(--body); background:rgba(38,34,32,0.08);
+    padding:3px 9px; border-radius:999px; font-weight:600; margin-left:6px;
+  }
+  .mi-actions{display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;}
+  .mi-price{font-weight:700; font-size:15px; color:var(--ink);}
+  .mi-add-btn{
+    border:1.5px solid var(--red); background:#fff; color:var(--red);
+    border-radius:999px; padding:6px 16px; font-size:13px; font-weight:700; cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .mi-add-btn:hover{background:var(--red); color:#fff;}
+  .mi-add-btn:disabled{border-color:var(--line); color:var(--body); cursor:not-allowed; background:#fff;}
+  .mi-qty-row{display:flex; align-items:center; gap:10px;}
+  .mi-qty-btn{
+    width:26px; height:26px; border-radius:50%; border:1.5px solid var(--red); background:#fff;
+    color:var(--red); font-size:16px; font-weight:700; cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .mi-qty-btn:hover{background:rgba(164,2,3,0.08);}
+  .mi-qty-val{font-weight:700; font-size:14px; min-width:16px; text-align:center;}
+
+  /* ============ BASKET BAR (collapsed, floating) ============ */
+  .basket-bar{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; border-radius:999px;
+    padding:14px 24px; display:flex; align-items:center; gap:14px;
+    box-shadow:0 16px 34px -12px rgba(0,0,0,0.4); cursor:pointer;
+    font-size:14px; font-weight:700; z-index:150;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  }
+  .basket-bar.show{opacity:1; pointer-events:auto;}
+  .basket-bar .count{
+    background:var(--red); border-radius:999px; padding:2px 9px; font-size:12.5px;
+  }
+
+  /* ============ BASKET PANEL ============ */
+  .basket-overlay{
+    position:fixed; inset:0; background:rgba(38,34,32,0.5); z-index:200;
+    display:none; align-items:stretch; justify-content:flex-end;
+  }
+  .basket-overlay.show{display:flex;}
+  .basket-panel{
+    background:var(--cream); width:min(420px, 100%); height:100%;
+    display:flex; flex-direction:column; box-shadow:-10px 0 30px -10px rgba(0,0,0,0.3);
+  }
+  .basket-head{
+    padding:20px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;
+    background:var(--card);
+  }
+  .basket-head h2{font-size:18px;}
+  .basket-close{border:none; background:none; font-size:22px; cursor:pointer; color:var(--body); line-height:1;}
+  .basket-body{flex:1; overflow-y:auto; padding:18px 22px;}
+  .basket-empty{text-align:center; color:var(--body); font-size:14px; padding:60px 20px;}
+  .basket-line{
+    display:flex; justify-content:space-between; gap:12px; padding:14px 0; border-bottom:1px solid var(--line);
+  }
+  .bl-name{font-weight:600; font-size:14px; margin-bottom:4px;}
+  .bl-price{font-size:12.5px; color:var(--body);}
+  .bl-remove{border:none; background:none; color:var(--red); font-size:12px; font-weight:600; cursor:pointer; margin-top:6px; padding:0;}
+
+  .order-type-toggle{
+    display:flex; gap:8px; margin-bottom:18px;
+  }
+  .ot-btn{
+    flex:1; border:1.5px solid var(--line); background:#fff; border-radius:10px;
+    padding:10px; font-size:13.5px; font-weight:700; cursor:pointer; color:var(--body);
+  }
+  .ot-btn.active{border-color:var(--red); color:var(--red); background:rgba(164,2,3,0.05);}
+
+  .basket-summary{border-top:1px solid var(--line); padding:18px 22px; background:var(--card);}
+  .bs-row{display:flex; justify-content:space-between; font-size:13.5px; color:var(--body); padding:5px 0;}
+  .bs-row.total{font-weight:700; color:var(--ink); font-size:16px; border-top:1px dashed var(--line); margin-top:6px; padding-top:12px;}
+  .checkout-btn{
+    display:block; width:100%; text-align:center; border:none; border-radius:999px;
+    background:var(--red); color:#fff; font-weight:700; font-size:15px; padding:14px; margin-top:14px; cursor:pointer;
+  }
+  .checkout-btn:hover{background:var(--red-dark);}
+  .checkout-btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .min-order-note{font-size:12px; color:var(--red); text-align:center; margin-top:8px;}
+
+  @media (max-width:520px){
+    .r-header, .menu-wrap{padding-left:18px; padding-right:18px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="index.html" class="nav-back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    Back
+  </a>
+  <div class="nav-logo"><img src="logo.png" alt="DoorFeast"><span>DoorFeast</span></div>
+</header>
+
+<div class="r-header">
+  <h1 id="rName">Loading…</h1>
+  <div class="r-meta" id="rMeta"></div>
+  <div class="r-badges" id="rBadges"></div>
+</div>
+
+<div class="menu-wrap" id="menuWrap"></div>
+
+<div class="basket-bar" id="basketBar">
+  <span>View basket</span>
+  <span class="count" id="basketCount">0</span>
+  <span id="basketBarTotal">£0.00</span>
+</div>
+
+<div class="basket-overlay" id="basketOverlay">
+  <div class="basket-panel">
+    <div class="basket-head">
+      <h2>Your basket</h2>
+      <button class="basket-close" id="basketClose">&times;</button>
+    </div>
+    <div class="basket-body" id="basketBody"></div>
+    <div class="basket-summary">
+      <div class="order-type-toggle" id="orderTypeToggle"></div>
+      <div class="bs-row"><span>Subtotal</span><span id="sumSubtotal">£0.00</span></div>
+      <div class="bs-row"><span id="deliveryFeeLabel">Delivery fee</span><span id="sumDeliveryFee">£0.00</span></div>
+      <div class="bs-row total"><span>Total</span><span id="sumTotal">£0.00</span></div>
+      <button class="checkout-btn" id="checkoutBtn" disabled>Go to checkout</button>
+      <p class="min-order-note" id="minOrderNote" style="display:none;"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   PLACEHOLDER DATA — this restaurant is not connected to Supabase
+   yet. Shape matches exactly what the real query will return
+   (restaurants row + menu_categories + menu_items), so swapping
+   this block for a real fetch later is a small, mechanical change.
+   ============================================================ */
+const PLACEHOLDER_RESTAURANT = {
+  name: "The Sample Kitchen",
+  cuisine: "British",
+  address: "12 High Street, Stoke-on-Trent",
+  opening_hours_label: "Mon–Sat 12pm–10pm, Sun 4pm–10pm",
+  does_delivery: true,
+  does_collection: true,
+  delivery_fee_pence: 250,
+  min_order_pence: 1000,
+  is_open_now: true
+};
+
+const PLACEHOLDER_MENU = [
+  {
+    category: "Starters",
+    items: [
+      { id: "s1", name: "Garlic Flatbread", description: "Stone-baked flatbread, garlic butter, herbs.", price_pence: 395, allergens: ["Gluten", "Dairy"], is_available: true },
+      { id: "s2", name: "Soup of the Day", description: "Ask staff for today's flavour.", price_pence: 450, allergens: ["Celery", "May contain dairy"], is_available: true },
+      { id: "s3", name: "Halloumi Fries", description: "Crispy halloumi, chilli honey drizzle.", price_pence: 550, allergens: ["Dairy", "Gluten"], is_available: false }
+    ]
+  },
+  {
+    category: "Mains",
+    items: [
+      { id: "m1", name: "Classic Beef Burger", description: "6oz beef patty, cheddar, house sauce, skin-on fries.", price_pence: 995, allergens: ["Gluten", "Dairy", "Egg", "Mustard"], is_available: true },
+      { id: "m2", name: "Butter Chicken Curry", description: "Slow-cooked chicken, tomato butter sauce, pilau rice.", price_pence: 1095, allergens: ["Dairy", "May contain nuts"], is_available: true },
+      { id: "m3", name: "Margherita Pizza", description: "San Marzano tomato, fior di latte, basil.", price_pence: 895, allergens: ["Gluten", "Dairy"], is_available: true }
+    ]
+  },
+  {
+    category: "Desserts",
+    items: [
+      { id: "d1", name: "Sticky Toffee Pudding", description: "Warm toffee sauce, vanilla ice cream.", price_pence: 495, allergens: ["Gluten", "Dairy", "Egg"], is_available: true },
+      { id: "d2", name: "Chocolate Brownie", description: "Served warm with cream.", price_pence: 450, allergens: ["Gluten", "Dairy", "Egg", "May contain nuts"], is_available: true }
+    ]
+  },
+  {
+    category: "Drinks",
+    items: [
+      { id: "dr1", name: "Soft Drink Can", description: null, price_pence: 150, allergens: ["None"], is_available: true },
+      { id: "dr2", name: "Sparkling Water", description: null, price_pence: 150, allergens: ["None"], is_available: true }
+    ]
+  }
+];
+
+/* ============================================================
+   RENDER RESTAURANT HEADER
+   ============================================================ */
+document.getElementById('rName').textContent = PLACEHOLDER_RESTAURANT.name;
+
+const rMeta = document.getElementById('rMeta');
+rMeta.innerHTML = `
+  <span>${PLACEHOLDER_RESTAURANT.cuisine}</span>
+  <span>${PLACEHOLDER_RESTAURANT.address}</span>
+  <span>${PLACEHOLDER_RESTAURANT.opening_hours_label}</span>
+`;
+
+const rBadges = document.getElementById('rBadges');
+let badgesHtml = '';
+if(PLACEHOLDER_RESTAURANT.is_open_now){
+  badgesHtml += `<span class="r-badge">Open now</span>`;
+} else {
+  badgesHtml += `<span class="r-badge closed">Closed</span>`;
+}
+if(PLACEHOLDER_RESTAURANT.does_delivery) badgesHtml += `<span class="r-badge">Delivery</span>`;
+if(PLACEHOLDER_RESTAURANT.does_collection) badgesHtml += `<span class="r-badge">Collection</span>`;
+rBadges.innerHTML = badgesHtml;
+
+/* ============================================================
+   RENDER MENU
+   ============================================================ */
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatGBP(pence){
+  return '£' + (pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+const menuWrap = document.getElementById('menuWrap');
+
+function renderMenu(){
+  menuWrap.innerHTML = PLACEHOLDER_MENU.map(cat => `
+    <div class="menu-category">
+      <h2>${escapeHtml(cat.category)}</h2>
+      ${cat.items.map(item => renderMenuItem(item)).join('')}
+    </div>
+  `).join('');
+}
+
+function renderMenuItem(item){
+  const qty = basket[item.id] ? basket[item.id].qty : 0;
+  return `
+    <div class="menu-item ${item.is_available ? '' : 'unavailable'}">
+      <div class="mi-info">
+        <div class="mi-name">${escapeHtml(item.name)}</div>
+        ${item.description ? `<p class="mi-desc">${escapeHtml(item.description)}</p>` : ''}
+        <span class="mi-allergens">Allergens: ${escapeHtml(item.allergens.join(', '))}</span>
+        ${item.is_available ? '' : '<span class="mi-soldout-tag">Sold out</span>'}
+      </div>
+      <div class="mi-actions">
+        <span class="mi-price">${formatGBP(item.price_pence)}</span>
+        ${!item.is_available ? `<button class="mi-add-btn" disabled>Sold out</button>` :
+          qty === 0 ? `<button class="mi-add-btn" onclick="addItem('${item.id}')">Add</button>` :
+          `<div class="mi-qty-row">
+             <button class="mi-qty-btn" onclick="decrementItem('${item.id}')">−</button>
+             <span class="mi-qty-val">${qty}</span>
+             <button class="mi-qty-btn" onclick="addItem('${item.id}')">+</button>
+           </div>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+function findItem(id){
+  for(const cat of PLACEHOLDER_MENU){
+    const found = cat.items.find(i => i.id === id);
+    if(found) return found;
+  }
+  return null;
+}
+
+/* ============================================================
+   BASKET — kept in sessionStorage, scoped per restaurant so
+   different restaurants don't mix baskets together.
+   ============================================================ */
+const BASKET_KEY = 'doorfeast_basket_sample-kitchen';
+let basket = JSON.parse(sessionStorage.getItem(BASKET_KEY) || '{}');
+let orderType = PLACEHOLDER_RESTAURANT.does_collection ? 'collection' : 'delivery';
+
+function saveBasket(){
+  sessionStorage.setItem(BASKET_KEY, JSON.stringify(basket));
+}
+
+function addItem(id){
+  const item = findItem(id);
+  if(!item || !item.is_available) return;
+  if(!basket[id]) basket[id] = { qty: 0 };
+  basket[id].qty += 1;
+  saveBasket();
+  renderMenu();
+  renderBasket();
+}
+
+function decrementItem(id){
+  if(!basket[id]) return;
+  basket[id].qty -= 1;
+  if(basket[id].qty <= 0) delete basket[id];
+  saveBasket();
+  renderMenu();
+  renderBasket();
+}
+
+function removeItem(id){
+  delete basket[id];
+  saveBasket();
+  renderMenu();
+  renderBasket();
+}
+
+function basketTotals(){
+  let subtotal = 0;
+  let count = 0;
+  for(const id in basket){
+    const item = findItem(id);
+    if(!item) continue;
+    subtotal += item.price_pence * basket[id].qty;
+    count += basket[id].qty;
+  }
+  const deliveryFee = orderType === 'delivery' ? (PLACEHOLDER_RESTAURANT.delivery_fee_pence || 0) : 0;
+  const total = subtotal + deliveryFee;
+  return { subtotal, deliveryFee, total, count };
+}
+
+/* ============================================================
+   RENDER BASKET
+   ============================================================ */
+const basketBar = document.getElementById('basketBar');
+const basketCount = document.getElementById('basketCount');
+const basketBarTotal = document.getElementById('basketBarTotal');
+const basketBody = document.getElementById('basketBody');
+const orderTypeToggle = document.getElementById('orderTypeToggle');
+const sumSubtotal = document.getElementById('sumSubtotal');
+const sumDeliveryFee = document.getElementById('sumDeliveryFee');
+const deliveryFeeLabel = document.getElementById('deliveryFeeLabel');
+const sumTotal = document.getElementById('sumTotal');
+const checkoutBtn = document.getElementById('checkoutBtn');
+const minOrderNote = document.getElementById('minOrderNote');
+
+function renderOrderTypeToggle(){
+  const options = [];
+  if(PLACEHOLDER_RESTAURANT.does_collection) options.push('collection');
+  if(PLACEHOLDER_RESTAURANT.does_delivery) options.push('delivery');
+  orderTypeToggle.innerHTML = options.map(opt => `
+    <button class="ot-btn ${orderType === opt ? 'active' : ''}" onclick="setOrderType('${opt}')">
+      ${opt === 'collection' ? 'Collection' : 'Delivery'}
+    </button>
+  `).join('');
+}
+
+function setOrderType(type){
+  orderType = type;
+  renderOrderTypeToggle();
+  renderBasket();
+}
+
+function renderBasket(){
+  const { subtotal, deliveryFee, total, count } = basketTotals();
+
+  basketCount.textContent = count;
+  basketBarTotal.textContent = formatGBP(subtotal);
+  basketBar.classList.toggle('show', count > 0);
+
+  if(count === 0){
+    basketBody.innerHTML = '<div class="basket-empty">Your basket is empty — add something tasty from the menu.</div>';
+  } else {
+    basketBody.innerHTML = Object.keys(basket).map(id => {
+      const item = findItem(id);
+      if(!item) return '';
+      return `
+        <div class="basket-line">
+          <div>
+            <div class="bl-name">${basket[id].qty} × ${escapeHtml(item.name)}</div>
+            <div class="bl-price">${formatGBP(item.price_pence * basket[id].qty)}</div>
+            <button class="bl-remove" onclick="removeItem('${id}')">Remove</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderOrderTypeToggle();
+  deliveryFeeLabel.textContent = orderType === 'delivery' ? 'Delivery fee' : 'Collection';
+  sumSubtotal.textContent = formatGBP(subtotal);
+  sumDeliveryFee.textContent = orderType === 'delivery' ? formatGBP(deliveryFee) : '£0.00';
+  sumTotal.textContent = formatGBP(total);
+
+  const minOrder = PLACEHOLDER_RESTAURANT.min_order_pence || 0;
+  const belowMin = orderType === 'delivery' && subtotal < minOrder && count > 0;
+  minOrderNote.style.display = belowMin ? 'block' : 'none';
+  if(belowMin){
+    minOrderNote.textContent = `Minimum order for delivery is ${formatGBP(minOrder)} — add ${formatGBP(minOrder - subtotal)} more.`;
+  }
+  checkoutBtn.disabled = count === 0 || belowMin;
+}
+
+/* ============================================================
+   BASKET PANEL OPEN/CLOSE
+   ============================================================ */
+const basketOverlay = document.getElementById('basketOverlay');
+basketBar.addEventListener('click', () => basketOverlay.classList.add('show'));
+document.getElementById('basketClose').addEventListener('click', () => basketOverlay.classList.remove('show'));
+basketOverlay.addEventListener('click', (e) => { if(e.target === basketOverlay) basketOverlay.classList.remove('show'); });
+
+checkoutBtn.addEventListener('click', () => {
+  // 👉 checkout.html isn't wired up to real payments yet — see its own placeholder notice.
+  window.location.href = 'checkout.html';
+});
+
+renderMenu();
+renderBasket();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — DoorFeast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--red:#A40203; --cream:#FAF7F2; --card:#FFFFFF; --ink:#262220; --body:#6E6860; --line:#E8E1D4;}
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .panel{max-width:440px; width:100%; text-align:center; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:44px 34px;}
+  .ph-icon{font-size:32px; margin-bottom:16px;}
+  h1{font-family:'Poppins',sans-serif; font-size:21px; margin:0 0 12px;}
+  p{font-size:14px; color:var(--body); line-height:1.6; margin:0 0 24px;}
+  a.back{display:inline-block; color:var(--red); font-weight:700; font-size:14px; text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="ph-icon">🚧</div>
+  <h1>Checkout isn't connected yet</h1>
+  <p>
+    This page is a placeholder. Payment goes live once the <code>create-order</code>
+    Supabase Edge Function and real Stripe keys are wired up (CLAUDE.md Step 5).
+    Nothing here charges a card yet.
+  </p>
+  <a class="back" href="javascript:history.back()">← Back to basket</a>
+</div>
+</body>
+</html>
