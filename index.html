@@ -32,41 +32,6 @@
   img{max-width:100%; display:block;}
   :focus-visible{outline:2.5px solid var(--red); outline-offset:2px;}
 
-  /* ============ PASSWORD GATE ============ */
-  #passwordGate{
-    position:fixed; inset:0; z-index:999;
-    background:var(--ink);
-    display:flex; align-items:center; justify-content:center;
-    padding:24px;
-  }
-  .gate-card{
-    background:var(--cream);
-    border-radius:20px;
-    padding:44px 36px;
-    max-width:380px;
-    width:100%;
-    text-align:center;
-    box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);
-  }
-  .gate-card img{width:96px; margin:0 auto 20px; border-radius:14px;}
-  .gate-card h2{font-size:20px; margin-bottom:8px;}
-  .gate-card p{font-size:13.5px; color:var(--body); margin:0 0 20px; line-height:1.5;}
-  .gate-card input{
-    width:100%; border:1.5px solid var(--line); border-radius:10px;
-    padding:12px 14px; font-size:14.5px; margin-bottom:12px; text-align:center;
-    letter-spacing:1px;
-  }
-  .gate-card input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(164,2,3,0.12);}
-  .gate-card button{
-    width:100%; border:none; border-radius:999px; padding:13px;
-    background:var(--red); color:#fff; font-weight:700; font-size:14.5px;
-    cursor:pointer; transition:background .15s;
-  }
-  .gate-card button:hover{background:var(--red-dark);}
-  .gate-error{color:var(--red); font-size:12.5px; margin-top:10px; display:none;}
-  .gate-error.show{display:block;}
-  body.gate-open{overflow:hidden;}
-
   /* ============ NAV ============ */
   header.nav{
     position:fixed; top:0; left:0; right:0; z-index:100;
@@ -521,19 +486,7 @@
   }
 </style>
 </head>
-<body class="gate-open">
-
-<!-- ============ PASSWORD GATE ============ -->
-<div id="passwordGate">
-  <div class="gate-card">
-    <img src="logo.png" alt="DoorFeast">
-    <h2>We're not public yet</h2>
-    <p>DoorFeast is in private preview while we onboard our first takeaways. Enter the access password to continue.</p>
-    <input type="password" id="gateInput" placeholder="Access password" autocomplete="off">
-    <button id="gateSubmit">Enter site</button>
-    <p class="gate-error" id="gateError">That password isn't right — try again.</p>
-  </div>
-</div>
+<body>
 
 <!-- ============ NAV ============ -->
 <header class="nav">
@@ -783,29 +736,12 @@
   <p class="footer-copyright">© 2026 DoorFeast. The neighbourhood takeaway network.</p>
 </footer>
 
-<script>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-/* ============ PASSWORD GATE ============ */
-// 👉 Change this to whatever access password you want to use for the pre-launch gate.
-const SITE_PASSWORD = "doorfeast2026";
-
-const gate = document.getElementById('passwordGate');
-const gateInput = document.getElementById('gateInput');
-const gateSubmit = document.getElementById('gateSubmit');
-const gateError = document.getElementById('gateError');
-
-function tryUnlock(){
-  if(gateInput.value === SITE_PASSWORD){
-    gate.style.display = 'none';
-    document.body.classList.remove('gate-open');
-  } else {
-    gateError.classList.add('show');
-    gateInput.focus();
-    gateInput.select();
-  }
-}
-gateSubmit.addEventListener('click', tryUnlock);
-gateInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============ CAROUSEL ============ */
 const slides = document.querySelectorAll('.slide');
@@ -935,10 +871,6 @@ async function handleSearch(){
 postcodeBtn.addEventListener('click', handleSearch);
 postcodeInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') handleSearch(); });
 
-/* ============ NOTIFY ME (out of coverage) ============ */
-// 👉 Reuse your customer waitlist Apps Script URL here to feed these emails into the same Sheet.
-const NOTIFY_APPS_SCRIPT_URL = "PASTE_YOUR_CUSTOMER_APPS_SCRIPT_WEB_APP_URL_HERE";
-
 /* ============ TAKEAWAY COMMISSION CALCULATOR ============ */
 const calcInput = document.getElementById('calcInput');
 const calcCommission = document.getElementById('calcCommission');
@@ -981,14 +913,10 @@ document.getElementById('notifyBtn').addEventListener('click', async () => {
   }
 
   try {
-    if(!NOTIFY_APPS_SCRIPT_URL.includes("PASTE_YOUR")){
-      await fetch(NOTIFY_APPS_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ name: "", contact: email, area: postcodeInput.value.trim(), platform: "", frustrations: "", favoriteTakeaways: "", wouldTry: "Yes — outside coverage area", wishlist: "" })
-      });
-    }
+    const { error } = await supabase
+      .from('waitlist_signups')
+      .insert({ email, area: postcodeInput.value.trim() || null });
+    if(error) throw error;
     msg.textContent = "You're on the list — we'll email you when we launch nearby.";
     msg.style.color = 'var(--ink)';
     msg.classList.add('show');

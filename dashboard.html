@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +14,7 @@
     --line:#E4DFD2; --sidebar:#1B1815;
   }
   *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  html.auth-pending{visibility:hidden;}
   body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink);}
   a{color:inherit;}
 
@@ -165,6 +166,10 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
       Business Info
     </div>
+    <div class="nav-item" data-section="delivery">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M21 3l-9 9M8 3H3v18h18v-5"/></svg>
+      Delivery Settings
+    </div>
     <div class="nav-item" data-section="orders">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 6l1 14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2l1-14"/></svg>
       Order Inbox
@@ -224,6 +229,15 @@
         </div>
         <div id="businessInfoWrap">
           <div class="empty-state">Loading your business info…</div>
+        </div>
+      </div>
+
+      <div class="section" id="section-delivery">
+        <div class="section-head">
+          <div><h2>Delivery settings</h2><p>Choose collection, delivery, or both — and set your delivery fee, minimum order, and coverage area.</p></div>
+        </div>
+        <div id="deliveryInfoWrap">
+          <div class="empty-state">Loading your delivery settings…</div>
         </div>
       </div>
 
@@ -297,7 +311,7 @@
     <div class="dash-footer">
       <span>© <span id="year"></span> DoorFeast. Fresh meals, delivered fast.</span>
       <div class="flinks">
-        <a href="signup.html">Log out</a>
+        <a href="signup.html" id="logoutLink">Log out</a>
         <a href="mailto:support@doorfeast.co.uk">Support</a>
       </div>
     </div>
@@ -324,13 +338,6 @@
       <label>Description</label>
       <textarea id="itemDescription" placeholder="Optional short description"></textarea>
 
-      <label>Cuisine category</label>
-      <select id="itemCuisine" required>
-        <option value="">Select a category</option>
-        <option>Indian</option><option>Chinese</option><option>Pizza</option>
-        <option>Kebab</option><option>Fast Food</option><option>Other</option>
-      </select>
-
       <label>Menu section</label>
       <select id="itemSubCategory">
         <option value="">No section</option>
@@ -352,27 +359,23 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 document.getElementById('year').textContent = new Date().getFullYear();
 
-const uid = new URLSearchParams(window.location.search).get('uid');
-if(!uid){ window.location.href = 'signup.html'; }
+const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 👉 Paste your Menu Items Apps Script Web App URL here (see Code-Menu.gs)
-const MENU_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQcOOiMB-Cka7duS3_e4occi89hkwLJJo5Y5uKW-LAqs2-7oX6ygOmpPSlke-jbDTJ/exec";
-// 👉 Paste your Applications Apps Script Web App URL here (same one used in application.html / admin.html)
-const APPLICATIONS_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIdGeaKvSVGDU7yb9rrlWCzOLZJ26ps15pCrJFpjig6mrBvhWpWa13I46f2pyqEyUS/exec";
+let restaurant = null;      // the logged-in owner's restaurants row
+let categories = [];        // that restaurant's menu_categories rows
 
-function jsonpFetch(url){
-  return new Promise((resolve, reject) => {
-    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    window[cbName] = (data) => { resolve(data); delete window[cbName]; script.remove(); };
-    const script = document.createElement('script');
-    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
-    script.onerror = () => reject(new Error('failed'));
-    document.body.appendChild(script);
-  });
-}
+document.getElementById('logoutLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  await supabase.auth.signOut();
+  window.location.href = 'signup.html';
+});
 
 const toast = document.getElementById('toast');
 function showToast(msg){
@@ -384,6 +387,7 @@ function showToast(msg){
 const sectionMeta = {
   menu: { title: 'Menu Management', sub: 'Add, edit, and manage what customers see on your menu.' },
   business: { title: 'Business Info', sub: 'Manage your business name, address, hours, and cuisine type.' },
+  delivery: { title: 'Delivery Settings', sub: 'Collection, delivery, fees, minimum order, and coverage postcodes.' },
   orders: { title: 'Order Inbox', sub: 'Live orders will appear here once payments go live.' },
   history: { title: 'Order History', sub: 'Search and filter past orders.' },
   payouts: { title: 'Payouts', sub: 'Where your earnings will show up.' },
@@ -403,6 +407,9 @@ document.querySelectorAll('.nav-item').forEach(item => {
     if(key === 'business' && !businessInfoLoaded){
       loadBusinessInfo();
     }
+    if(key === 'delivery' && !deliveryInfoLoaded){
+      loadDeliveryInfo();
+    }
   });
 });
 
@@ -410,29 +417,17 @@ document.querySelectorAll('.nav-item').forEach(item => {
 let businessInfoLoaded = false;
 const businessInfoWrap = document.getElementById('businessInfoWrap');
 
-async function loadBusinessInfo(){
-  if(APPLICATIONS_APPS_SCRIPT_URL.includes('PASTE_YOUR')){
-    businessInfoWrap.innerHTML = '<div class="empty-state">Business info backend not configured yet — paste your Applications Apps Script URL into dashboard.html.</div>';
-    return;
-  }
-  try {
-    const data = await jsonpFetch(`${APPLICATIONS_APPS_SCRIPT_URL}?action=business&uid=${encodeURIComponent(uid)}`);
-    businessInfoLoaded = true;
-    if(!data.found){
-      businessInfoWrap.innerHTML = '<div class="empty-state">No business record found for this account yet.</div>';
-      return;
-    }
-    renderBusinessInfoForm(data);
-  } catch(err){
-    businessInfoWrap.innerHTML = '<div class="empty-state">Couldn\'t load your business info. Please try again.</div>';
-  }
+function loadBusinessInfo(){
+  businessInfoLoaded = true;
+  renderBusinessInfoForm(restaurant);
 }
 
 function renderBusinessInfoForm(data){
+  const hoursText = (data.opening_hours && data.opening_hours.text) || '';
   businessInfoWrap.innerHTML = `
     <div class="card-form" style="background:var(--card); border:1px solid var(--line); border-radius:16px; padding:26px 28px; max-width:520px;">
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business name</label>
-      <input type="text" id="biz-name" value="${escapeHtml(data.businessName)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+      <input type="text" id="biz-name" value="${escapeHtml(data.name)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
 
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Phone number</label>
       <input type="text" id="biz-phone" value="${escapeHtml(data.phone)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
@@ -446,7 +441,7 @@ function renderBusinessInfoForm(data){
       </select>
 
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Opening hours</label>
-      <textarea id="biz-hours" placeholder="e.g. Mon–Sat 12pm–10pm, Sun 4pm–10pm" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:18px; min-height:60px; font-family:inherit;">${escapeHtml(data.openingHours)}</textarea>
+      <textarea id="biz-hours" placeholder="e.g. Mon–Sat 12pm–10pm, Sun 4pm–10pm" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:18px; min-height:60px; font-family:inherit;">${escapeHtml(hoursText)}</textarea>
 
       <button class="btn btn-primary" id="saveBizBtn">Save changes</button>
     </div>
@@ -457,20 +452,91 @@ function renderBusinessInfoForm(data){
     btn.disabled = true;
     btn.textContent = 'Saving…';
     try {
-      await fetch(APPLICATIONS_APPS_SCRIPT_URL, {
-        method: 'POST', mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          type: 'updateBusinessInfo',
-          uid,
-          businessName: document.getElementById('biz-name').value.trim(),
-          phone: document.getElementById('biz-phone').value.trim(),
-          address: document.getElementById('biz-address').value.trim(),
-          cuisine: document.getElementById('biz-cuisine').value,
-          openingHours: document.getElementById('biz-hours').value.trim()
-        })
-      });
+      const updates = {
+        name: document.getElementById('biz-name').value.trim(),
+        phone: document.getElementById('biz-phone').value.trim(),
+        address: document.getElementById('biz-address').value.trim(),
+        cuisine: document.getElementById('biz-cuisine').value,
+        opening_hours: { text: document.getElementById('biz-hours').value.trim() }
+      };
+      const { error } = await supabase.from('restaurants').update(updates).eq('id', restaurant.id);
+      if(error) throw error;
+      Object.assign(restaurant, updates);
+      document.getElementById('restaurantNamePill').textContent = restaurant.name;
       showToast('Business info saved.');
+    } catch(err){
+      showToast('Something went wrong — please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save changes';
+    }
+  });
+}
+
+// ============ DELIVERY SETTINGS ============
+let deliveryInfoLoaded = false;
+const deliveryInfoWrap = document.getElementById('deliveryInfoWrap');
+
+function loadDeliveryInfo(){
+  deliveryInfoLoaded = true;
+  renderDeliveryInfoForm(restaurant);
+}
+
+function renderDeliveryInfoForm(data){
+  const postcodesText = (data.delivery_postcodes || []).join(', ');
+  deliveryInfoWrap.innerHTML = `
+    <div class="card-form" style="background:var(--card); border:1px solid var(--line); border-radius:16px; padding:26px 28px; max-width:520px;">
+      <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:14px;">
+        <input type="checkbox" id="dv-collection" ${data.does_collection ? 'checked' : ''} style="width:18px; height:18px;">
+        Offer collection
+      </label>
+      <label style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; margin-bottom:20px;">
+        <input type="checkbox" id="dv-delivery" ${data.does_delivery ? 'checked' : ''} style="width:18px; height:18px;">
+        Offer delivery
+      </label>
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Delivery fee (£)</label>
+      <input type="number" id="dv-fee" step="0.01" min="0" value="${data.delivery_fee_pence != null ? (data.delivery_fee_pence / 100).toFixed(2) : ''}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Minimum order for delivery (£)</label>
+      <input type="number" id="dv-min-order" step="0.01" min="0" value="${data.min_order_pence != null ? (data.min_order_pence / 100).toFixed(2) : ''}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Delivery postcodes</label>
+      <input type="text" id="dv-postcodes" placeholder="e.g. ST1, ST3, ST6" value="${escapeHtml(postcodesText)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:6px;">
+      <p style="font-size:11.5px; color:var(--body); margin:0 0 18px;">Comma-separated postcode areas you'll deliver to, e.g. ST1, ST3, ST6. Leave blank if you don't restrict by postcode.</p>
+
+      <button class="btn btn-primary" id="saveDeliveryBtn">Save changes</button>
+    </div>
+  `;
+
+  document.getElementById('saveDeliveryBtn').addEventListener('click', async () => {
+    const doesCollection = document.getElementById('dv-collection').checked;
+    const doesDelivery = document.getElementById('dv-delivery').checked;
+    if(!doesCollection && !doesDelivery){
+      showToast('Turn on at least one of collection or delivery.');
+      return;
+    }
+
+    const btn = document.getElementById('saveDeliveryBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const feeVal = document.getElementById('dv-fee').value.trim();
+      const minOrderVal = document.getElementById('dv-min-order').value.trim();
+      const postcodes = document.getElementById('dv-postcodes').value
+        .split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
+
+      const updates = {
+        does_collection: doesCollection,
+        does_delivery: doesDelivery,
+        delivery_fee_pence: feeVal ? Math.round(parseFloat(feeVal) * 100) : null,
+        min_order_pence: minOrderVal ? Math.round(parseFloat(minOrderVal) * 100) : null,
+        delivery_postcodes: postcodes.length ? postcodes : null
+      };
+      const { error } = await supabase.from('restaurants').update(updates).eq('id', restaurant.id);
+      if(error) throw error;
+      Object.assign(restaurant, updates);
+      showToast('Delivery settings saved.');
     } catch(err){
       showToast('Something went wrong — please try again.');
     } finally {
@@ -494,32 +560,48 @@ function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function fileToPayload(input){
-  return new Promise((resolve, reject) => {
-    const file = input.files[0];
-    if(!file){ resolve(null); return; }
-    const reader = new FileReader();
-    reader.onload = () => resolve({
-      data: reader.result.split(',')[1],
-      mimeType: file.type || 'application/octet-stream',
-      name: file.name
-    });
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+async function uploadPhoto(file){
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${restaurant.id}/${Date.now()}-${Math.floor(Math.random()*1e6)}.${ext}`;
+  const { error } = await supabase.storage.from('menu-photos').upload(path, file, { upsert: false });
+  if(error) throw error;
+  return supabase.storage.from('menu-photos').getPublicUrl(path).data.publicUrl;
+}
+
+// menu_items.category_id is NOT NULL, but the form allows "No section" —
+// those items go in a per-restaurant "General" category created on demand.
+async function getOrCreateCategoryId(name){
+  const wanted = (name || 'General').trim() || 'General';
+  const existing = categories.find(c => c.name.toLowerCase() === wanted.toLowerCase());
+  if(existing) return existing.id;
+  const { data, error } = await supabase
+    .from('menu_categories')
+    .insert({ restaurant_id: restaurant.id, name: wanted, sort_order: categories.length })
+    .select()
+    .single();
+  if(error) throw error;
+  categories.push(data);
+  return data.id;
+}
+
+function categoryName(categoryId){
+  const c = categories.find(c => c.id === categoryId);
+  return c ? c.name : '';
 }
 
 async function loadMenu(){
-  if(MENU_APPS_SCRIPT_URL.includes('PASTE_YOUR')){
-    menuGrid.innerHTML = '<div class="empty-state">Menu backend not configured yet — paste your Apps Script URL into dashboard.html.</div>';
-    return;
-  }
   try {
-    const data = await jsonpFetch(`${MENU_APPS_SCRIPT_URL}?uid=${encodeURIComponent(uid)}`);
-    menuItems = data.items || [];
+    const [{ data: cats, error: catErr }, { data: items, error: itemErr }] = await Promise.all([
+      supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
+      supabase.from('menu_items').select('*').eq('restaurant_id', restaurant.id).order('sort_order')
+    ]);
+    if(catErr) throw catErr;
+    if(itemErr) throw itemErr;
+    categories = cats || [];
+    menuItems = items || [];
     renderMenu();
   } catch(err){
-    menuGrid.innerHTML = '<div class="empty-state">Couldn\'t load your menu. Check the Apps Script URL and try again.</div>';
+    menuGrid.innerHTML = '<div class="empty-state">Couldn\'t load your menu. Please try again.</div>';
   }
 }
 
@@ -529,25 +611,24 @@ function renderMenu(){
     return;
   }
   menuGrid.innerHTML = menuItems.map(item => `
-    <div class="menu-item-card ${item.available ? '' : 'unavailable'}" data-id="${item.id}">
-      ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${escapeHtml(item.name)}" style="width:64px; height:64px; object-fit:cover; border-radius:10px; flex-shrink:0;">` : `<div style="width:64px; height:64px; border-radius:10px; background:var(--cream); border:1px dashed var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--body); text-align:center;">No photo</div>`}
+    <div class="menu-item-card ${item.is_available ? '' : 'unavailable'}" data-id="${item.id}">
+      ${item.photo_url ? `<img src="${item.photo_url}" alt="${escapeHtml(item.name)}" style="width:64px; height:64px; object-fit:cover; border-radius:10px; flex-shrink:0;">` : `<div style="width:64px; height:64px; border-radius:10px; background:var(--cream); border:1px dashed var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--body); text-align:center;">No photo</div>`}
       <div class="mi-left">
         <div class="mi-title-row">
           <span class="mi-title">${escapeHtml(item.name)}</span>
-          <span class="mi-price">£${Number(item.price).toFixed(2)}</span>
-          ${item.cuisineCategory ? `<span class="mi-tag">${escapeHtml(item.cuisineCategory)}</span>` : ''}
-          ${item.subCategory ? `<span class="mi-tag" style="background:rgba(166,30,30,0.08); border-color:rgba(166,30,30,0.25); color:var(--red);">${escapeHtml(item.subCategory)}</span>` : ''}
+          <span class="mi-price">£${(item.price_pence / 100).toFixed(2)}</span>
+          ${categoryName(item.category_id) ? `<span class="mi-tag" style="background:rgba(166,30,30,0.08); border-color:rgba(166,30,30,0.25); color:var(--red);">${escapeHtml(categoryName(item.category_id))}</span>` : ''}
         </div>
         ${item.description ? `<p class="mi-desc">${escapeHtml(item.description)}</p>` : ''}
-        <span class="mi-allergens">Allergens: ${escapeHtml(item.allergens)}</span>
+        <span class="mi-allergens">Allergens: ${escapeHtml((item.allergens || []).join(', '))}</span>
       </div>
       <div class="mi-actions">
         <div>
           <label class="toggle-switch">
-            <input type="checkbox" ${item.available ? 'checked' : ''} onchange="toggleAvailable('${item.id}', this.checked)">
+            <input type="checkbox" ${item.is_available ? 'checked' : ''} onchange="toggleAvailable('${item.id}', this.checked)">
             <span class="toggle-slider"></span>
           </label>
-          <div class="toggle-label">${item.available ? 'Available' : 'Sold out'}</div>
+          <div class="toggle-label">${item.is_available ? 'Available' : 'Sold out'}</div>
         </div>
         <div class="mi-actions-row">
           <button class="icon-btn" onclick="openEditModal('${item.id}')">Edit</button>
@@ -576,25 +657,26 @@ function openEditModal(id){
   editingId = id;
   modalTitle.textContent = 'Edit menu item';
   document.getElementById('itemName').value = item.name;
-  document.getElementById('itemPrice').value = item.price;
+  document.getElementById('itemPrice').value = (item.price_pence / 100).toFixed(2);
   document.getElementById('itemDescription').value = item.description || '';
-  document.getElementById('itemCuisine').value = item.cuisineCategory || '';
-  document.getElementById('itemSubCategory').value = item.subCategory || '';
-  document.getElementById('itemAllergens').value = item.allergens;
+  document.getElementById('itemSubCategory').value = categoryName(item.category_id) || '';
+  document.getElementById('itemAllergens').value = (item.allergens || []).join(', ');
   const preview = document.getElementById('currentPhotoPreview');
-  if(item.photoUrl){
-    document.getElementById('currentPhotoImg').src = item.photoUrl;
+  if(item.photo_url){
+    document.getElementById('currentPhotoImg').src = item.photo_url;
     preview.style.display = 'block';
   } else {
     preview.style.display = 'none';
   }
   itemModalOverlay.classList.add('show');
 }
+window.openEditModal = openEditModal;
 
 itemForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const allergens = document.getElementById('itemAllergens').value.trim();
-  if(!allergens){
+  const allergens = document.getElementById('itemAllergens').value
+    .split(',').map(a => a.trim()).filter(Boolean);
+  if(allergens.length === 0){
     showToast('Allergen information is required.');
     return;
   }
@@ -602,27 +684,31 @@ itemForm.addEventListener('submit', async (e) => {
   itemSaveBtn.disabled = true;
   itemSaveBtn.textContent = 'Saving…';
 
-  const photo = await fileToPayload(document.getElementById('itemPhoto'));
-
-  const payload = {
-    action: editingId ? 'edit' : 'add',
-    uid,
-    id: editingId || undefined,
-    name: document.getElementById('itemName').value.trim(),
-    price: parseFloat(document.getElementById('itemPrice').value),
-    description: document.getElementById('itemDescription').value.trim(),
-    cuisineCategory: document.getElementById('itemCuisine').value,
-    subCategory: document.getElementById('itemSubCategory').value,
-    allergens,
-    photo
-  };
-
   try {
-    await fetch(MENU_APPS_SCRIPT_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
+    const file = document.getElementById('itemPhoto').files[0];
+    const photoUrl = file ? await uploadPhoto(file) : undefined;
+    const categoryId = await getOrCreateCategoryId(document.getElementById('itemSubCategory').value);
+
+    const row = {
+      restaurant_id: restaurant.id,
+      category_id: categoryId,
+      name: document.getElementById('itemName').value.trim(),
+      price_pence: Math.round(parseFloat(document.getElementById('itemPrice').value) * 100),
+      description: document.getElementById('itemDescription').value.trim() || null,
+      allergens
+    };
+    if(photoUrl !== undefined) row.photo_url = photoUrl;
+
+    let error;
+    if(editingId){
+      ({ error } = await supabase.from('menu_items').update(row).eq('id', editingId));
+    } else {
+      row.is_available = true;
+      row.sort_order = menuItems.length;
+      ({ error } = await supabase.from('menu_items').insert(row));
+    }
+    if(error) throw error;
+
     itemModalOverlay.classList.remove('show');
     showToast(editingId ? 'Item updated.' : 'Item added.');
     await loadMenu();
@@ -637,35 +723,85 @@ itemForm.addEventListener('submit', async (e) => {
 async function deleteItem(id){
   if(!confirm('Delete this menu item? This can\'t be undone.')) return;
   try {
-    await fetch(MENU_APPS_SCRIPT_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'delete', uid, id })
-    });
+    const { error } = await supabase.from('menu_items').delete().eq('id', id);
+    if(error) throw error;
     showToast('Item deleted.');
     await loadMenu();
   } catch(err){
     showToast('Something went wrong — please try again.');
   }
 }
+window.deleteItem = deleteItem;
 
 async function toggleAvailable(id, available){
   try {
-    await fetch(MENU_APPS_SCRIPT_URL, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'toggleAvailable', uid, id, available })
-    });
+    const { error } = await supabase.from('menu_items').update({ is_available: available }).eq('id', id);
+    if(error) throw error;
     const item = menuItems.find(i => i.id === id);
-    if(item) item.available = available;
+    if(item) item.is_available = available;
     renderMenu();
   } catch(err){
     showToast('Couldn\'t update availability — please try again.');
     await loadMenu();
   }
 }
+window.toggleAvailable = toggleAvailable;
 
-loadMenu();
+// ============ AUTH GUARD + INIT ============
+// Runs before anything else: confirm a real Supabase session exists and
+// this account owns a restaurant, before revealing the dashboard at all.
+(async function init(){
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session){
+    window.location.href = 'signup.html';
+    return;
+  }
+
+  // .limit(1) instead of .maybeSingle() — maybeSingle() throws if more
+  // than one row matches, which repeated test approvals during
+  // development can easily produce. Take the most recent one instead
+  // of hard-failing on duplicates.
+  const { data: ownedRestaurants, error } = await supabase
+    .from('restaurants')
+    .select('*')
+    .eq('owner_user_id', session.user.id)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const ownedRestaurant = ownedRestaurants && ownedRestaurants[0];
+
+  // No restaurant found for this account. This is NOT the same as "not
+  // logged in" — silently bouncing to signup.html here just hides the
+  // real problem (usually: logged in as a different account than the
+  // one that applied — e.g. Google sign-in vs the email/password
+  // account that submitted the application, which Supabase treats as
+  // two separate users by default — or a genuine database error). Show
+  // what's wrong instead of redirecting blind.
+  if(error || !ownedRestaurant){
+    document.documentElement.classList.remove('auth-pending');
+    document.body.innerHTML = `
+      <div style="max-width:480px; margin:80px auto; padding:32px; font-family:'Inter',sans-serif; text-align:center;">
+        <h1 style="font-family:'Poppins',sans-serif; font-size:20px; margin:0 0 12px;">No restaurant linked to this account</h1>
+        <p style="color:#6E6A62; font-size:14px; line-height:1.6; margin:0 0 18px;">
+          You're logged in as <b>${escapeHtml(session.user.email || session.user.id)}</b>, but no approved restaurant is linked to this account.
+          If you applied using a different email or a different sign-in method (e.g. Google vs email/password), log in with that one instead.
+        </p>
+        ${error ? `<p style="color:#A61E1E; font-size:12px; font-family:monospace; background:rgba(166,30,30,0.06); padding:10px 14px; border-radius:8px; margin:0 0 18px; text-align:left;">${escapeHtml(error.message || JSON.stringify(error))}</p>` : ''}
+        <button id="switchAccountBtn" style="border:none; border-radius:999px; padding:12px 24px; background:#A61E1E; color:#fff; font-weight:700; font-size:14px; cursor:pointer;">Log out and try a different account</button>
+      </div>
+    `;
+    document.getElementById('switchAccountBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = 'signup.html';
+    });
+    return;
+  }
+
+  restaurant = ownedRestaurant;
+  document.getElementById('restaurantNamePill').textContent = restaurant.name;
+  document.documentElement.classList.remove('auth-pending');
+
+  await loadMenu();
+})();
 </script>
 </body>
 </html>
