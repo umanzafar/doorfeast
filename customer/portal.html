@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My DoorFeast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html.auth-pending body{visibility:hidden;}
+  :root{
+    --bg: #0A0908;
+    --card: rgba(255,255,255,0.045);
+    --card-hover: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.09);
+    --ink: #F3EFE8;
+    --body: #9C968B;
+    --red: #FF3B3B;
+    --red-dim: #C81E3A;
+    --red-glow: rgba(255,59,59,0.35);
+    --gold: #E8B34D;
+    --green: #3DDC84;
+    --sidebar: #0F0E0D;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;
+    background:
+      radial-gradient(1100px circle at 8% -10%, rgba(255,59,59,0.14), transparent 42%),
+      radial-gradient(900px circle at 100% 0%, rgba(232,179,77,0.10), transparent 46%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit;}
+  ::selection{background:rgba(255,59,59,0.3);}
+
+  .shell{display:flex; min-height:100vh;}
+
+  .sidebar{
+    width:250px; flex-shrink:0; background:var(--sidebar); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; padding:26px 0;
+  }
+  .sidebar .brand{display:flex; align-items:center; gap:10px; padding:0 22px 24px; border-bottom:1px solid var(--border); margin-bottom:14px;}
+  .sidebar .brand img{width:30px; border-radius:8px;}
+  .sidebar .brand span{font-family:'Poppins',sans-serif; font-weight:800; font-size:16px;}
+  .nav-item{
+    display:flex; align-items:center; gap:12px; padding:12px 22px; font-size:14px; font-weight:600;
+    color:var(--body); cursor:pointer; border-left:3px solid transparent; transition:.15s;
+  }
+  .nav-item:hover{color:var(--ink); background:rgba(255,255,255,0.03);}
+  .nav-item.active{
+    color:var(--ink); background:linear-gradient(90deg, rgba(255,59,59,0.14), transparent);
+    border-left-color:var(--red);
+  }
+  .nav-item svg{flex-shrink:0;}
+  .nav-item .badge{
+    margin-left:auto; background:var(--red); color:#fff; font-size:10.5px; font-weight:800;
+    border-radius:999px; padding:1px 7px; min-width:18px; text-align:center;
+  }
+  .sidebar-footer{margin-top:auto; padding:16px 22px 0;}
+  .logout-btn{
+    display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:600; color:var(--body);
+    cursor:pointer; padding:10px 0; transition:.15s;
+  }
+  .logout-btn:hover{color:var(--red);}
+
+  .main{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .topbar{
+    padding:26px 40px 0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  .topbar h1{font-family:'Poppins',sans-serif; font-size:24px; font-weight:800; margin:0; letter-spacing:-0.3px;}
+  .topbar p{font-size:13px; color:var(--body); margin:4px 0 0;}
+  .customer-pill{
+    display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border);
+    border-radius:999px; padding:7px 16px 7px 7px; font-size:12.5px; font-weight:600;
+  }
+  .customer-pill .avatar{
+    width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg, var(--red), var(--gold));
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff;
+  }
+
+  .content{flex:1; padding:26px 40px 60px; max-width:920px; width:100%;}
+  .section{display:none;}
+  .section.active{display:block; animation:fadeIn .35s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:28px 30px; backdrop-filter:blur(24px); box-shadow:0 24px 50px -30px rgba(0,0,0,0.7);
+  }
+  .card + .card{margin-top:16px;}
+
+  label{font-size:12px; font-weight:600; color:var(--body); text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:7px;}
+  input, textarea, select{
+    width:100%; border:1.5px solid var(--border); border-radius:12px; padding:12px 14px;
+    font-size:14px; margin-bottom:16px; font-family:inherit; background:rgba(255,255,255,0.03); color:var(--ink);
+  }
+  input:disabled{opacity:0.5;}
+  input:focus, textarea:focus, select:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px var(--red-glow);}
+  input::placeholder, textarea::placeholder{color:#5c574f;}
+  label.checkbox{display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; color:var(--ink); text-transform:none; margin-bottom:20px;}
+  label.checkbox input{width:18px; height:18px; margin:0;}
+
+  .btn{border:none; border-radius:999px; padding:12px 24px; font-size:13.5px; font-weight:700; cursor:pointer; transition:.15s;}
+  .btn-primary{background:linear-gradient(135deg, var(--red), var(--red-dim)); color:#fff; box-shadow:0 8px 24px -10px var(--red-glow);}
+  .btn-primary:hover{box-shadow:0 10px 30px -8px var(--red-glow); transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none;}
+  .btn-secondary{background:rgba(255,255,255,0.06); border:1.5px solid var(--border); color:var(--ink);}
+  .btn-secondary:hover{border-color:var(--red);}
+  .btn-ghost{background:none; border:1.5px solid var(--border); color:var(--body); padding:9px 16px; font-size:12.5px;}
+  .btn-ghost:hover{color:var(--red); border-color:var(--red);}
+  .btn-ghost.danger:hover{color:#ff6b6b; border-color:#ff6b6b;}
+
+  .section-head{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px;}
+  .section-head h2{font-family:'Poppins',sans-serif; font-size:19px; margin:0 0 4px;}
+  .section-head p{font-size:13px; color:var(--body); margin:0; max-width:440px;}
+
+  .empty-state{text-align:center; padding:56px 20px; color:var(--body); font-size:14px;}
+
+  /* Orders */
+  .order-card{display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap;}
+  .order-card + .order-card{margin-top:14px;}
+  .oc-number{font-family:'Poppins',sans-serif; font-weight:700; font-size:14.5px; margin-bottom:4px;}
+  .oc-restaurant{font-size:13px; color:var(--body); margin-bottom:6px;}
+  .oc-date{font-size:11.5px; color:#615c54;}
+  .oc-right{text-align:right;}
+  .oc-total{font-weight:700; font-size:15px; margin-bottom:6px;}
+  .oc-status{display:inline-block; font-size:11px; font-weight:700; text-transform:capitalize; padding:4px 11px; border-radius:999px; background:rgba(232,179,77,0.16); color:var(--gold);}
+  .oc-status.completed{background:rgba(61,220,132,0.14); color:var(--green);}
+  .oc-status.rejected, .oc-status.refunded{background:rgba(255,59,59,0.14); color:var(--red);}
+
+  /* Addresses */
+  .addr-card{display:flex; justify-content:space-between; gap:14px; align-items:flex-start; flex-wrap:wrap;}
+  .addr-card + .addr-card{margin-top:14px;}
+  .addr-label-row{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .addr-label{font-family:'Poppins',sans-serif; font-weight:700; font-size:14.5px;}
+  .addr-default-tag{font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.4px; background:rgba(255,59,59,0.15); color:var(--red); padding:3px 9px; border-radius:999px;}
+  .addr-lines{font-size:13.5px; color:var(--body); line-height:1.6;}
+  .addr-actions{display:flex; gap:8px; flex-shrink:0;}
+
+  /* Basket */
+  .basket-line{display:flex; justify-content:space-between; gap:14px; padding:14px 0; border-bottom:1px solid var(--border);}
+  .basket-line:last-child{border-bottom:none;}
+  .bl-name{font-weight:600; font-size:14px; margin-bottom:2px;}
+  .bl-qty{font-size:12.5px; color:var(--body);}
+  .bl-price{font-weight:700; font-size:14.5px;}
+  .basket-summary-row{display:flex; justify-content:space-between; font-size:14.5px; font-weight:700; padding-top:16px; margin-top:6px; border-top:1px dashed var(--border);}
+
+  /* Modal */
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); display:none; align-items:center; justify-content:center; padding:20px; z-index:300;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#141312; border:1px solid var(--border); border-radius:20px; padding:30px 28px; max-width:440px; width:100%; max-height:88vh; overflow-y:auto;}
+  .modal h3{font-family:'Poppins',sans-serif; font-size:18px; margin:0 0 18px;}
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#1c1a18; border:1px solid var(--border); color:var(--ink); font-size:13.5px; font-weight:600;
+    padding:12px 22px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:400;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:820px){
+    .shell{flex-direction:column;}
+    .sidebar{width:100%; flex-direction:row; overflow-x:auto; padding:12px 0;}
+    .sidebar .brand{display:none;}
+    .nav-item{border-left:none; border-bottom:3px solid transparent; white-space:nowrap; padding:10px 16px;}
+    .nav-item.active{border-left:none; border-bottom-color:var(--red);}
+    .sidebar-footer{display:none;}
+    .content, .topbar{padding-left:18px; padding-right:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand"><img src="../logo.png" alt="DoorFeast"><span>DoorFeast</span></div>
+
+    <div class="nav-item active" data-section="account">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+      Account
+    </div>
+    <div class="nav-item" data-section="orders">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 6l1 14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2l1-14"/></svg>
+      My Orders
+    </div>
+    <div class="nav-item" data-section="addresses">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      Addresses
+    </div>
+    <div class="nav-item" data-section="basket">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 2H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
+      Basket
+      <span class="badge" id="basketBadge" style="display:none;">0</span>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="logout-btn" id="logoutLink">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Log out
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="topbarTitle">Account</h1>
+        <p id="topbarSub">Your name, email, and contact details.</p>
+      </div>
+      <div class="customer-pill"><span class="avatar" id="avatarInitial">?</span><span id="customerNamePill">Loading…</span></div>
+    </div>
+
+    <div class="content">
+
+      <div class="section active" id="section-account">
+        <div class="card" id="accountCard">
+          <div class="empty-state">Loading your account…</div>
+        </div>
+      </div>
+
+      <div class="section" id="section-orders">
+        <div class="section-head"><div><h2>My orders</h2><p>Your past and current orders.</p></div></div>
+        <div id="ordersWrap"><div class="card"><div class="empty-state">Loading your orders…</div></div></div>
+      </div>
+
+      <div class="section" id="section-addresses">
+        <div class="section-head">
+          <div><h2>Saved addresses</h2><p>Manage the addresses you deliver to.</p></div>
+          <button class="btn btn-primary" id="addAddressBtn">+ Add address</button>
+        </div>
+        <div id="addressesWrap"><div class="card"><div class="empty-state">Loading your addresses…</div></div></div>
+      </div>
+
+      <div class="section" id="section-basket">
+        <div class="section-head"><div><h2>Your basket</h2><p>Whatever's currently in your basket from browsing a restaurant.</p></div></div>
+        <div id="basketWrap"><div class="card"><div class="empty-state">Loading your basket…</div></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addressModalOverlay">
+  <div class="modal">
+    <h3 id="addressModalTitle">Add address</h3>
+    <form id="addressForm">
+      <label>Label</label>
+      <input type="text" id="addr-label" placeholder="e.g. Home, Work">
+
+      <label>Address line 1</label>
+      <input type="text" id="addr-line1" required>
+
+      <label>Address line 2</label>
+      <input type="text" id="addr-line2" placeholder="Optional">
+
+      <label>City / Town</label>
+      <input type="text" id="addr-city" required>
+
+      <label>Postcode</label>
+      <input type="text" id="addr-postcode" required>
+
+      <label>Delivery notes</label>
+      <textarea id="addr-notes" placeholder="e.g. Gate code, leave with neighbour…" style="min-height:60px; resize:vertical;"></textarea>
+
+      <label class="checkbox">
+        <input type="checkbox" id="addr-default">
+        Set as default address
+      </label>
+
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary" id="addressSaveBtn" style="flex:1;">Save address</button>
+        <button type="button" class="btn btn-secondary" id="addressCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let customer = null;
+  let addresses = [];
+  let editingAddressId = null;
+
+  function escapeHtml(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function formatGBP(pence){
+    return '£' + (pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function formatDate(iso){
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  const toast = document.getElementById('toast');
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  document.getElementById('logoutLink').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+  });
+
+  /* ============ NAV ============ */
+  const sectionMeta = {
+    account: { title: 'Account', sub: 'Your name, email, and contact details.' },
+    orders: { title: 'My Orders', sub: 'Your past and current orders.' },
+    addresses: { title: 'Saved Addresses', sub: 'Manage the addresses you deliver to.' },
+    basket: { title: 'Your Basket', sub: "Whatever's currently in your basket from browsing a restaurant." }
+  };
+  const loaded = { orders: false, addresses: false, basket: false };
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      item.classList.add('active');
+      const key = item.dataset.section;
+      document.getElementById('section-' + key).classList.add('active');
+      document.getElementById('topbarTitle').textContent = sectionMeta[key].title;
+      document.getElementById('topbarSub').textContent = sectionMeta[key].sub;
+      if(key === 'orders' && !loaded.orders) loadOrders();
+      if(key === 'addresses' && !loaded.addresses) loadAddresses();
+      if(key === 'basket') loadBasket(); // always re-read — basket can change from another tab
+    });
+  });
+
+  /* ============ ACCOUNT ============ */
+  function renderAccount(){
+    document.getElementById('accountCard').innerHTML = `
+      <label for="acc-name">Full name</label>
+      <input type="text" id="acc-name" value="${escapeHtml(customer.name)}">
+
+      <label for="acc-email">Email</label>
+      <input type="email" id="acc-email" value="${escapeHtml(customer.email)}" disabled>
+
+      <label for="acc-phone">Phone number</label>
+      <input type="text" id="acc-phone" value="${escapeHtml(customer.phone || '')}" placeholder="Optional">
+
+      <label class="checkbox">
+        <input type="checkbox" id="acc-marketing" ${customer.marketing_opt_in ? 'checked' : ''}>
+        Send me offers and updates by email
+      </label>
+
+      <button class="btn btn-primary" id="saveAccountBtn">Save changes</button>
+    `;
+
+    document.getElementById('saveAccountBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('saveAccountBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      try {
+        const updates = {
+          name: document.getElementById('acc-name').value.trim(),
+          phone: document.getElementById('acc-phone').value.trim() || null,
+          marketing_opt_in: document.getElementById('acc-marketing').checked
+        };
+        const { error } = await supabase.from('customers').update(updates).eq('id', customer.id);
+        if(error) throw error;
+        Object.assign(customer, updates);
+        updateIdentityUi();
+        showToast('Account updated.');
+      } catch(err){
+        showToast('Something went wrong — please try again.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save changes';
+      }
+    });
+  }
+
+  function updateIdentityUi(){
+    document.getElementById('customerNamePill').textContent = customer.name;
+    document.getElementById('avatarInitial').textContent = (customer.name || '?').charAt(0).toUpperCase();
+  }
+
+  /* ============ ORDERS ============ */
+  async function loadOrders(){
+    loaded.orders = true;
+    const wrap = document.getElementById('ordersWrap');
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('*, restaurants(name)')
+      .eq('customer_id', customer.id)
+      .order('created_at', { ascending: false });
+
+    if(error){
+      wrap.innerHTML = `<div class="card"><div class="empty-state">Couldn't load your orders. Please try again.</div></div>`;
+      return;
+    }
+    if(!orders || orders.length === 0){
+      wrap.innerHTML = `<div class="card"><div class="empty-state">No orders yet — orders will appear here once you place one.</div></div>`;
+      return;
+    }
+    wrap.innerHTML = `<div class="card">` + orders.map(o => `
+      <div class="order-card">
+        <div>
+          <div class="oc-number">${escapeHtml(o.order_number)}</div>
+          <div class="oc-restaurant">${escapeHtml(o.restaurants ? o.restaurants.name : 'Restaurant')}</div>
+          <div class="oc-date">${formatDate(o.created_at)}</div>
+        </div>
+        <div class="oc-right">
+          <div class="oc-total">${formatGBP(o.total_pence)}</div>
+          <span class="oc-status ${o.status}">${escapeHtml(o.status.replace('_', ' '))}</span>
+        </div>
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  /* ============ ADDRESSES ============ */
+  const addressModalOverlay = document.getElementById('addressModalOverlay');
+  const addressForm = document.getElementById('addressForm');
+
+  async function loadAddresses(){
+    loaded.addresses = true;
+    const wrap = document.getElementById('addressesWrap');
+    const { data, error } = await supabase
+      .from('customer_addresses')
+      .select('*')
+      .eq('customer_id', customer.id)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if(error){
+      wrap.innerHTML = `<div class="card"><div class="empty-state">Couldn't load your addresses. Please try again.</div></div>`;
+      return;
+    }
+    addresses = data || [];
+    renderAddresses();
+  }
+
+  function renderAddresses(){
+    const wrap = document.getElementById('addressesWrap');
+    if(addresses.length === 0){
+      wrap.innerHTML = `<div class="card"><div class="empty-state">No saved addresses yet — add one for faster checkout.</div></div>`;
+      return;
+    }
+    wrap.innerHTML = `<div class="card">` + addresses.map(a => `
+      <div class="addr-card">
+        <div>
+          <div class="addr-label-row">
+            <span class="addr-label">${escapeHtml(a.label || 'Address')}</span>
+            ${a.is_default ? '<span class="addr-default-tag">Default</span>' : ''}
+          </div>
+          <div class="addr-lines">
+            ${escapeHtml(a.line1)}${a.line2 ? ', ' + escapeHtml(a.line2) : ''}<br>
+            ${escapeHtml(a.city)}, ${escapeHtml(a.postcode)}
+            ${a.delivery_notes ? '<br>' + escapeHtml(a.delivery_notes) : ''}
+          </div>
+        </div>
+        <div class="addr-actions">
+          ${!a.is_default ? `<button class="btn-ghost" onclick="setDefaultAddress('${a.id}')">Set default</button>` : ''}
+          <button class="btn-ghost" onclick="openEditAddress('${a.id}')">Edit</button>
+          <button class="btn-ghost danger" onclick="deleteAddress('${a.id}')">Delete</button>
+        </div>
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  document.getElementById('addAddressBtn').addEventListener('click', () => {
+    editingAddressId = null;
+    document.getElementById('addressModalTitle').textContent = 'Add address';
+    addressForm.reset();
+    addressModalOverlay.classList.add('show');
+  });
+  document.getElementById('addressCancelBtn').addEventListener('click', () => {
+    addressModalOverlay.classList.remove('show');
+  });
+
+  window.openEditAddress = function(id){
+    const a = addresses.find(x => x.id === id);
+    if(!a) return;
+    editingAddressId = id;
+    document.getElementById('addressModalTitle').textContent = 'Edit address';
+    document.getElementById('addr-label').value = a.label || '';
+    document.getElementById('addr-line1').value = a.line1;
+    document.getElementById('addr-line2').value = a.line2 || '';
+    document.getElementById('addr-city').value = a.city;
+    document.getElementById('addr-postcode').value = a.postcode;
+    document.getElementById('addr-notes').value = a.delivery_notes || '';
+    document.getElementById('addr-default').checked = a.is_default;
+    addressModalOverlay.classList.add('show');
+  };
+
+  window.deleteAddress = async function(id){
+    if(!confirm("Delete this address?")) return;
+    const { error } = await supabase.from('customer_addresses').delete().eq('id', id);
+    if(error){ showToast('Something went wrong — please try again.'); return; }
+    showToast('Address deleted.');
+    await loadAddresses();
+  };
+
+  window.setDefaultAddress = async function(id){
+    await supabase.from('customer_addresses').update({ is_default: false }).eq('customer_id', customer.id);
+    const { error } = await supabase.from('customer_addresses').update({ is_default: true }).eq('id', id);
+    if(error){ showToast('Something went wrong — please try again.'); return; }
+    showToast('Default address updated.');
+    await loadAddresses();
+  };
+
+  addressForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('addressSaveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const wantsDefault = document.getElementById('addr-default').checked;
+      const row = {
+        customer_id: customer.id,
+        label: document.getElementById('addr-label').value.trim() || null,
+        line1: document.getElementById('addr-line1').value.trim(),
+        line2: document.getElementById('addr-line2').value.trim() || null,
+        city: document.getElementById('addr-city').value.trim(),
+        postcode: document.getElementById('addr-postcode').value.trim().toUpperCase(),
+        delivery_notes: document.getElementById('addr-notes').value.trim() || null,
+        is_default: wantsDefault
+      };
+
+      if(wantsDefault){
+        await supabase.from('customer_addresses').update({ is_default: false }).eq('customer_id', customer.id);
+      }
+
+      let error;
+      if(editingAddressId){
+        ({ error } = await supabase.from('customer_addresses').update(row).eq('id', editingAddressId));
+      } else {
+        ({ error } = await supabase.from('customer_addresses').insert(row));
+      }
+      if(error) throw error;
+
+      addressModalOverlay.classList.remove('show');
+      showToast(editingAddressId ? 'Address updated.' : 'Address added.');
+      await loadAddresses();
+    } catch(err){
+      showToast('Something went wrong — please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save address';
+    }
+  });
+
+  /* ============ BASKET ============ */
+  // The basket lives in localStorage, written by restaurant.html — this
+  // page just reads whatever's there. Each entry is self-contained
+  // (name + price snapshot at add-time), so it renders without needing
+  // to know which restaurant it came from. Tied to the current
+  // single-placeholder-restaurant setup until Step 3 (real restaurant
+  // pages) lands — the key naming will need revisiting then.
+  const BASKET_KEY = 'doorfeast_basket_sample-kitchen';
+
+  function readBasket(){
+    try { return JSON.parse(localStorage.getItem(BASKET_KEY) || '{}'); }
+    catch(e){ return {}; }
+  }
+
+  function loadBasket(){
+    const basket = readBasket();
+    const entries = Object.values(basket);
+    const count = entries.reduce((sum, e) => sum + e.qty, 0);
+
+    const badge = document.getElementById('basketBadge');
+    if(count > 0){ badge.style.display = 'inline-block'; badge.textContent = count; }
+    else { badge.style.display = 'none'; }
+
+    const wrap = document.getElementById('basketWrap');
+    if(entries.length === 0){
+      wrap.innerHTML = `<div class="card"><div class="empty-state">Your basket is empty — browse a restaurant to add items.</div></div>`;
+      return;
+    }
+
+    const subtotal = entries.reduce((sum, e) => sum + (e.price_pence * e.qty), 0);
+    wrap.innerHTML = `<div class="card">` +
+      entries.map(e => `
+        <div class="basket-line">
+          <div>
+            <div class="bl-name">${escapeHtml(e.name || 'Item')}</div>
+            <div class="bl-qty">Qty ${e.qty}</div>
+          </div>
+          <div class="bl-price">${formatGBP((e.price_pence || 0) * e.qty)}</div>
+        </div>
+      `).join('') +
+      `<div class="basket-summary-row"><span>Subtotal</span><span>${formatGBP(subtotal)}</span></div>
+       <a href="../checkout.html" class="btn btn-primary" style="display:block; text-align:center; margin-top:18px;">Go to checkout</a>
+      </div>`;
+  }
+
+  /* ============ AUTH GUARD + INIT ============ */
+  (async function init(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){
+      window.location.href = 'index.html';
+      return;
+    }
+
+    const { data: found, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if(error || !found){
+      document.documentElement.classList.remove('auth-pending');
+      document.getElementById('accountCard').innerHTML = `<div class="empty-state">Couldn't load your account${error ? ': ' + escapeHtml(error.message) : ''}. Try logging out and back in.</div>`;
+      return;
+    }
+
+    customer = found;
+    updateIdentityUi();
+    renderAccount();
+    document.documentElement.classList.remove('auth-pending');
+  })();
+</script>
+</body>
+</html>

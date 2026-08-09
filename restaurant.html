@@ -325,21 +325,24 @@ function findItem(id){
 }
 
 /* ============================================================
-   BASKET — kept in sessionStorage, scoped per restaurant so
-   different restaurants don't mix baskets together.
+   BASKET — kept in localStorage (not sessionStorage) so it's also
+   readable from the customer portal's Basket tab, which lives on a
+   different page/tab. Scoped per restaurant so different restaurants
+   don't mix baskets together. Each entry snapshots name + price at
+   add-time so any page can render it without re-looking-up the menu.
    ============================================================ */
 const BASKET_KEY = 'doorfeast_basket_sample-kitchen';
-let basket = JSON.parse(sessionStorage.getItem(BASKET_KEY) || '{}');
+let basket = JSON.parse(localStorage.getItem(BASKET_KEY) || '{}');
 let orderType = PLACEHOLDER_RESTAURANT.does_collection ? 'collection' : 'delivery';
 
 function saveBasket(){
-  sessionStorage.setItem(BASKET_KEY, JSON.stringify(basket));
+  localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
 }
 
 function addItem(id){
   const item = findItem(id);
   if(!item || !item.is_available) return;
-  if(!basket[id]) basket[id] = { qty: 0 };
+  if(!basket[id]) basket[id] = { qty: 0, name: item.name, price_pence: item.price_pence };
   basket[id].qty += 1;
   saveBasket();
   renderMenu();
