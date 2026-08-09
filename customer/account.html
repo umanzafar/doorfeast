@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — DoorFeast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html.auth-pending body{visibility:hidden;}
+  :root{
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --line:#E4DFD2;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink);}
+  a{color:inherit;}
+
+  header.nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px; background:var(--card); border-bottom:1px solid var(--line);
+  }
+  .nav-logo{display:flex; align-items:center; gap:8px; text-decoration:none;}
+  .nav-logo img{width:30px; border-radius:8px;}
+  .nav-logo span{font-family:'Poppins',sans-serif; font-weight:800; font-size:15px; color:var(--ink);}
+  .nav-links{display:flex; gap:20px; align-items:center; font-size:13.5px; font-weight:600;}
+  .nav-links a{text-decoration:none; color:var(--body);}
+  .nav-links a.active{color:var(--red);}
+  .nav-links a:hover{color:var(--red);}
+
+  .wrap{max-width:520px; margin:0 auto; padding:36px 24px 60px;}
+  h1{font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 6px;}
+  p.sub{font-size:13.5px; color:var(--body); margin:0 0 26px;}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:26px 28px;}
+  label{font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;}
+  input{
+    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px;
+    font-size:14px; margin-bottom:16px; font-family:inherit;
+  }
+  input:disabled{background:var(--cream); color:var(--body);}
+  input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.1);}
+  label.checkbox{display:flex; align-items:center; gap:10px; font-weight:600; font-size:14px; color:var(--ink); margin-bottom:20px;}
+  label.checkbox input{width:18px; height:18px; margin:0;}
+
+  .btn{border:none; border-radius:999px; padding:12px 24px; font-size:14px; font-weight:700; cursor:pointer;}
+  .btn-primary{background:var(--red); color:#fff;}
+  .btn-primary:hover{background:var(--red-dark);}
+  .btn-primary:disabled{opacity:0.6; cursor:not-allowed;}
+  .btn-secondary{background:#fff; border:1.5px solid var(--line); color:var(--ink);}
+  .btn-secondary:hover{border-color:var(--red); color:var(--red);}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; font-size:13.5px; font-weight:600;
+    padding:12px 22px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:400;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="../index.html" class="nav-logo"><img src="../logo.png" alt="DoorFeast"><span>DoorFeast</span></a>
+  <div class="nav-links">
+    <a href="account.html" class="active">My account</a>
+    <a href="orders.html">My orders</a>
+    <a href="#" id="logoutLink">Log out</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>My account</h1>
+  <p class="sub">Update your details below.</p>
+
+  <div class="card" id="accountCard">
+    <div style="text-align:center; padding:30px 0; color:var(--body); font-size:14px;">Loading your account…</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const toast = document.getElementById('toast');
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+  function escapeHtml(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.getElementById('logoutLink').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+  });
+
+  const accountCard = document.getElementById('accountCard');
+
+  function renderAccount(customer){
+    accountCard.innerHTML = `
+      <label for="acc-name">Full name</label>
+      <input type="text" id="acc-name" value="${escapeHtml(customer.name)}">
+
+      <label for="acc-email">Email</label>
+      <input type="email" id="acc-email" value="${escapeHtml(customer.email)}" disabled>
+
+      <label for="acc-phone">Phone number</label>
+      <input type="text" id="acc-phone" value="${escapeHtml(customer.phone || '')}" placeholder="Optional">
+
+      <label class="checkbox">
+        <input type="checkbox" id="acc-marketing" ${customer.marketing_opt_in ? 'checked' : ''}>
+        Send me offers and updates by email
+      </label>
+
+      <button class="btn btn-primary" id="saveBtn">Save changes</button>
+    `;
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      try {
+        const updates = {
+          name: document.getElementById('acc-name').value.trim(),
+          phone: document.getElementById('acc-phone').value.trim() || null,
+          marketing_opt_in: document.getElementById('acc-marketing').checked
+        };
+        const { error } = await supabase.from('customers').update(updates).eq('id', customer.id);
+        if(error) throw error;
+        Object.assign(customer, updates);
+        showToast('Account updated.');
+      } catch(err){
+        showToast('Something went wrong — please try again.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save changes';
+      }
+    });
+  }
+
+  (async function init(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){
+      window.location.href = 'index.html';
+      return;
+    }
+
+    const { data: customer, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if(error || !customer){
+      document.documentElement.classList.remove('auth-pending');
+      accountCard.innerHTML = `<div style="text-align:center; padding:20px 0; color:var(--body); font-size:14px;">
+        Couldn't load your account${error ? ': ' + escapeHtml(error.message) : ''}. Try logging out and back in.
+      </div>`;
+      return;
+    }
+
+    renderAccount(customer);
+    document.documentElement.classList.remove('auth-pending');
+  })();
+</script>
+</body>
+</html>
