@@ -272,6 +272,17 @@
       const { data: refreshed } = await supabase.from('customers').select('*').eq('id', customer.id).single();
       if(refreshed) customer = refreshed;
       renderPhoneStep();
+
+      // Let the homepage's notification bell reflect this — inserted as
+      // the acting customer, covered by the "customer can insert own
+      // notifications" RLS policy from migration_6.
+      await supabase.from('customer_notifications').insert({
+        customer_id: customer.id,
+        title: customer.discount_eligible ? 'You earned £5 off your first order! 🎁' : 'Phone verified',
+        message: customer.discount_eligible
+          ? 'Your phone is verified — your £5 discount will apply automatically at checkout.'
+          : "Your phone was verified, but this account isn't eligible for the first-order discount."
+      });
     } catch(err){
       console.error(err);
       showError(err.message || "That code didn't work — please try again.");
