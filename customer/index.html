@@ -184,9 +184,11 @@
   }
 
   // First-time signups (and anyone who never finished it) land on the
-  // onboarding wizard instead of straight into the portal.
+  // onboarding wizard. Everyone else goes to the homepage — the account/
+  // orders/addresses/basket screens are a panel opened from the profile
+  // icon there now, not a separate destination page.
   function goToAccount(customerRow){
-    window.location.href = customerRow && customerRow.onboarding_completed ? 'portal.html' : 'onboarding.html';
+    window.location.href = customerRow && customerRow.onboarding_completed ? '../index.html' : 'onboarding.html';
   }
 
   emailForm.addEventListener('submit', async (e) => {
