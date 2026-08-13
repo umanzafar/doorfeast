@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome — DoorFeast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html.auth-pending body{visibility:hidden;}
+  :root{
+    --bg: #0A0908;
+    --card: rgba(255,255,255,0.045);
+    --border: rgba(255,255,255,0.09);
+    --ink: #F3EFE8;
+    --body: #9C968B;
+    --red: #FF3B3B;
+    --red-dim: #C81E3A;
+    --red-glow: rgba(255,59,59,0.35);
+    --gold: #E8B34D;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;
+    background:
+      radial-gradient(1100px circle at 8% -10%, rgba(255,59,59,0.14), transparent 42%),
+      radial-gradient(900px circle at 100% 0%, rgba(232,179,77,0.10), transparent 46%),
+      var(--bg);
+    background-attachment:fixed;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  .wrap{width:100%; max-width:460px;}
+  .brandbar{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:26px;}
+  .brandbar img{width:32px; border-radius:8px;}
+  .brandbar span{font-family:'Poppins',sans-serif; font-weight:800; font-size:17px;}
+
+  .progress{display:flex; gap:6px; margin-bottom:26px;}
+  .progress-seg{flex:1; height:4px; border-radius:99px; background:var(--border); overflow:hidden;}
+  .progress-seg .fill{height:100%; width:0%; background:linear-gradient(90deg, var(--red), var(--gold)); transition:width .3s ease;}
+  .progress-seg.done .fill{width:100%;}
+  .progress-seg.active .fill{width:100%;}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:22px;
+    padding:34px 30px; backdrop-filter:blur(24px); box-shadow:0 24px 50px -30px rgba(0,0,0,0.7);
+  }
+  .step{display:none;}
+  .step.active{display:block; animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .step-eyebrow{font-size:11.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--gold); margin:0 0 8px;}
+  .step h2{font-family:'Poppins',sans-serif; font-size:21px; margin:0 0 8px; line-height:1.3;}
+  .step p.hint{font-size:13.5px; color:var(--body); margin:0 0 22px; line-height:1.5;}
+
+  label{font-size:12px; font-weight:600; color:var(--body); text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:7px;}
+  input{
+    width:100%; border:1.5px solid var(--border); border-radius:12px; padding:13px 14px;
+    font-size:14.5px; margin-bottom:16px; font-family:inherit; background:rgba(255,255,255,0.03); color:var(--ink);
+  }
+  input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px var(--red-glow);}
+  input::placeholder{color:#5c574f;}
+
+  .chip-grid{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
+  .chip{
+    border:1.5px solid var(--border); background:rgba(255,255,255,0.03); color:var(--ink);
+    border-radius:999px; padding:10px 18px; font-size:13.5px; font-weight:600; cursor:pointer; transition:.15s;
+  }
+  .chip:hover{border-color:var(--red);}
+  .chip.selected{background:linear-gradient(135deg, var(--red), var(--red-dim)); border-color:transparent; color:#fff;}
+
+  .option-list{display:flex; flex-direction:column; gap:9px; margin-bottom:8px;}
+  .option{
+    display:flex; align-items:center; gap:10px; border:1.5px solid var(--border); border-radius:12px;
+    padding:12px 14px; background:rgba(255,255,255,0.03); cursor:pointer; font-size:14px; transition:.15s;
+  }
+  .option:hover{border-color:var(--red);}
+  .option input{width:16px; height:16px; margin:0; accent-color:var(--red);}
+  .option.selected{border-color:var(--red); background:rgba(255,59,59,0.08);}
+
+  .actions{display:flex; gap:10px; margin-top:24px;}
+  .btn{border:none; border-radius:999px; padding:13px 24px; font-size:14px; font-weight:700; cursor:pointer; transition:.15s;}
+  .btn-primary{flex:1; background:linear-gradient(135deg, var(--red), var(--red-dim)); color:#fff; box-shadow:0 8px 24px -10px var(--red-glow);}
+  .btn-primary:hover{transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:0.45; cursor:not-allowed; transform:none;}
+  .btn-back{background:none; border:1.5px solid var(--border); color:var(--body); padding:13px 18px;}
+  .btn-back:hover{color:var(--ink); border-color:var(--ink);}
+
+  .skip-link{display:block; text-align:center; font-size:12.5px; color:var(--body); margin-top:18px; text-decoration:none; cursor:pointer;}
+  .skip-link:hover{color:var(--ink);}
+
+  .error-box{
+    background:rgba(255,59,59,0.1); border:1px solid rgba(255,59,59,0.3); color:#ff8a8a;
+    font-size:12.5px; padding:10px 14px; border-radius:10px; margin-bottom:16px; display:none;
+  }
+  .error-box.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="brandbar"><img src="../logo.png" alt="DoorFeast"><span>DoorFeast</span></div>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="card">
+    <div class="error-box" id="errorBox"></div>
+
+    <form id="onboardForm">
+
+      <div class="step active" data-step="0">
+        <p class="step-eyebrow">Step 1 of 4</p>
+        <h2>What should we call you?</h2>
+        <p class="hint">Just your first name is fine — we'll use it to personalise your account.</p>
+        <label for="ob-name">Your name</label>
+        <input type="text" id="ob-name" placeholder="e.g. Sam" autocomplete="given-name">
+      </div>
+
+      <div class="step" data-step="1">
+        <p class="step-eyebrow">Step 2 of 4</p>
+        <h2>Where should we deliver to?</h2>
+        <p class="hint">We'll save this as your default delivery address — you can add more or change it later.</p>
+        <label for="ob-line1">Address line 1</label>
+        <input type="text" id="ob-line1" placeholder="e.g. 12 High Street" autocomplete="address-line1">
+        <label for="ob-city">City / Town</label>
+        <input type="text" id="ob-city" placeholder="e.g. Stoke-on-Trent" autocomplete="address-level2">
+        <label for="ob-postcode">Postcode</label>
+        <input type="text" id="ob-postcode" placeholder="e.g. ST1 1AA" autocomplete="postal-code">
+      </div>
+
+      <div class="step" data-step="2">
+        <p class="step-eyebrow">Step 3 of 4</p>
+        <h2>What are you in the mood for?</h2>
+        <p class="hint">Pick as many as you like — we'll use this to show you food you'll actually want.</p>
+        <div class="chip-grid" id="cuisineChips">
+          <button type="button" class="chip" data-value="Indian">Indian</button>
+          <button type="button" class="chip" data-value="Chinese">Chinese</button>
+          <button type="button" class="chip" data-value="Pizza">Pizza</button>
+          <button type="button" class="chip" data-value="Kebab">Kebab</button>
+          <button type="button" class="chip" data-value="Fast Food">Fast Food</button>
+          <button type="button" class="chip" data-value="Desserts">Desserts</button>
+          <button type="button" class="chip" data-value="Vegan">Vegan</button>
+          <button type="button" class="chip" data-value="Other">Other</button>
+        </div>
+      </div>
+
+      <div class="step" data-step="3">
+        <p class="step-eyebrow">Step 4 of 4</p>
+        <h2>How did you hear about DoorFeast?</h2>
+        <p class="hint">Helps us know what's working — completely optional.</p>
+        <div class="option-list" id="heardFromOptions">
+          <label class="option"><input type="radio" name="heardFrom" value="Instagram"><span>Instagram</span></label>
+          <label class="option"><input type="radio" name="heardFrom" value="Facebook"><span>Facebook</span></label>
+          <label class="option"><input type="radio" name="heardFrom" value="TikTok"><span>TikTok</span></label>
+          <label class="option"><input type="radio" name="heardFrom" value="Friend or family"><span>Friend or family</span></label>
+          <label class="option"><input type="radio" name="heardFrom" value="Google search"><span>Google search</span></label>
+          <label class="option"><input type="radio" name="heardFrom" value="Poster or flyer"><span>Poster or flyer</span></label>
+          <label class="option"><input type="radio" name="heardFrom" value="Other"><span>Other</span></label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-back" id="backBtn" style="display:none;">Back</button>
+        <button type="submit" class="btn btn-primary" id="nextBtn">Next</button>
+      </div>
+    </form>
+
+    <a class="skip-link" id="skipLink">Skip for now →</a>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const TOTAL_STEPS = 4;
+  let currentStep = 0;
+  let customer = null;
+  const selectedCuisines = new Set();
+
+  const progress = document.getElementById('progress');
+  for(let i = 0; i < TOTAL_STEPS; i++){
+    const seg = document.createElement('div');
+    seg.className = 'progress-seg';
+    seg.innerHTML = '<div class="fill"></div>';
+    progress.appendChild(seg);
+  }
+  const progressSegs = progress.querySelectorAll('.progress-seg');
+
+  const steps = document.querySelectorAll('.step');
+  const backBtn = document.getElementById('backBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const errorBox = document.getElementById('errorBox');
+
+  function showError(msg){
+    errorBox.textContent = msg;
+    errorBox.classList.add('show');
+  }
+  function clearError(){
+    errorBox.classList.remove('show');
+  }
+
+  function renderStep(){
+    steps.forEach(s => s.classList.toggle('active', Number(s.dataset.step) === currentStep));
+    progressSegs.forEach((seg, i) => {
+      seg.classList.toggle('done', i < currentStep);
+      seg.classList.toggle('active', i === currentStep);
+    });
+    backBtn.style.display = currentStep === 0 ? 'none' : 'inline-block';
+    nextBtn.textContent = currentStep === TOTAL_STEPS - 1 ? "Finish" : "Next";
+    clearError();
+  }
+
+  document.getElementById('cuisineChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if(!chip) return;
+    const val = chip.dataset.value;
+    if(selectedCuisines.has(val)){
+      selectedCuisines.delete(val);
+      chip.classList.remove('selected');
+    } else {
+      selectedCuisines.add(val);
+      chip.classList.add('selected');
+    }
+  });
+
+  document.getElementById('heardFromOptions').addEventListener('click', (e) => {
+    const option = e.target.closest('.option');
+    if(!option) return;
+    document.querySelectorAll('#heardFromOptions .option').forEach(o => o.classList.remove('selected'));
+    option.classList.add('selected');
+  });
+
+  backBtn.addEventListener('click', () => {
+    if(currentStep > 0){
+      currentStep -= 1;
+      renderStep();
+    }
+  });
+
+  function validateStep(step){
+    if(step === 0){
+      const name = document.getElementById('ob-name').value.trim();
+      if(!name){ showError('Please enter your name.'); return false; }
+    }
+    if(step === 1){
+      const line1 = document.getElementById('ob-line1').value.trim();
+      const city = document.getElementById('ob-city').value.trim();
+      const postcode = document.getElementById('ob-postcode').value.trim();
+      if(!line1 || !city || !postcode){ showError('Please fill in your address.'); return false; }
+    }
+    // Steps 2 (cuisines) and 3 (heard-from) are optional — no validation needed.
+    return true;
+  }
+
+  async function finishOnboarding(){
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Saving…';
+    try {
+      const name = document.getElementById('ob-name').value.trim();
+      const line1 = document.getElementById('ob-line1').value.trim();
+      const city = document.getElementById('ob-city').value.trim();
+      const postcode = document.getElementById('ob-postcode').value.trim();
+      const heardFrom = (document.querySelector('input[name="heardFrom"]:checked') || {}).value || null;
+
+      const { error: custError } = await supabase
+        .from('customers')
+        .update({
+          name: name || customer.name,
+          cuisine_interests: selectedCuisines.size ? Array.from(selectedCuisines) : null,
+          heard_from: heardFrom,
+          onboarding_completed: true
+        })
+        .eq('id', customer.id);
+      if(custError) throw custError;
+
+      if(line1 && city && postcode){
+        const { error: addrError } = await supabase.from('customer_addresses').insert({
+          customer_id: customer.id,
+          label: 'Home',
+          line1, city, postcode,
+          is_default: true
+        });
+        if(addrError) throw addrError;
+      }
+
+      window.location.href = 'portal.html';
+    } catch(err){
+      console.error(err);
+      showError('Something went wrong saving that — please try again.');
+      nextBtn.disabled = false;
+      nextBtn.textContent = 'Finish';
+    }
+  }
+
+  document.getElementById('onboardForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(!validateStep(currentStep)) return;
+
+    if(currentStep < TOTAL_STEPS - 1){
+      currentStep += 1;
+      renderStep();
+    } else {
+      await finishOnboarding();
+    }
+  });
+
+  document.getElementById('skipLink').addEventListener('click', async () => {
+    try {
+      await supabase.from('customers').update({ onboarding_completed: true }).eq('id', customer.id);
+    } catch(err){
+      console.error(err);
+    }
+    window.location.href = 'portal.html';
+  });
+
+  /* ============ AUTH GUARD + INIT ============ */
+  (async function init(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){
+      window.location.href = 'index.html';
+      return;
+    }
+
+    const { data: found, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if(error || !found){
+      window.location.href = 'index.html';
+      return;
+    }
+
+    if(found.onboarding_completed){
+      window.location.href = 'portal.html';
+      return;
+    }
+
+    customer = found;
+    if(customer.name){
+      document.getElementById('ob-name').value = customer.name;
+    }
+    document.documentElement.classList.remove('auth-pending');
+    renderStep();
+  })();
+</script>
+</body>
+</html>

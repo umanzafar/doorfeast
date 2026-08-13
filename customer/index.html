@@ -165,24 +165,28 @@
   // Every logged-in customer must have a row in `customers` — create one
   // on first signup, and backfill it on login too (covers accounts that
   // signed in before this table existed, or via Google without ever
-  // hitting the signup form).
+  // hitting the signup form). Returns the row either way, so callers can
+  // check onboarding_completed without a second query.
   async function ensureCustomerRow(user, fallbackName){
     const { data: existing } = await supabase
       .from('customers')
-      .select('id')
+      .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
-    if(existing) return;
+    if(existing) return existing;
 
-    await supabase.from('customers').insert({
+    const { data: created } = await supabase.from('customers').insert({
       user_id: user.id,
       name: fallbackName || user.user_metadata?.full_name || user.email.split('@')[0],
       email: user.email
-    });
+    }).select().single();
+    return created;
   }
 
-  async function goToAccount(){
-    window.location.href = 'portal.html';
+  // First-time signups (and anyone who never finished it) land on the
+  // onboarding wizard instead of straight into the portal.
+  function goToAccount(customerRow){
+    window.location.href = customerRow && customerRow.onboarding_completed ? 'portal.html' : 'onboarding.html';
   }
 
   emailForm.addEventListener('submit', async (e) => {
@@ -196,16 +200,17 @@
     submitBtn.textContent = mode === 'signup' ? 'Creating account…' : 'Logging in…';
 
     try {
+      let customerRow;
       if(mode === 'signup'){
         const { data, error } = await supabase.auth.signUp({ email, password });
         if(error) throw error;
-        if(data.user) await ensureCustomerRow(data.user, name);
+        if(data.user) customerRow = await ensureCustomerRow(data.user, name);
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if(error) throw error;
-        if(data.user) await ensureCustomerRow(data.user);
+        if(data.user) customerRow = await ensureCustomerRow(data.user);
       }
-      await goToAccount();
+      goToAccount(customerRow);
     } catch(err){
       showError(friendlyError(err));
       submitBtn.disabled = false;
@@ -239,8 +244,8 @@
   let initialCheckDone = false;
   supabase.auth.onAuthStateChange(async (event, session) => {
     if(session){
-      await ensureCustomerRow(session.user);
-      await goToAccount();
+      const customerRow = await ensureCustomerRow(session.user);
+      goToAccount(customerRow);
       return;
     }
     if(event === 'INITIAL_SESSION' && !initialCheckDone){

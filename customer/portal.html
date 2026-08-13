@@ -619,6 +619,11 @@
       return;
     }
 
+    if(!found.onboarding_completed){
+      window.location.href = 'onboarding.html';
+      return;
+    }
+
     customer = found;
     updateIdentityUi();
     renderAccount();
