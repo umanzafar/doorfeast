@@ -176,6 +176,20 @@
 
   .panel-empty{text-align:center; padding:44px 16px; color:var(--body); font-size:13.5px;}
 
+  .discount-box-inner{
+    background:rgba(217,164,65,0.08); border:1px solid rgba(217,164,65,0.3); border-radius:12px;
+    padding:16px 18px;
+  }
+  .discount-box-inner.discount-ok{background:rgba(46,125,70,0.08); border-color:rgba(46,125,70,0.3);}
+  .discount-box-inner.discount-blocked{background:rgba(166,30,30,0.06); border-color:rgba(166,30,30,0.25);}
+  .discount-box-inner b{display:block; font-family:'Poppins',sans-serif; font-size:13.5px; margin-bottom:5px;}
+  .discount-box-inner p{font-size:12.5px; color:var(--body); line-height:1.5; margin:0 0 10px;}
+  #discountPhoneStep, #discountOtpStep{display:flex; gap:8px;}
+  #discountPhoneStep input, #discountOtpStep input{
+    flex:1; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13.5px; margin-bottom:0; background:#fff;
+  }
+  .discount-error{color:var(--red); font-size:12px; margin:8px 0 0;}
+
   .p-order-card, .p-addr-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px;}
   .p-order-card + .p-order-card, .p-addr-card + .p-addr-card{margin-top:12px;}
   .p-order-card{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;}
@@ -1332,9 +1346,12 @@ function renderPanelAccount(){
       <input type="checkbox" id="pacc-marketing" ${panelCustomer.marketing_opt_in ? 'checked' : ''}>
       Send me offers and updates by email
     </label>
-    <button class="panel-btn panel-btn-primary" id="savePanelAccountBtn">Save changes</button>
+    <button class="panel-btn panel-btn-primary" id="savePanelAccountBtn" style="margin-bottom:22px;">Save changes</button>
+
+    <div class="discount-box" id="discountBox"></div>
   `;
   renderAvatarInto(document.getElementById('pacc-avatar-preview'), panelCustomer.avatar_url, panelCustomer.name);
+  renderDiscountBox();
 
   document.getElementById('pacc-avatar-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -1383,6 +1400,116 @@ function renderPanelAccount(){
     } finally {
       btn.disabled = false;
       btn.textContent = 'Save changes';
+    }
+  });
+}
+
+/* ============ FIRST-ORDER DISCOUNT — phone verification + fraud check ============
+   Verifying a phone number here uses Supabase's own phone-OTP mechanism
+   (the same one used for phone sign-in), just applied to an
+   already-logged-in account: updateUser({phone}) sends the code,
+   verifyOtp({type:'phone_change'}) confirms it. Once verified, a
+   database trigger (migration_7) automatically checks whether that
+   phone — or any address this account saves — already belongs to a
+   different customer, and flips discount_eligible off if so. This page
+   only ever reads that flag; it never decides eligibility itself. */
+let otpSentTo = null;
+
+function renderDiscountBox(){
+  const box = document.getElementById('discountBox');
+  if(!box) return;
+
+  if(panelCustomer.phone_verified && panelCustomer.discount_eligible){
+    box.innerHTML = `
+      <div class="discount-box-inner discount-ok">
+        <b>✓ You're eligible for £5 off your first order.</b>
+        <p>Your phone number is verified — the discount will apply automatically at checkout.</p>
+      </div>`;
+    return;
+  }
+  if(panelCustomer.phone_verified && !panelCustomer.discount_eligible){
+    box.innerHTML = `
+      <div class="discount-box-inner discount-blocked">
+        <b>This account isn't eligible for the first-order discount.</b>
+        <p>The phone number or address on this account matches one already used on another DoorFeast account.</p>
+      </div>`;
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="discount-box-inner">
+      <b>Unlock £5 off your first order</b>
+      <p>Verify your phone number to claim it — takes 30 seconds.</p>
+      <div id="discountPhoneStep">
+        <input type="tel" id="discount-phone" placeholder="e.g. 07700 900123">
+        <button class="panel-btn panel-btn-primary" id="sendOtpBtn">Send code</button>
+      </div>
+      <div id="discountOtpStep" style="display:none; margin-top:12px;">
+        <input type="text" id="discount-otp" placeholder="6-digit code" maxlength="6" inputmode="numeric">
+        <button class="panel-btn panel-btn-primary" id="verifyOtpBtn">Verify</button>
+      </div>
+      <p class="discount-error" id="discountError" style="display:none;"></p>
+    </div>`;
+
+  document.getElementById('sendOtpBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('sendOtpBtn');
+    const errEl = document.getElementById('discountError');
+    errEl.style.display = 'none';
+    let phone = document.getElementById('discount-phone').value.trim();
+    // Normalize UK numbers (07... -> +447...) — Supabase phone auth needs E.164.
+    if(phone.startsWith('0')) phone = '+44' + phone.slice(1);
+    if(!phone.startsWith('+')){
+      errEl.textContent = 'Please enter a valid UK mobile number.';
+      errEl.style.display = 'block';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const { error } = await supabase.auth.updateUser({ phone });
+      if(error) throw error;
+      otpSentTo = phone;
+      document.getElementById('discountOtpStep').style.display = 'block';
+      btn.textContent = 'Code sent';
+    } catch(err){
+      console.error(err);
+      errEl.textContent = err.message || "Couldn't send a code — please try again.";
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Send code';
+    }
+  });
+
+  document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('verifyOtpBtn');
+    const errEl = document.getElementById('discountError');
+    errEl.style.display = 'none';
+    const code = document.getElementById('discount-otp').value.trim();
+    if(!code){ return; }
+    btn.disabled = true;
+    btn.textContent = 'Verifying…';
+    try {
+      const { error: verifyErr } = await supabase.auth.verifyOtp({ phone: otpSentTo, token: code, type: 'phone_change' });
+      if(verifyErr) throw verifyErr;
+
+      // Trigger in migration_7 runs on this update and sets
+      // discount_eligible automatically if it's a duplicate.
+      const { error: updateErr } = await supabase
+        .from('customers')
+        .update({ phone: otpSentTo, phone_verified: true })
+        .eq('id', panelCustomer.id);
+      if(updateErr) throw updateErr;
+
+      const { data: refreshed } = await supabase.from('customers').select('*').eq('id', panelCustomer.id).single();
+      if(refreshed) panelCustomer = refreshed;
+      renderDiscountBox();
+      await addSelfNotification('Phone verified', panelCustomer.discount_eligible ? "You're eligible for £5 off your first order." : "Your phone was verified, but this account isn't eligible for the first-order discount.");
+    } catch(err){
+      console.error(err);
+      errEl.textContent = err.message || "That code didn't work — please try again.";
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Verify';
     }
   });
 }
