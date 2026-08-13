@@ -6,97 +6,81 @@
 <title>Welcome — DoorFeast</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   html.auth-pending body{visibility:hidden;}
   :root{
-    --bg: #0A0908;
-    --card: rgba(255,255,255,0.045);
-    --border: rgba(255,255,255,0.09);
-    --ink: #F3EFE8;
-    --body: #9C968B;
-    --red: #FF3B3B;
-    --red-dim: #C81E3A;
-    --red-glow: rgba(255,59,59,0.35);
-    --gold: #E8B34D;
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --line:#E4DFD2;
   }
   *{box-sizing:border-box;} html,body{margin:0;padding:0;}
-  body{
-    font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;
-    background:
-      radial-gradient(1100px circle at 8% -10%, rgba(255,59,59,0.14), transparent 42%),
-      radial-gradient(900px circle at 100% 0%, rgba(232,179,77,0.10), transparent 46%),
-      var(--bg);
-    background-attachment:fixed;
-    display:flex; align-items:center; justify-content:center; padding:24px;
-  }
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; justify-content:center; padding:56px 20px 80px;}
   a{color:inherit;}
   button{font-family:inherit;}
 
-  .wrap{width:100%; max-width:460px;}
+  .wrap{width:100%; max-width:480px;}
   .brandbar{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:26px;}
   .brandbar img{width:32px; border-radius:8px;}
   .brandbar span{font-family:'Poppins',sans-serif; font-weight:800; font-size:17px;}
 
-  .progress{display:flex; gap:6px; margin-bottom:26px;}
-  .progress-seg{flex:1; height:4px; border-radius:99px; background:var(--border); overflow:hidden;}
-  .progress-seg .fill{height:100%; width:0%; background:linear-gradient(90deg, var(--red), var(--gold)); transition:width .3s ease;}
+  .progress{display:flex; gap:6px; margin-bottom:22px;}
+  .progress-seg{flex:1; height:4px; border-radius:99px; background:var(--line); overflow:hidden;}
+  .progress-seg .fill{height:100%; width:0%; background:var(--red); transition:width .3s ease;}
   .progress-seg.done .fill{width:100%;}
   .progress-seg.active .fill{width:100%;}
 
   .card{
-    background:var(--card); border:1px solid var(--border); border-radius:22px;
-    padding:34px 30px; backdrop-filter:blur(24px); box-shadow:0 24px 50px -30px rgba(0,0,0,0.7);
+    background:var(--card); border:1px solid var(--line); border-radius:22px;
+    padding:40px 36px 34px; box-shadow:0 20px 45px -25px rgba(27,24,21,0.25);
   }
   .step{display:none;}
   .step.active{display:block; animation:fadeIn .3s ease;}
   @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 
-  .step-eyebrow{font-size:11.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--gold); margin:0 0 8px;}
-  .step h2{font-family:'Poppins',sans-serif; font-size:21px; margin:0 0 8px; line-height:1.3;}
-  .step p.hint{font-size:13.5px; color:var(--body); margin:0 0 22px; line-height:1.5;}
+  .step-eyebrow{font-size:11.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--red); margin:0 0 8px;}
+  .step h2{font-family:'Poppins',sans-serif; font-weight:800; font-size:22px; margin:0 0 8px; line-height:1.3;}
+  .step p.hint{font-size:13.5px; color:var(--body); line-height:1.55; margin:0 0 22px;}
 
-  label{font-size:12px; font-weight:600; color:var(--body); text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:7px;}
+  label{font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;}
   input{
-    width:100%; border:1.5px solid var(--border); border-radius:12px; padding:13px 14px;
-    font-size:14.5px; margin-bottom:16px; font-family:inherit; background:rgba(255,255,255,0.03); color:var(--ink);
+    width:100%; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px;
+    font-size:14.5px; color:var(--ink); margin-bottom:16px; font-family:inherit;
   }
-  input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px var(--red-glow);}
-  input::placeholder{color:#5c574f;}
+  input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
 
-  .chip-grid{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
+  .chip-grid{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:8px;}
   .chip{
-    border:1.5px solid var(--border); background:rgba(255,255,255,0.03); color:var(--ink);
+    border:1.5px solid var(--line); background:#fff; color:var(--ink);
     border-radius:999px; padding:10px 18px; font-size:13.5px; font-weight:600; cursor:pointer; transition:.15s;
   }
   .chip:hover{border-color:var(--red);}
-  .chip.selected{background:linear-gradient(135deg, var(--red), var(--red-dim)); border-color:transparent; color:#fff;}
+  .chip.selected{background:var(--red); border-color:var(--red); color:#fff;}
 
   .option-list{display:flex; flex-direction:column; gap:9px; margin-bottom:8px;}
   .option{
-    display:flex; align-items:center; gap:10px; border:1.5px solid var(--border); border-radius:12px;
-    padding:12px 14px; background:rgba(255,255,255,0.03); cursor:pointer; font-size:14px; transition:.15s;
+    display:flex; align-items:center; gap:10px; border:1.5px solid var(--line); border-radius:10px;
+    padding:11px 14px; background:#fff; cursor:pointer; font-size:14.5px; transition:.15s;
   }
   .option:hover{border-color:var(--red);}
   .option input{width:16px; height:16px; margin:0; accent-color:var(--red);}
-  .option.selected{border-color:var(--red); background:rgba(255,59,59,0.08);}
+  .option.selected{border-color:var(--red); background:rgba(166,30,30,0.06);}
+  .option.selected span{font-weight:600; color:var(--red);}
 
-  .actions{display:flex; gap:10px; margin-top:24px;}
-  .btn{border:none; border-radius:999px; padding:13px 24px; font-size:14px; font-weight:700; cursor:pointer; transition:.15s;}
-  .btn-primary{flex:1; background:linear-gradient(135deg, var(--red), var(--red-dim)); color:#fff; box-shadow:0 8px 24px -10px var(--red-glow);}
-  .btn-primary:hover{transform:translateY(-1px);}
-  .btn-primary:disabled{opacity:0.45; cursor:not-allowed; transform:none;}
-  .btn-back{background:none; border:1.5px solid var(--border); color:var(--body); padding:13px 18px;}
-  .btn-back:hover{color:var(--ink); border-color:var(--ink);}
+  .actions{display:flex; gap:10px; margin-top:8px;}
+  .btn{border:none; border-radius:999px; padding:14px 24px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif;}
+  .btn-primary{flex:1; background:var(--red); color:#fff; box-shadow:0 12px 24px -8px rgba(166,30,30,0.45);}
+  .btn-primary:hover{background:var(--red-dark);}
+  .btn-primary:disabled{opacity:0.65; cursor:not-allowed;}
+  .btn-back{background:none; border:1.5px solid var(--line); color:var(--body);}
+  .btn-back:hover{border-color:var(--ink); color:var(--ink);}
 
-  .skip-link{display:block; text-align:center; font-size:12.5px; color:var(--body); margin-top:18px; text-decoration:none; cursor:pointer;}
-  .skip-link:hover{color:var(--ink);}
-
-  .error-box{
-    background:rgba(255,59,59,0.1); border:1px solid rgba(255,59,59,0.3); color:#ff8a8a;
-    font-size:12.5px; padding:10px 14px; border-radius:10px; margin-bottom:16px; display:none;
+  .error-banner{
+    display:none; background:#FBE7E5; border:1px solid #D8534B; color:#8A2E28;
+    font-size:13px; padding:10px 14px; border-radius:10px; margin-bottom:20px;
   }
-  .error-box.show{display:block;}
+  .error-banner.show{display:block;}
+
+  @media (max-width:480px){ .card{padding:26px 22px 24px;} }
 </style>
 </head>
 <body>
@@ -107,7 +91,7 @@
   <div class="progress" id="progress"></div>
 
   <div class="card">
-    <div class="error-box" id="errorBox"></div>
+    <div class="error-banner" id="errorBanner"></div>
 
     <form id="onboardForm">
 
@@ -167,8 +151,6 @@
         <button type="submit" class="btn btn-primary" id="nextBtn">Next</button>
       </div>
     </form>
-
-    <a class="skip-link" id="skipLink">Skip for now →</a>
   </div>
 </div>
 
@@ -196,14 +178,14 @@
   const steps = document.querySelectorAll('.step');
   const backBtn = document.getElementById('backBtn');
   const nextBtn = document.getElementById('nextBtn');
-  const errorBox = document.getElementById('errorBox');
+  const errorBanner = document.getElementById('errorBanner');
 
   function showError(msg){
-    errorBox.textContent = msg;
-    errorBox.classList.add('show');
+    errorBanner.textContent = msg;
+    errorBanner.classList.add('show');
   }
   function clearError(){
-    errorBox.classList.remove('show');
+    errorBanner.classList.remove('show');
   }
 
   function renderStep(){
@@ -309,15 +291,6 @@
     } else {
       await finishOnboarding();
     }
-  });
-
-  document.getElementById('skipLink').addEventListener('click', async () => {
-    try {
-      await supabase.from('customers').update({ onboarding_completed: true }).eq('id', customer.id);
-    } catch(err){
-      console.error(err);
-    }
-    window.location.href = 'portal.html';
   });
 
   /* ============ AUTH GUARD + INIT ============ */
