@@ -1424,7 +1424,12 @@ function renderDiscountBox(){
       <div class="discount-box-inner discount-ok">
         <b>✓ You're eligible for £5 off your first order.</b>
         <p>Your phone number is verified — the discount will apply automatically at checkout.</p>
+        <button class="panel-btn panel-btn-primary" id="browseRestaurantsBtn" style="width:100%;">Browse restaurants near you →</button>
       </div>`;
+    document.getElementById('browseRestaurantsBtn').addEventListener('click', () => {
+      profileOverlay.classList.remove('show');
+      document.getElementById('search').scrollIntoView({ behavior: 'smooth' });
+    });
     return;
   }
   if(panelCustomer.phone_verified && !panelCustomer.discount_eligible){
