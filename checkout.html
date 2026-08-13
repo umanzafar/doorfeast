@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,29 +8,387 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{--red:#A40203; --cream:#FAF7F2; --card:#FFFFFF; --ink:#262220; --body:#6E6860; --line:#E8E1D4;}
-  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
-  body{
-    font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink);
-    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  html.auth-pending body{visibility:hidden;}
+  :root{
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --line:#E4DFD2; --green:#2E7D46;
   }
-  .panel{max-width:440px; width:100%; text-align:center; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:44px 34px;}
-  .ph-icon{font-size:32px; margin-bottom:16px;}
-  h1{font-family:'Poppins',sans-serif; font-size:21px; margin:0 0 12px;}
-  p{font-size:14px; color:var(--body); line-height:1.6; margin:0 0 24px;}
-  a.back{display:inline-block; color:var(--red); font-weight:700; font-size:14px; text-decoration:none;}
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; justify-content:center; padding:56px 20px 80px;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  .wrap{width:100%; max-width:480px;}
+  .brandbar{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:26px;}
+  .brandbar img{width:32px; border-radius:8px;}
+  .brandbar span{font-family:'Poppins',sans-serif; font-weight:800; font-size:17px;}
+
+  .progress{display:flex; gap:6px; margin-bottom:22px;}
+  .progress-seg{flex:1; height:4px; border-radius:99px; background:var(--line); overflow:hidden;}
+  .progress-seg .fill{height:100%; width:0%; background:var(--red); transition:width .3s ease;}
+  .progress-seg.done .fill{width:100%;}
+  .progress-seg.active .fill{width:100%;}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:22px;
+    padding:36px 32px 30px; box-shadow:0 20px 45px -25px rgba(27,24,21,0.25);
+  }
+  .step{display:none;}
+  .step.active{display:block; animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .step-eyebrow{font-size:11.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--red); margin:0 0 8px;}
+  .step h2{font-family:'Poppins',sans-serif; font-weight:800; font-size:21px; margin:0 0 8px; line-height:1.3;}
+  .step p.hint{font-size:13.5px; color:var(--body); line-height:1.55; margin:0 0 20px;}
+
+  label{font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;}
+  input{
+    width:100%; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px;
+    font-size:14.5px; color:var(--ink); margin-bottom:14px; font-family:inherit;
+  }
+  input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
+
+  .row-inline{display:flex; gap:8px;}
+  .row-inline input{flex:1;}
+
+  .option{
+    display:flex; align-items:flex-start; gap:10px; border:1.5px solid var(--line); border-radius:10px;
+    padding:12px 14px; background:#fff; cursor:pointer; font-size:14px; margin-bottom:9px; transition:.15s;
+  }
+  .option:hover{border-color:var(--red);}
+  .option.selected{border-color:var(--red); background:rgba(166,30,30,0.06);}
+  .option input{width:16px; height:16px; margin:2px 0 0; accent-color:var(--red);}
+  .option-label{font-weight:700; font-size:13.5px;}
+  .option-sub{font-size:12px; color:var(--body); margin-top:2px;}
+
+  .add-address-link{display:inline-block; font-size:13px; font-weight:700; color:var(--red); text-decoration:none; cursor:pointer; margin-top:2px;}
+
+  .verified-banner{
+    display:flex; align-items:center; gap:10px; background:rgba(46,125,70,0.08); border:1px solid rgba(46,125,70,0.3);
+    border-radius:12px; padding:14px 16px; font-size:13.5px; color:var(--green); font-weight:600;
+  }
+
+  .order-line{display:flex; justify-content:space-between; font-size:13.5px; padding:8px 0; color:var(--body);}
+  .order-line.total{font-weight:700; color:var(--ink); font-size:15.5px; border-top:1px dashed var(--line); margin-top:6px; padding-top:12px;}
+  .order-line.discount{color:var(--green); font-weight:600;}
+
+  .payment-placeholder{
+    background:rgba(217,164,65,0.1); border:1px solid rgba(217,164,65,0.3); border-radius:12px;
+    padding:16px 18px; font-size:13px; color:#8A6414; line-height:1.55; margin-bottom:20px;
+  }
+
+  .actions{display:flex; gap:10px; margin-top:8px;}
+  .btn{border:none; border-radius:999px; padding:14px 24px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif;}
+  .btn-primary{flex:1; background:var(--red); color:#fff; box-shadow:0 12px 24px -8px rgba(166,30,30,0.45);}
+  .btn-primary:hover{background:var(--red-dark);}
+  .btn-primary:disabled{opacity:0.65; cursor:not-allowed;}
+  .btn-back{background:none; border:1.5px solid var(--line); color:var(--body);}
+  .btn-back:hover{border-color:var(--ink); color:var(--ink);}
+
+  .error-banner{
+    display:none; background:#FBE7E5; border:1px solid #D8534B; color:#8A2E28;
+    font-size:13px; padding:10px 14px; border-radius:10px; margin-bottom:18px;
+  }
+  .error-banner.show{display:block;}
+
+  @media (max-width:480px){ .card{padding:26px 22px 24px;} }
 </style>
 </head>
 <body>
-<div class="panel">
-  <div class="ph-icon">🚧</div>
-  <h1>Checkout isn't connected yet</h1>
-  <p>
-    This page is a placeholder. Payment goes live once the <code>create-order</code>
-    Supabase Edge Function and real Stripe keys are wired up (CLAUDE.md Step 5).
-    Nothing here charges a card yet.
-  </p>
-  <a class="back" href="javascript:history.back()">← Back to basket</a>
+
+<div class="wrap">
+  <div class="brandbar"><img src="logo.png" alt="DoorFeast"><span>DoorFeast</span></div>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="card">
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Step 1: verify phone (skipped automatically if already verified) -->
+    <div class="step active" data-step="0">
+      <p class="step-eyebrow">Step 1 of 3</p>
+      <h2>Verify your number</h2>
+      <p class="hint">Needed to confirm your order and, if you're eligible, apply your £5 first-order discount.</p>
+      <div id="verifiedBanner" style="display:none;" class="verified-banner">✓ Phone number verified</div>
+      <div id="phoneStep">
+        <label for="co-phone">Mobile number</label>
+        <div class="row-inline">
+          <input type="tel" id="co-phone" placeholder="e.g. 07700 900123">
+          <button type="button" class="btn btn-primary" id="sendOtpBtn" style="flex:none;">Send code</button>
+        </div>
+      </div>
+      <div id="otpStep" style="display:none;">
+        <label for="co-otp">6-digit code</label>
+        <div class="row-inline">
+          <input type="text" id="co-otp" placeholder="123456" maxlength="6" inputmode="numeric">
+          <button type="button" class="btn btn-primary" id="verifyOtpBtn" style="flex:none;">Verify</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: address -->
+    <div class="step" data-step="1">
+      <p class="step-eyebrow">Step 2 of 3</p>
+      <h2>Where's this going?</h2>
+      <p class="hint">Choose a saved address or add a new one.</p>
+      <div id="addressOptions"></div>
+      <a class="add-address-link" id="addNewAddressLink">+ Add a new address</a>
+      <div id="newAddressForm" style="display:none; margin-top:14px;">
+        <label>Address line 1</label>
+        <input type="text" id="na-line1">
+        <label>City / Town</label>
+        <input type="text" id="na-city">
+        <label>Postcode</label>
+        <input type="text" id="na-postcode">
+      </div>
+    </div>
+
+    <!-- Step 3: payment (placeholder) -->
+    <div class="step" data-step="2">
+      <p class="step-eyebrow">Step 3 of 3</p>
+      <h2>Payment</h2>
+      <p class="hint">Review your order below.</p>
+      <div id="orderSummary"></div>
+      <div class="payment-placeholder">
+        🚧 Payment isn't connected yet — this needs the <code>create-order</code> Supabase Edge Function and Stripe Connect set up first (CLAUDE.md Step 5). Nothing here charges a card.
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn btn-back" id="backBtn" style="display:none;">Back</button>
+      <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
+    </div>
+  </div>
 </div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const TOTAL_STEPS = 3;
+  let currentStep = 0;
+  let customer = null;
+  let addresses = [];
+  let selectedAddressId = null;
+  let otpSentTo = null;
+
+  function escapeHtml(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function formatGBP(pence){
+    return '£' + ((pence || 0) / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const progress = document.getElementById('progress');
+  for(let i = 0; i < TOTAL_STEPS; i++){
+    const seg = document.createElement('div');
+    seg.className = 'progress-seg';
+    seg.innerHTML = '<div class="fill"></div>';
+    progress.appendChild(seg);
+  }
+  const progressSegs = progress.querySelectorAll('.progress-seg');
+  const steps = document.querySelectorAll('.step');
+  const backBtn = document.getElementById('backBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const errorBanner = document.getElementById('errorBanner');
+
+  function showError(msg){
+    errorBanner.textContent = msg;
+    errorBanner.classList.add('show');
+  }
+  function clearError(){
+    errorBanner.classList.remove('show');
+  }
+
+  function renderStep(){
+    steps.forEach(s => s.classList.toggle('active', Number(s.dataset.step) === currentStep));
+    progressSegs.forEach((seg, i) => {
+      seg.classList.toggle('done', i < currentStep);
+      seg.classList.toggle('active', i === currentStep);
+    });
+    backBtn.style.display = currentStep === 0 ? 'none' : 'inline-block';
+    nextBtn.textContent = currentStep === TOTAL_STEPS - 1 ? "Place order" : "Next";
+    nextBtn.disabled = currentStep === TOTAL_STEPS - 1; // payment isn't wired up yet
+    clearError();
+    if(currentStep === 1) renderAddressOptions();
+    if(currentStep === 2) renderOrderSummary();
+  }
+
+  backBtn.addEventListener('click', () => {
+    if(currentStep > 0){ currentStep -= 1; renderStep(); }
+  });
+
+  /* ============ STEP 1: PHONE VERIFICATION ============
+     Same mechanism as the Rewards tab used to use — Supabase's own
+     phone-OTP flow applied to an already-logged-in account. Moved here
+     since verification belongs at the point of ordering, not gating
+     whether someone can even see the £5 offer. */
+  function renderPhoneStep(){
+    if(customer.phone_verified){
+      document.getElementById('verifiedBanner').style.display = 'flex';
+      document.getElementById('phoneStep').style.display = 'none';
+      document.getElementById('otpStep').style.display = 'none';
+    }
+  }
+
+  document.getElementById('sendOtpBtn').addEventListener('click', async () => {
+    clearError();
+    const btn = document.getElementById('sendOtpBtn');
+    let phone = document.getElementById('co-phone').value.trim();
+    if(phone.startsWith('0')) phone = '+44' + phone.slice(1);
+    if(!phone.startsWith('+')){ showError('Please enter a valid UK mobile number.'); return; }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const { error } = await supabase.auth.updateUser({ phone });
+      if(error) throw error;
+      otpSentTo = phone;
+      document.getElementById('otpStep').style.display = 'block';
+      btn.textContent = 'Code sent';
+    } catch(err){
+      console.error(err);
+      showError(err.message || "Couldn't send a code — please try again.");
+      btn.disabled = false;
+      btn.textContent = 'Send code';
+    }
+  });
+
+  document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
+    clearError();
+    const btn = document.getElementById('verifyOtpBtn');
+    const code = document.getElementById('co-otp').value.trim();
+    if(!code) return;
+    btn.disabled = true;
+    btn.textContent = 'Verifying…';
+    try {
+      const { error: verifyErr } = await supabase.auth.verifyOtp({ phone: otpSentTo, token: code, type: 'phone_change' });
+      if(verifyErr) throw verifyErr;
+      const { error: updateErr } = await supabase.from('customers').update({ phone: otpSentTo, phone_verified: true }).eq('id', customer.id);
+      if(updateErr) throw updateErr;
+      const { data: refreshed } = await supabase.from('customers').select('*').eq('id', customer.id).single();
+      if(refreshed) customer = refreshed;
+      renderPhoneStep();
+    } catch(err){
+      console.error(err);
+      showError(err.message || "That code didn't work — please try again.");
+      btn.disabled = false;
+      btn.textContent = 'Verify';
+    }
+  });
+
+  /* ============ STEP 2: ADDRESS ============ */
+  document.getElementById('addNewAddressLink').addEventListener('click', () => {
+    selectedAddressId = null;
+    document.querySelectorAll('#addressOptions .option').forEach(o => o.classList.remove('selected'));
+    document.getElementById('newAddressForm').style.display = 'block';
+  });
+
+  function renderAddressOptions(){
+    const wrap = document.getElementById('addressOptions');
+    if(addresses.length === 0){
+      wrap.innerHTML = `<p style="font-size:13px; color:var(--body);">No saved addresses yet — add one below.</p>`;
+      document.getElementById('newAddressForm').style.display = 'block';
+      return;
+    }
+    wrap.innerHTML = addresses.map(a => `
+      <label class="option ${selectedAddressId === a.id ? 'selected' : ''}" data-id="${a.id}">
+        <input type="radio" name="addr" ${selectedAddressId === a.id ? 'checked' : ''}>
+        <span>
+          <span class="option-label">${escapeHtml(a.label || 'Address')}</span>
+          <span class="option-sub">${escapeHtml(a.line1)}, ${escapeHtml(a.city)}, ${escapeHtml(a.postcode)}</span>
+        </span>
+      </label>
+    `).join('');
+    wrap.querySelectorAll('.option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        selectedAddressId = opt.dataset.id;
+        wrap.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        opt.querySelector('input').checked = true;
+        document.getElementById('newAddressForm').style.display = 'none';
+      });
+    });
+    if(!selectedAddressId){
+      const def = addresses.find(a => a.is_default) || addresses[0];
+      selectedAddressId = def.id;
+      renderAddressOptions();
+    }
+  }
+
+  async function saveNewAddressIfNeeded(){
+    const formVisible = document.getElementById('newAddressForm').style.display === 'block';
+    if(!formVisible) return true;
+    const line1 = document.getElementById('na-line1').value.trim();
+    const city = document.getElementById('na-city').value.trim();
+    const postcode = document.getElementById('na-postcode').value.trim();
+    if(!line1 || !city || !postcode){ showError('Please fill in the new address.'); return false; }
+    const { data, error } = await supabase.from('customer_addresses').insert({
+      customer_id: customer.id, label: 'Home', line1, city, postcode,
+      is_default: addresses.length === 0
+    }).select().single();
+    if(error){ showError('Could not save that address — please try again.'); return false; }
+    addresses.push(data);
+    selectedAddressId = data.id;
+    return true;
+  }
+
+  /* ============ STEP 3: ORDER SUMMARY ============ */
+  const BASKET_KEY = 'doorfeast_basket_sample-kitchen';
+  function renderOrderSummary(){
+    let basket = {};
+    try { basket = JSON.parse(localStorage.getItem(BASKET_KEY) || '{}'); } catch(e){}
+    const entries = Object.values(basket);
+    const subtotal = entries.reduce((sum, e) => sum + (e.price_pence || 0) * e.qty, 0);
+    const discount = (customer.phone_verified && customer.discount_eligible) ? 500 : 0;
+    const total = Math.max(subtotal - discount, 0);
+
+    document.getElementById('orderSummary').innerHTML = `
+      <div class="order-line"><span>Subtotal</span><span>${formatGBP(subtotal)}</span></div>
+      ${discount > 0 ? `<div class="order-line discount"><span>First-order discount</span><span>-${formatGBP(discount)}</span></div>` : ''}
+      <div class="order-line total"><span>Total</span><span>${formatGBP(total)}</span></div>
+    `;
+  }
+
+  /* ============ NAVIGATION ============ */
+  nextBtn.addEventListener('click', async () => {
+    clearError();
+    if(currentStep === 0){
+      if(!customer.phone_verified){ showError('Please verify your phone number to continue.'); return; }
+      currentStep += 1; renderStep(); return;
+    }
+    if(currentStep === 1){
+      const ok = await saveNewAddressIfNeeded();
+      if(!ok) return;
+      if(!selectedAddressId){ showError('Please choose or add a delivery address.'); return; }
+      currentStep += 1; renderStep(); return;
+    }
+  });
+
+  /* ============ AUTH GUARD + INIT ============ */
+  (async function init(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){
+      window.location.href = 'customer/index.html?mode=login';
+      return;
+    }
+    const { data: found } = await supabase.from('customers').select('*').eq('user_id', session.user.id).maybeSingle();
+    if(!found){
+      window.location.href = 'customer/index.html?mode=login';
+      return;
+    }
+    customer = found;
+
+    const { data: addr } = await supabase.from('customer_addresses').select('*').eq('customer_id', customer.id).order('is_default', { ascending: false });
+    addresses = addr || [];
+
+    renderPhoneStep();
+    document.documentElement.classList.remove('auth-pending');
+    renderStep();
+  })();
+</script>
 </body>
 </html>
