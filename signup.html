@@ -208,12 +208,19 @@
     }
   });
 
-  // If we're already logged in (including just landing back here after a
-  // Google redirect), skip the form entirely and route onward.
-  const { data: { session } } = await supabase.auth.getSession();
-  if(session){
-    await goToOnboarding();
-  }
+  // Drives the initial "am I logged in" check via onAuthStateChange rather
+  // than a one-off getSession() call. This matters specifically for the
+  // Google redirect case: right after landing back here, Supabase still
+  // needs a moment to exchange the ?code= in the URL for a real session —
+  // a single getSession() snapshot can run before that finishes and see
+  // "no session", which showed the signup form again instead of
+  // continuing through. onAuthStateChange's first event, INITIAL_SESSION,
+  // is guaranteed to fire only once that exchange (if any) is done.
+  supabase.auth.onAuthStateChange((event, session) => {
+    if(session){
+      goToOnboarding();
+    }
+  });
 </script>
 </body>
 </html>

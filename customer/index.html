@@ -228,16 +228,26 @@
     }
   });
 
-  // If we're already logged in (including landing back here after a
-  // Google redirect), make sure a customers row exists, then go
-  // straight to the account page instead of showing the form.
-  const { data: { session } } = await supabase.auth.getSession();
-  if(session){
-    await ensureCustomerRow(session.user);
-    await goToAccount();
-  } else {
-    document.documentElement.classList.remove('auth-pending');
-  }
+  // Drives the initial "am I logged in" check via onAuthStateChange rather
+  // than a one-off getSession() call. This matters specifically for the
+  // Google redirect case: right after landing back here, Supabase still
+  // needs a moment to exchange the ?code= in the URL for a real session —
+  // a single getSession() snapshot can run before that finishes and see
+  // "no session", which was showing the signup form again instead of
+  // continuing through. onAuthStateChange's first event, INITIAL_SESSION,
+  // is guaranteed to fire only once that exchange (if any) is done.
+  let initialCheckDone = false;
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if(session){
+      await ensureCustomerRow(session.user);
+      await goToAccount();
+      return;
+    }
+    if(event === 'INITIAL_SESSION' && !initialCheckDone){
+      initialCheckDone = true;
+      document.documentElement.classList.remove('auth-pending');
+    }
+  });
 </script>
 </body>
 </html>
