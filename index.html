@@ -627,7 +627,17 @@
     <span>DoorFeast</span>
   </div>
   <div class="nav-links" id="navLinksLoggedOut">
-    <a href="/customer/index.html?mode=login">Log in</a>
+    <div class="signup-dropdown" tabindex="0">
+      <a href="#" onclick="return false;">Log in</a>
+      <div class="signup-menu">
+        <a href="/customer/index.html?mode=login">
+          Log in as a customer
+        </a>
+        <a href="/signup.html?mode=login">
+          Log in as a takeaway partner
+        </a>
+      </div>
+    </div>
     <div class="signup-dropdown" tabindex="0">
       <a href="#" class="btn-signup" onclick="return false;">Sign up</a>
       <div class="signup-menu">

@@ -101,12 +101,13 @@
   const emailForm = document.getElementById('emailForm');
   const submitBtn = document.getElementById('submitBtn');
   const googleBtn = document.getElementById('googleBtn');
-  const toggleLink = document.getElementById('toggleLink');
   const toggleMode = document.getElementById('toggleMode');
   const formTitle = document.getElementById('formTitle');
   const formSub = document.getElementById('formSub');
 
-  let mode = 'signup'; // or 'login'
+  // ?mode=login lets index.html's "Log in as a takeaway partner" link land
+  // here already in login mode, matching customer/index.html's pattern.
+  let mode = new URLSearchParams(window.location.search).get('mode') === 'login' ? 'login' : 'signup';
 
   function showError(msg){
     errorBox.textContent = msg;
@@ -150,24 +151,26 @@
     }
   }
 
-  toggleLink.addEventListener('click', () => {
-    clearError();
-    if(mode === 'signup'){
-      mode = 'login';
+  function applyMode(){
+    if(mode === 'login'){
       formTitle.textContent = 'Welcome back';
       formSub.textContent = 'Log in to check your application status.';
       submitBtn.textContent = 'Log in';
       toggleMode.innerHTML = `New here? <a id="toggleLink">Create an account</a>`;
     } else {
-      mode = 'signup';
       formTitle.textContent = 'Become a DoorFeast Partner';
       formSub.textContent = 'Create your account to start your takeaway application.';
       submitBtn.textContent = 'Create account';
       toggleMode.innerHTML = `Already have an account? <a id="toggleLink">Log in</a>`;
     }
     // re-bind since innerHTML was replaced
-    document.getElementById('toggleLink').addEventListener('click', () => toggleLink.click());
-  });
+    document.getElementById('toggleLink').addEventListener('click', () => {
+      clearError();
+      mode = mode === 'signup' ? 'login' : 'signup';
+      applyMode();
+    });
+  }
+  applyMode();
 
   emailForm.addEventListener('submit', async (e) => {
     e.preventDefault();
