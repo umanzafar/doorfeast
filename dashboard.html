@@ -72,6 +72,16 @@
     .stat-row{flex-direction:column;}
   }
 
+  .golive-box{
+    background:var(--cream); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; margin-bottom:16px; text-align:left;
+  }
+  .golive-row{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .golive-title{font-family:'Poppins',sans-serif; font-weight:700; font-size:14px;}
+  .golive-sub{font-size:11.5px; color:var(--body); margin-top:2px;}
+  .golive-warning{font-size:11.5px; color:var(--amber); line-height:1.5; margin:10px 0 0; display:none;}
+  .golive-warning.show{display:block;}
+
   /* ============ SLIDE-OUT PANEL (same pattern as the customer profile panel) ============ */
   .profile-overlay{
     position:fixed; inset:0; background:rgba(38,34,32,0.5); z-index:500;
@@ -240,6 +250,20 @@
         <div class="stat-label">Status</div>
         <div class="stat-status" id="statLiveStatus">—</div>
       </div>
+    </div>
+
+    <div class="golive-box" id="goliveBox">
+      <div class="golive-row">
+        <div>
+          <div class="golive-title">Go live</div>
+          <div class="golive-sub" id="goliveSub">Makes you visible in customer search.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="goliveToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <p class="golive-warning" id="goliveWarning">⚠ Online payments aren't set up yet (Stripe Connect isn't built). Customers could find you and browse your menu, but can't actually pay or place a real order yet.</p>
     </div>
 
     <div style="display:flex; gap:10px;">
@@ -994,7 +1018,43 @@ function updateRestaurantIdentityUi(){
   document.getElementById('publicViewNote').textContent = restaurant.is_live
     ? 'This is exactly what customers see.'
     : "You're not live yet — this preview only works for you, logged in. Customers can't see it or find it in search until you go live.";
+
+  document.getElementById('goliveToggle').checked = restaurant.is_live;
+  document.getElementById('goliveSub').textContent = restaurant.is_live
+    ? "You're visible in customer search right now."
+    : "Makes you visible in customer search.";
+  document.getElementById('goliveWarning').classList.toggle('show', restaurant.is_live);
 }
+
+// Manual toggle — see the "Temporary approved exception" note on Hard
+// Rule 7 in CLAUDE.md. Replace with the real Stripe charges_enabled
+// gate once Stripe Connect + create-order exist; remove this override.
+document.getElementById('goliveToggle').addEventListener('change', async (e) => {
+  const goingLive = e.target.checked;
+  if(goingLive){
+    const ok = confirm("Go live now?\n\nCustomers will be able to find and browse you in search. Online payments aren't set up yet, so they won't be able to actually place a paid order.");
+    if(!ok){
+      e.target.checked = false;
+      return;
+    }
+  }
+  try {
+    const { error } = await supabase.from('restaurants').update({ is_live: goingLive }).eq('id', restaurant.id);
+    if(error) throw error;
+    restaurant.is_live = goingLive;
+    updateRestaurantIdentityUi();
+    if(document.getElementById('statLiveStatus')){
+      const statusEl = document.getElementById('statLiveStatus');
+      statusEl.className = 'stat-status ' + (goingLive ? 'live' : 'draft');
+      statusEl.innerHTML = '<span class="dot"></span>' + (goingLive ? 'Live' : 'Not live yet');
+    }
+    showToast(goingLive ? "You're live!" : 'Taken offline.');
+  } catch(err){
+    console.error(err);
+    showToast('Something went wrong — please try again.');
+    e.target.checked = !goingLive;
+  }
+});
 
 // ============ AUTH GUARD + INIT ============
 // Runs before anything else: confirm a real Supabase session exists and

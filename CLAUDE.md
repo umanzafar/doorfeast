@@ -48,6 +48,7 @@ An online food ordering marketplace for independent takeaways in Stoke-on-Trent,
 6. **Never trust a value sent from the browser for pricing.** Recalculate the order total on the server (in the Edge Function) from database prices before creating the Stripe payment. A customer can edit anything in their browser.
 
 7. **A restaurant cannot go live or take real orders until its Stripe Connect account is fully onboarded** (`charges_enabled = true` from Stripe). Don't build a path that lets `is_live = true` happen before that check passes.
+   - **Temporary approved exception (2026-08-15):** a manual "Go Live" toggle exists in `dashboard.html` before Stripe Connect exists, explicitly requested to test search/discovery. It shows a clear warning that payments aren't live. Once Stripe Connect + `create-order` land, replace this with the real `charges_enabled` gate and remove the manual override.
 
 8. **Allergens must be shown on every menu item before purchase**, and the field cannot be empty. (UK Food Information Regulations.)
 
