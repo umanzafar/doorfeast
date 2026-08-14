@@ -310,6 +310,27 @@ function showNotFound(msg){
   document.documentElement.classList.remove('auth-pending');
 }
 
+// opening_hours is stored per-day: { mon: "12:00-22:00", tue: "closed", ... }.
+// Groups consecutive days sharing the same value, e.g. "Mon–Fri 12:00–22:00, Sat–Sun Closed".
+const DAY_ORDER = ['mon','tue','wed','thu','fri','sat','sun'];
+const DAY_LABELS = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' };
+
+function formatOpeningHours(hours){
+  if(!hours || typeof hours !== 'object') return '';
+  const groups = [];
+  for(const day of DAY_ORDER){
+    const val = hours[day] || 'closed';
+    const last = groups[groups.length - 1];
+    if(last && last.val === val) last.days.push(day);
+    else groups.push({ val, days: [day] });
+  }
+  return groups.map(g => {
+    const label = g.days.length > 1 ? `${DAY_LABELS[g.days[0]]}–${DAY_LABELS[g.days[g.days.length - 1]]}` : DAY_LABELS[g.days[0]];
+    const val = g.val === 'closed' ? 'Closed' : g.val.replace('-', '–');
+    return `${label} ${val}`;
+  }).join(', ');
+}
+
 function renderHeader(){
   document.getElementById('rHeaderWrap').style.display = 'flex';
   document.title = restaurant.name + ' — DoorFeast';
@@ -332,7 +353,7 @@ function renderHeader(){
     descEl.style.display = 'block';
   }
 
-  const hoursText = (restaurant.opening_hours && restaurant.opening_hours.text) || '';
+  const hoursText = formatOpeningHours(restaurant.opening_hours);
   document.getElementById('rMeta').innerHTML = `
     <span>${escapeHtml(restaurant.cuisine || '')}</span>
     <span>${escapeHtml(restaurant.address || '')}</span>

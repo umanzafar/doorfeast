@@ -187,6 +187,21 @@
     padding:11px 14px; font-size:12px; color:var(--amber); margin-bottom:18px;
   }
 
+  .hours-grid{border:1.5px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:18px;}
+  .hours-row{display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .hours-row:last-child{border-bottom:none;}
+  .hours-day{font-size:13px; font-weight:600; width:88px; flex-shrink:0;}
+  .hours-closed-label{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--body); flex-shrink:0;}
+  .hours-closed-label input{width:15px; height:15px; margin:0;}
+  .hours-times{display:flex; align-items:center; gap:6px; flex:1; min-width:180px;}
+  .hours-time-input{
+    border:1.5px solid var(--line); border-radius:8px; padding:6px 8px; font-size:13px;
+    font-family:inherit; width:110px;
+  }
+  .hours-times span{color:var(--body); font-size:12px;}
+  .hours-row.is-closed .hours-time-input{opacity:0.4; pointer-events:none; background:var(--cream);}
+  .hours-row.is-closed .hours-times-label{color:var(--body); font-style:italic; font-size:12.5px;}
+
   .toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
     background:var(--ink); color:#fff; font-size:13.5px; font-weight:600;
@@ -519,8 +534,27 @@ function renderRestaurantAvatarInto(el, logoUrl, name){
   }
 }
 
+// Each day stores either "HH:MM-HH:MM" or "closed" — same shape already
+// used by the seeded restaurant data, so this also fixes those rows
+// (which the old free-text opening_hours.text field never actually read).
+const OPENING_HOURS_DAYS = [
+  { key: 'mon', label: 'Monday' },
+  { key: 'tue', label: 'Tuesday' },
+  { key: 'wed', label: 'Wednesday' },
+  { key: 'thu', label: 'Thursday' },
+  { key: 'fri', label: 'Friday' },
+  { key: 'sat', label: 'Saturday' },
+  { key: 'sun', label: 'Sunday' }
+];
+
+function parseDayHours(value){
+  if(!value || value === 'closed') return { closed: true, open: '12:00', close: '22:00' };
+  const [open, close] = value.split('-');
+  return { closed: false, open: open || '12:00', close: close || '22:00' };
+}
+
 function renderBusinessInfoForm(data){
-  const hoursText = (data.opening_hours && data.opening_hours.text) || '';
+  const hours = data.opening_hours || {};
   businessInfoWrap.innerHTML = `
     <div class="card-form" style="background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 22px;">
       <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
@@ -550,12 +584,36 @@ function renderBusinessInfoForm(data){
       </select>
 
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Opening hours</label>
-      <textarea id="biz-hours" placeholder="e.g. Mon–Sat 12pm–10pm, Sun 4pm–10pm" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:18px; min-height:60px; font-family:inherit;">${escapeHtml(hoursText)}</textarea>
+      <div class="hours-grid" id="hoursGrid">
+        ${OPENING_HOURS_DAYS.map(day => {
+          const d = parseDayHours(hours[day.key]);
+          return `
+            <div class="hours-row ${d.closed ? 'is-closed' : ''}" data-day="${day.key}">
+              <span class="hours-day">${day.label}</span>
+              <label class="hours-closed-label">
+                <input type="checkbox" class="hours-closed-cb" ${d.closed ? 'checked' : ''}>
+                Closed
+              </label>
+              <div class="hours-times">
+                <input type="time" class="hours-time-input hours-open" value="${d.open}">
+                <span>–</span>
+                <input type="time" class="hours-time-input hours-close" value="${d.close}">
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
 
       <button class="btn btn-primary" id="saveBizBtn">Save changes</button>
     </div>
   `;
   renderRestaurantAvatarInto(document.getElementById('biz-logo-preview'), data.logo_url, data.name);
+
+  document.querySelectorAll('.hours-closed-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.hours-row').classList.toggle('is-closed', cb.checked);
+    });
+  });
 
   document.getElementById('biz-logo-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -588,13 +646,26 @@ function renderBusinessInfoForm(data){
     btn.disabled = true;
     btn.textContent = 'Saving…';
     try {
+      const opening_hours = {};
+      document.querySelectorAll('.hours-row').forEach(row => {
+        const day = row.dataset.day;
+        const closed = row.querySelector('.hours-closed-cb').checked;
+        if(closed){
+          opening_hours[day] = 'closed';
+        } else {
+          const open = row.querySelector('.hours-open').value || '12:00';
+          const close = row.querySelector('.hours-close').value || '22:00';
+          opening_hours[day] = `${open}-${close}`;
+        }
+      });
+
       const updates = {
         name: document.getElementById('biz-name').value.trim(),
         phone: document.getElementById('biz-phone').value.trim(),
         address: document.getElementById('biz-address').value.trim(),
         description: document.getElementById('biz-description').value.trim() || null,
         cuisine: document.getElementById('biz-cuisine').value,
-        opening_hours: { text: document.getElementById('biz-hours').value.trim() }
+        opening_hours
       };
       const { error } = await supabase.from('restaurants').update(updates).eq('id', restaurant.id);
       if(error) throw error;
