@@ -16,19 +16,28 @@
   }
   *{box-sizing:border-box;} html,body{margin:0;padding:0;}
   body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; justify-content:center; padding:56px 20px 80px;}
-  .wrap{width:100%; max-width:640px;}
-  .brandbar{display:flex; justify-content:center; margin-bottom:26px;}
-  .brandbar .logo-img{width:120px; height:auto; border-radius:14px; box-shadow:0 14px 30px -10px rgba(0,0,0,0.25);}
-  .hero{text-align:center; margin-bottom:30px;}
-  .hero h1{font-family:'Poppins',sans-serif; font-weight:800; font-size:28px; line-height:1.28; margin:0 0 12px;}
-  .hero p{font-size:15px; line-height:1.6; color:var(--body); margin:0; max-width:480px; margin:0 auto;}
-  .card{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:40px 36px 34px; box-shadow:0 20px 45px -25px rgba(27,24,21,0.25);}
-  .qpath{position:relative; padding-left:34px;}
-  .qpath::before{content:""; position:absolute; left:10px; top:6px; bottom:6px; width:2px; background:linear-gradient(var(--red), var(--line));}
-  .question{position:relative; margin-bottom:26px;}
-  .question::before{content:attr(data-step); position:absolute; left:-34px; top:0; width:22px; height:22px; border-radius:50%; background:var(--card); border:2px solid var(--red); color:var(--red); font-family:'Poppins',sans-serif; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center;}
-  label.qlabel{display:block; font-family:'Poppins',sans-serif; font-weight:600; font-size:15px; margin-bottom:8px;}
-  .qhint{font-size:12px; color:var(--body); margin:-4px 0 10px;}
+  .wrap{width:100%; max-width:520px;}
+  .brandbar{display:flex; justify-content:center; margin-bottom:22px;}
+  .brandbar .logo-img{width:100px; height:auto; border-radius:14px; box-shadow:0 14px 30px -10px rgba(0,0,0,0.25);}
+  .hero{text-align:center; margin-bottom:22px;}
+  .hero h1{font-family:'Poppins',sans-serif; font-weight:800; font-size:24px; line-height:1.28; margin:0 0 10px;}
+  .hero p{font-size:14px; line-height:1.6; color:var(--body); margin:0; max-width:440px; margin:0 auto;}
+
+  .progress{display:flex; gap:5px; margin-bottom:20px;}
+  .progress-seg{flex:1; height:4px; border-radius:99px; background:var(--line); overflow:hidden;}
+  .progress-seg .fill{height:100%; width:0%; background:var(--red); transition:width .3s ease;}
+  .progress-seg.done .fill{width:100%;}
+  .progress-seg.active .fill{width:100%;}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:36px 32px 30px; box-shadow:0 20px 45px -25px rgba(27,24,21,0.25);}
+
+  .step{display:none;}
+  .step.active{display:block; animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .step-eyebrow{font-size:11.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--red); margin:0 0 8px;}
+  label.qlabel{display:block; font-family:'Poppins',sans-serif; font-weight:700; font-size:19px; margin-bottom:8px;}
+  .qhint{font-size:12.5px; color:var(--body); margin:-2px 0 14px; line-height:1.5;}
   input[type="text"], input[type="email"]{width:100%; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:14.5px; color:var(--ink);}
   input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
   .option-list{display:flex; flex-direction:column; gap:9px;}
@@ -50,14 +59,18 @@
   .file-drop.has-file{border-color:var(--red); border-style:solid; background:rgba(166,30,30,0.04);}
   .file-drop .fd-filename{font-size:12.5px; color:var(--red); font-weight:600; margin-top:6px; word-break:break-all;}
 
-  .submit-row{padding-left:34px; margin-top:8px;}
-  button.submit-btn{width:100%; border:none; border-radius:999px; padding:15px 20px; font-family:'Poppins',sans-serif; font-weight:700; font-size:16px; color:#fff; background:var(--red); cursor:pointer; box-shadow:0 12px 24px -8px rgba(166,30,30,0.45);}
-  button.submit-btn:hover{background:var(--red-dark);}
-  button.submit-btn:disabled{opacity:0.65; cursor:not-allowed;}
-  .privacy-note{text-align:center; font-size:11.5px; color:var(--body); margin-top:14px; padding-left:34px;}
+  .actions{display:flex; gap:10px; margin-top:22px;}
+  .btn{border:none; border-radius:999px; padding:14px 24px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif;}
+  .btn-primary{flex:1; background:var(--red); color:#fff; box-shadow:0 12px 24px -8px rgba(166,30,30,0.45);}
+  .btn-primary:hover{background:var(--red-dark);}
+  .btn-primary:disabled{opacity:0.65; cursor:not-allowed;}
+  .btn-back{background:none; border:1.5px solid var(--line); color:var(--body);}
+  .btn-back:hover{border-color:var(--ink); color:var(--ink);}
+
+  .privacy-note{text-align:center; font-size:11.5px; color:var(--body); margin-top:16px;}
   .error-banner{display:none; background:#FBE7E5; border:1px solid #D8534B; color:#8A2E28; font-size:13px; padding:10px 14px; border-radius:10px; margin-bottom:20px;}
   .error-banner.show{display:block;}
-  @media (max-width:480px){ .card{padding:26px 22px 24px;} .hero h1{font-size:23px;} }
+  @media (max-width:480px){ .card{padding:26px 22px 24px;} .hero h1{font-size:21px;} }
 </style>
 </head>
 <body>
@@ -65,89 +78,99 @@
   <div class="brandbar"><img src="logo.png" alt="DoorFeast" class="logo-img"></div>
   <div class="hero">
     <h1>Apply to list your takeaway on DoorFeast</h1>
-    <p>Fill this in once — our team reviews every application by hand and emails you the decision.</p>
+    <p>A few quick questions — our team reviews every application by hand and emails you the decision.</p>
   </div>
+
+  <div class="progress" id="progress"></div>
 
   <div class="card">
     <div id="errorBanner" class="error-banner">Something went wrong sending your application. Please try again in a moment.</div>
 
     <form id="applicationForm">
-      <div class="qpath">
 
-        <div class="question" data-step="1">
-          <label class="qlabel">Business name</label>
-          <input type="text" id="businessName" required>
-        </div>
-
-        <div class="question" data-step="2">
-          <label class="qlabel">Owner name</label>
-          <input type="text" id="ownerName" required>
-        </div>
-
-        <div class="question" data-step="3">
-          <label class="qlabel">Phone number</label>
-          <input type="text" id="phone" required>
-        </div>
-
-        <div class="question" data-step="4">
-          <label class="qlabel">Email</label>
-          <input type="email" id="email" required placeholder="you@example.com">
-        </div>
-
-        <div class="question" data-step="5">
-          <label class="qlabel">Business address</label>
-          <input type="text" id="address" required>
-        </div>
-
-        <div class="question" data-step="6">
-          <label class="qlabel">Cuisine type</label>
-          <div class="option-list">
-            <label class="option"><input type="radio" name="cuisine" value="Indian" required><span>Indian</span></label>
-            <label class="option"><input type="radio" name="cuisine" value="Chinese"><span>Chinese</span></label>
-            <label class="option"><input type="radio" name="cuisine" value="Pizza"><span>Pizza</span></label>
-            <label class="option"><input type="radio" name="cuisine" value="Kebab"><span>Kebab</span></label>
-            <label class="option"><input type="radio" name="cuisine" value="Fast Food"><span>Fast Food</span></label>
-            <label class="option"><input type="radio" id="cuisineOtherCheck" name="cuisine" value="Other"><span>Other</span></label>
-          </div>
-        </div>
-
-        <div class="question" data-step="7">
-          <label class="qlabel">Food hygiene certificate</label>
-          <p class="qhint">Photo or PDF of your current certificate</p>
-          <label class="file-drop" id="dropHygiene">
-            <input type="file" id="hygieneCert" accept="image/*,application/pdf" required>
-            <div class="fd-label">Click to upload</div>
-            <div class="fd-hint">JPG, PNG or PDF</div>
-            <div class="fd-filename"></div>
-          </label>
-        </div>
-
-        <div class="question" data-step="8">
-          <label class="qlabel">Proof of business registration</label>
-          <p class="qhint">e.g. Companies House registration, VAT certificate, or council business registration</p>
-          <label class="file-drop" id="dropBizReg">
-            <input type="file" id="businessReg" accept="image/*,application/pdf" required>
-            <div class="fd-label">Click to upload</div>
-            <div class="fd-hint">JPG, PNG or PDF</div>
-            <div class="fd-filename"></div>
-          </label>
-        </div>
-
-        <div class="question" data-step="9">
-          <label class="qlabel">ID of the account holder</label>
-          <p class="qhint">Passport, driving licence, or national ID — for the person who'll manage payouts</p>
-          <label class="file-drop" id="dropIdDoc">
-            <input type="file" id="idDoc" accept="image/*,application/pdf" required>
-            <div class="fd-label">Click to upload</div>
-            <div class="fd-hint">JPG, PNG or PDF</div>
-            <div class="fd-filename"></div>
-          </label>
-        </div>
-
+      <div class="step active" data-step="0">
+        <p class="step-eyebrow">Step 1 of 9</p>
+        <label class="qlabel">Business name</label>
+        <input type="text" id="businessName">
       </div>
 
-      <div class="submit-row">
-        <button type="submit" class="submit-btn" id="submitBtn">Submit application →</button>
+      <div class="step" data-step="1">
+        <p class="step-eyebrow">Step 2 of 9</p>
+        <label class="qlabel">Owner name</label>
+        <input type="text" id="ownerName">
+      </div>
+
+      <div class="step" data-step="2">
+        <p class="step-eyebrow">Step 3 of 9</p>
+        <label class="qlabel">Phone number</label>
+        <input type="text" id="phone">
+      </div>
+
+      <div class="step" data-step="3">
+        <p class="step-eyebrow">Step 4 of 9</p>
+        <label class="qlabel">Email</label>
+        <input type="email" id="email" placeholder="you@example.com">
+      </div>
+
+      <div class="step" data-step="4">
+        <p class="step-eyebrow">Step 5 of 9</p>
+        <label class="qlabel">Business address</label>
+        <input type="text" id="address">
+      </div>
+
+      <div class="step" data-step="5">
+        <p class="step-eyebrow">Step 6 of 9</p>
+        <label class="qlabel">Cuisine type</label>
+        <p class="qhint">Tap one to continue automatically.</p>
+        <div class="option-list" id="cuisineOptions">
+          <label class="option"><input type="radio" name="cuisine" value="Indian"><span>Indian</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Chinese"><span>Chinese</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Pizza"><span>Pizza</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Kebab"><span>Kebab</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Fast Food"><span>Fast Food</span></label>
+          <label class="option"><input type="radio" id="cuisineOtherCheck" name="cuisine" value="Other"><span>Other</span></label>
+        </div>
+      </div>
+
+      <div class="step" data-step="6">
+        <p class="step-eyebrow">Step 7 of 9</p>
+        <label class="qlabel">Food hygiene certificate</label>
+        <p class="qhint">Photo or PDF of your current certificate</p>
+        <label class="file-drop" id="dropHygiene">
+          <input type="file" id="hygieneCert" accept="image/*,application/pdf">
+          <div class="fd-label">Click to upload</div>
+          <div class="fd-hint">JPG, PNG or PDF</div>
+          <div class="fd-filename"></div>
+        </label>
+      </div>
+
+      <div class="step" data-step="7">
+        <p class="step-eyebrow">Step 8 of 9</p>
+        <label class="qlabel">Proof of business registration</label>
+        <p class="qhint">e.g. Companies House registration, VAT certificate, or council business registration</p>
+        <label class="file-drop" id="dropBizReg">
+          <input type="file" id="businessReg" accept="image/*,application/pdf">
+          <div class="fd-label">Click to upload</div>
+          <div class="fd-hint">JPG, PNG or PDF</div>
+          <div class="fd-filename"></div>
+        </label>
+      </div>
+
+      <div class="step" data-step="8">
+        <p class="step-eyebrow">Step 9 of 9</p>
+        <label class="qlabel">ID of the account holder</label>
+        <p class="qhint">Passport, driving licence, or national ID — for the person who'll manage payouts</p>
+        <label class="file-drop" id="dropIdDoc">
+          <input type="file" id="idDoc" accept="image/*,application/pdf">
+          <div class="fd-label">Click to upload</div>
+          <div class="fd-hint">JPG, PNG or PDF</div>
+          <div class="fd-filename"></div>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-back" id="backBtn" style="display:none;">Previous</button>
+        <button type="submit" class="btn btn-primary" id="nextBtn">Next</button>
       </div>
       <p class="privacy-note">Your documents are used only to verify your business and are never shared publicly.</p>
     </form>
@@ -161,6 +184,8 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const MAX_FILE_MB = 8;
+  const TOTAL_STEPS = 9;
+  let currentStep = 0;
 
   // Runs before anything paints (body stays visibility:hidden until this
   // resolves) — no session means they skipped signup, send them there.
@@ -171,14 +196,60 @@
   const user = session.user;
   document.documentElement.classList.remove('auth-pending');
 
-  window.addEventListener('DOMContentLoaded', () => {
-    const emailInput = document.getElementById('email');
-    if(emailInput && user.email){
-      emailInput.value = user.email;
-      emailInput.readOnly = true;
-      emailInput.style.background = '#f2efe8';
-      emailInput.style.cursor = 'not-allowed';
-    }
+  const emailInput = document.getElementById('email');
+  if(emailInput && user.email){
+    emailInput.value = user.email;
+    emailInput.readOnly = true;
+    emailInput.style.background = '#f2efe8';
+    emailInput.style.cursor = 'not-allowed';
+  }
+
+  /* ============ WIZARD NAVIGATION ============ */
+  const progress = document.getElementById('progress');
+  for(let i = 0; i < TOTAL_STEPS; i++){
+    const seg = document.createElement('div');
+    seg.className = 'progress-seg';
+    seg.innerHTML = '<div class="fill"></div>';
+    progress.appendChild(seg);
+  }
+  const progressSegs = progress.querySelectorAll('.progress-seg');
+  const steps = document.querySelectorAll('.step');
+  const backBtn = document.getElementById('backBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const errorBanner = document.getElementById('errorBanner');
+
+  function showError(msg){
+    errorBanner.textContent = msg;
+    errorBanner.classList.add('show');
+  }
+  function clearError(){
+    errorBanner.classList.remove('show');
+  }
+
+  function renderStep(){
+    steps.forEach(s => s.classList.toggle('active', Number(s.dataset.step) === currentStep));
+    progressSegs.forEach((seg, i) => {
+      seg.classList.toggle('done', i < currentStep);
+      seg.classList.toggle('active', i === currentStep);
+    });
+    backBtn.style.display = currentStep === 0 ? 'none' : 'inline-block';
+    nextBtn.textContent = currentStep === TOTAL_STEPS - 1 ? 'Submit application →' : 'Next';
+    clearError();
+  }
+
+  function goToStep(n){
+    currentStep = n;
+    renderStep();
+  }
+
+  backBtn.addEventListener('click', () => {
+    if(currentStep > 0) goToStep(currentStep - 1);
+  });
+
+  // Auto-advance the moment a cuisine option is picked — still leaves the
+  // Next button working normally on every other step.
+  document.getElementById('cuisineOptions').addEventListener('change', () => {
+    if(currentStep === 5) goToStep(currentStep + 1);
   });
 
   function wireFileDrop(dropId, inputId){
@@ -203,6 +274,19 @@
   wireFileDrop('dropBizReg', 'businessReg');
   wireFileDrop('dropIdDoc', 'idDoc');
 
+  function validateStep(step){
+    if(step === 0 && !document.getElementById('businessName').value.trim()){ showError('Please enter your business name.'); return false; }
+    if(step === 1 && !document.getElementById('ownerName').value.trim()){ showError('Please enter the owner name.'); return false; }
+    if(step === 2 && !document.getElementById('phone').value.trim()){ showError('Please enter a phone number.'); return false; }
+    if(step === 3 && !document.getElementById('email').value.trim()){ showError('Please enter an email address.'); return false; }
+    if(step === 4 && !document.getElementById('address').value.trim()){ showError('Please enter your business address.'); return false; }
+    if(step === 5 && !document.querySelector('input[name="cuisine"]:checked')){ showError('Please choose a cuisine type.'); return false; }
+    if(step === 6 && !document.getElementById('hygieneCert').files[0]){ showError('Please upload your food hygiene certificate.'); return false; }
+    if(step === 7 && !document.getElementById('businessReg').files[0]){ showError('Please upload proof of business registration.'); return false; }
+    if(step === 8 && !document.getElementById('idDoc').files[0]){ showError('Please upload an ID document.'); return false; }
+    return true;
+  }
+
   // Uploads to the private application-documents bucket, path prefixed by
   // the user's own id (RLS only lets them — and admins — read it back).
   async function uploadDoc(file, label){
@@ -214,26 +298,25 @@
   }
 
   const form = document.getElementById('applicationForm');
-  const submitBtn = document.getElementById('submitBtn');
-  const errorBanner = document.getElementById('errorBanner');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errorBanner.classList.remove('show');
+    if(!validateStep(currentStep)) return;
 
-    const cuisine = (document.querySelector('input[name="cuisine"]:checked') || {}).value || "";
+    if(currentStep < TOTAL_STEPS - 1){
+      goToStep(currentStep + 1);
+      return;
+    }
+
+    // Final step — actually submit.
+    clearError();
+    const cuisine = document.querySelector('input[name="cuisine"]:checked').value;
     const hygieneInput = document.getElementById('hygieneCert');
     const bizRegInput = document.getElementById('businessReg');
     const idInput = document.getElementById('idDoc');
 
-    if(!hygieneInput.files[0] || !bizRegInput.files[0] || !idInput.files[0] || !cuisine){
-      errorBanner.textContent = "Please fill in all required fields and upload all three documents.";
-      errorBanner.classList.add('show');
-      return;
-    }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Uploading…";
+    nextBtn.disabled = true;
+    nextBtn.textContent = "Uploading…";
 
     try {
       const [hygieneCertPath, businessRegPath, idDocPath] = await Promise.all([
@@ -260,12 +343,13 @@
 
     } catch (err) {
       console.error(err);
-      errorBanner.textContent = "Something went wrong sending your application. Please try again in a moment.";
-      errorBanner.classList.add('show');
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit application →";
+      showError("Something went wrong sending your application. Please try again in a moment.");
+      nextBtn.disabled = false;
+      nextBtn.textContent = "Submit application →";
     }
   });
+
+  renderStep();
 </script>
 </body>
 </html>
