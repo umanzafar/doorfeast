@@ -950,7 +950,8 @@
       </div>
     </div>
 
-    <div style="padding:16px 22px; border-top:1px solid var(--line); background:var(--card);">
+    <div style="padding:16px 22px; border-top:1px solid var(--line); background:var(--card); display:flex; flex-direction:column; gap:10px;">
+      <a href="mailto:support@doorfeast.co.uk" style="text-align:center; font-size:12.5px; font-weight:600; color:var(--body); text-decoration:none;">Contact us</a>
       <button class="panel-btn panel-btn-secondary" id="panelLogoutBtn" style="width:100%;">Log out</button>
     </div>
   </div>
@@ -1477,7 +1478,7 @@ async function loadPanelOrders(){
     return;
   }
   wrap.innerHTML = orders.map(o => `
-    <div class="p-order-card">
+    <a class="p-order-card" href="order.html?number=${encodeURIComponent(o.order_number)}" style="text-decoration:none; color:inherit; display:flex;">
       <div>
         <div class="p-oc-number">${escapeHtmlPanel(o.order_number)}</div>
         <div class="p-oc-restaurant">${escapeHtmlPanel(o.restaurants ? o.restaurants.name : 'Restaurant')}</div>
@@ -1487,7 +1488,7 @@ async function loadPanelOrders(){
         <div class="p-oc-total">${formatGBPFromPence(o.total_pence)}</div>
         <span class="p-oc-status ${o.status}">${escapeHtmlPanel(o.status.replace('_', ' '))}</span>
       </div>
-    </div>
+    </a>
   `).join('');
 }
 

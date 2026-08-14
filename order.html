@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track your order — DoorFeast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html.auth-pending body{visibility:hidden;}
+  :root{
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --line:#E4DFD2; --green:#2E7D46; --amber:#8A6414;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; padding:40px 20px 80px; display:flex; justify-content:center;}
+  a{color:inherit;}
+
+  .wrap{width:100%; max-width:560px;}
+  .brandbar{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:26px;}
+  .brandbar img{width:32px; border-radius:8px;}
+  .brandbar span{font-family:'Poppins',sans-serif; font-weight:800; font-size:17px;}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:32px 30px; margin-bottom:16px; box-shadow:0 20px 45px -28px rgba(27,24,21,0.2);}
+
+  .order-head{display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:6px; flex-wrap:wrap;}
+  .order-number{font-family:'Poppins',sans-serif; font-weight:800; font-size:20px;}
+  .order-restaurant{font-size:13.5px; color:var(--body); margin:2px 0 0;}
+  .status-pill{font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; white-space:nowrap;}
+  .status-pill.pending, .status-pill.paid{background:rgba(217,164,65,0.18); color:var(--amber);}
+  .status-pill.accepted, .status-pill.preparing{background:rgba(164,2,3,0.08); color:var(--red);}
+  .status-pill.ready{background:rgba(46,125,70,0.1); color:var(--green);}
+  .status-pill.completed{background:rgba(46,125,70,0.15); color:var(--green);}
+  .status-pill.rejected, .status-pill.refunded{background:rgba(166,30,30,0.1); color:var(--red);}
+
+  .tracker{display:flex; justify-content:space-between; margin:26px 0 8px; position:relative;}
+  .tracker::before{content:""; position:absolute; top:11px; left:16px; right:16px; height:2px; background:var(--line); z-index:0;}
+  .tracker-step{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;}
+  .tracker-dot{width:24px; height:24px; border-radius:50%; background:#fff; border:2.5px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--body); transition:.2s;}
+  .tracker-step.done .tracker-dot{background:var(--red); border-color:var(--red); color:#fff;}
+  .tracker-step.done .tracker-dot::after{content:"✓";}
+  .tracker-label{font-size:10.5px; font-weight:600; color:var(--body); text-align:center;}
+  .tracker-step.done .tracker-label{color:var(--ink);}
+
+  .rejected-note{background:rgba(166,30,30,0.06); border:1px solid rgba(166,30,30,0.2); border-radius:12px; padding:14px 16px; font-size:13px; color:var(--ink); margin-top:16px;}
+
+  .card h3{font-family:'Poppins',sans-serif; font-size:15px; margin:0 0 14px;}
+  .item-line{display:flex; justify-content:space-between; font-size:13.5px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .item-line:last-child{border-bottom:none;}
+  .item-line .qty{color:var(--body); margin-right:6px;}
+  .total-line{display:flex; justify-content:space-between; font-weight:700; font-size:15px; padding-top:14px; margin-top:6px; border-top:1px dashed var(--line);}
+
+  .contact-row{display:flex; flex-direction:column; gap:10px; font-size:13.5px;}
+  .contact-row a{color:var(--red); font-weight:600; text-decoration:none;}
+  .contact-row a:hover{text-decoration:underline;}
+
+  .panel-empty{text-align:center; padding:60px 20px; color:var(--body); font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="brandbar"><img src="logo.png" alt="DoorFeast"><span>DoorFeast</span></div>
+  <div id="content">
+    <div class="card"><div class="panel-empty">Loading your order…</div></div>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const orderNumber = new URLSearchParams(window.location.search).get('number');
+  const content = document.getElementById('content');
+
+  function escapeHtml(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function formatGBP(pence){
+    return '£' + ((pence || 0) / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // The main forward path an order takes. Rejected/refunded are handled
+  // as a separate note rather than a step in this line, since an order
+  // only ever goes one way or the other, never both.
+  const FORWARD_STEPS = [
+    { key: 'paid', label: 'Placed' },
+    { key: 'accepted', label: 'Accepted' },
+    { key: 'preparing', label: 'Preparing' },
+    { key: 'ready', label: 'Ready' },
+    { key: 'completed', label: 'Completed' }
+  ];
+
+  function renderOrder(order, items){
+    const isEndState = order.status === 'rejected' || order.status === 'refunded';
+    const currentIndex = FORWARD_STEPS.findIndex(s => s.key === order.status);
+
+    const trackerHtml = isEndState ? '' : `
+      <div class="tracker">
+        ${FORWARD_STEPS.map((s, i) => `
+          <div class="tracker-step ${i <= (currentIndex < 0 ? 0 : currentIndex) ? 'done' : ''}">
+            <div class="tracker-dot"></div>
+            <div class="tracker-label">${s.label}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    const subtotal = items.reduce((sum, i) => sum + i.line_total_pence, 0);
+
+    content.innerHTML = `
+      <div class="card">
+        <div class="order-head">
+          <div>
+            <div class="order-number">${escapeHtml(order.order_number)}</div>
+            <p class="order-restaurant">${escapeHtml(order.restaurants ? order.restaurants.name : 'Restaurant')}</p>
+          </div>
+          <span class="status-pill ${order.status}">${escapeHtml(order.status.replace('_', ' '))}</span>
+        </div>
+        ${trackerHtml}
+        ${isEndState ? `
+          <div class="rejected-note">
+            ${order.status === 'rejected'
+              ? `<b>This order was rejected.</b>${order.rejection_reason ? ' ' + escapeHtml(order.rejection_reason) : ''} A refund has been issued.`
+              : `<b>This order was refunded.</b>`}
+          </div>` : ''}
+      </div>
+
+      <div class="card">
+        <h3>Order details</h3>
+        ${items.map(i => `
+          <div class="item-line">
+            <span><span class="qty">${i.quantity}×</span>${escapeHtml(i.item_name)}</span>
+            <span>${formatGBP(i.line_total_pence)}</span>
+          </div>
+        `).join('')}
+        <div class="total-line"><span>Total</span><span>${formatGBP(order.total_pence)}</span></div>
+      </div>
+
+      <div class="card">
+        <h3>Need help with this order?</h3>
+        <div class="contact-row">
+          ${order.restaurants && order.restaurants.phone ? `<span>Call the restaurant: <a href="tel:${escapeHtml(order.restaurants.phone)}">${escapeHtml(order.restaurants.phone)}</a></span>` : ''}
+          <span>Or contact DoorFeast support: <a href="mailto:support@doorfeast.co.uk">support@doorfeast.co.uk</a></span>
+        </div>
+      </div>
+    `;
+  }
+
+  async function loadOrder(){
+    if(!orderNumber){
+      content.innerHTML = `<div class="card"><div class="panel-empty">No order number given.</div></div>`;
+      document.documentElement.classList.remove('auth-pending');
+      return;
+    }
+
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('*, restaurants(name, phone)')
+      .eq('order_number', orderNumber)
+      .maybeSingle();
+
+    if(error || !order){
+      content.innerHTML = `<div class="card"><div class="panel-empty">Couldn't find that order — check the link and try again.</div></div>`;
+      document.documentElement.classList.remove('auth-pending');
+      return;
+    }
+
+    const { data: items } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', order.id)
+      .order('id');
+
+    renderOrder(order, items || []);
+    document.documentElement.classList.remove('auth-pending');
+
+    // Live updates — re-renders whenever the restaurant changes this
+    // order's status (accept/reject/ready/etc), no refresh needed.
+    supabase
+      .channel(`order-${order.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${order.id}` }, (payload) => {
+        renderOrder({ ...payload.new, restaurants: order.restaurants }, items || []);
+      })
+      .subscribe();
+  }
+
+  /* ============ AUTH GUARD ============ */
+  (async function init(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if(!session){
+      window.location.href = `customer/index.html?mode=login`;
+      return;
+    }
+    await loadOrder();
+  })();
+</script>
+</body>
+</html>
