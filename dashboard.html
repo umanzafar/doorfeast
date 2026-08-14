@@ -575,6 +575,10 @@ function renderBusinessInfoForm(data){
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business address</label>
       <input type="text" id="biz-address" value="${escapeHtml(data.address)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
 
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Postcode</label>
+      <input type="text" id="biz-postcode" value="${escapeHtml(data.postcode || '')}" placeholder="e.g. ST6 3AA" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:6px; text-transform:uppercase;">
+      <p style="font-size:11.5px; color:var(--body); margin:0 0 16px;" id="biz-postcode-note">This is what lets customers find you when they search their postcode on the homepage.</p>
+
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Description</label>
       <textarea id="biz-description" placeholder="A couple of sentences customers will see on your public page" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px; min-height:60px; font-family:inherit;">${escapeHtml(data.description || '')}</textarea>
 
@@ -659,14 +663,43 @@ function renderBusinessInfoForm(data){
         }
       });
 
+      const postcode = document.getElementById('biz-postcode').value.trim().toUpperCase();
+      const postcodeNote = document.getElementById('biz-postcode-note');
+
       const updates = {
         name: document.getElementById('biz-name').value.trim(),
         phone: document.getElementById('biz-phone').value.trim(),
         address: document.getElementById('biz-address').value.trim(),
         description: document.getElementById('biz-description').value.trim() || null,
         cuisine: document.getElementById('biz-cuisine').value,
+        postcode,
         opening_hours
       };
+
+      // Look up lat/lng for the postcode so the homepage's postcode search
+      // (haversine distance against every live restaurant) can find this
+      // restaurant. Same free postcodes.io API the homepage search itself
+      // already uses to geocode the customer's postcode.
+      if(postcode && postcode !== restaurant.postcode){
+        try {
+          const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+          const geo = await res.json();
+          if(geo.status === 200 && geo.result){
+            updates.lat = geo.result.latitude;
+            updates.lng = geo.result.longitude;
+            postcodeNote.textContent = "This is what lets customers find you when they search their postcode on the homepage.";
+            postcodeNote.style.color = 'var(--body)';
+          } else {
+            postcodeNote.textContent = "That postcode wasn't recognised — double check it, or customers won't be able to find you by search.";
+            postcodeNote.style.color = 'var(--red)';
+          }
+        } catch(geoErr){
+          console.error(geoErr);
+          postcodeNote.textContent = "Couldn't verify that postcode right now — try saving again in a moment.";
+          postcodeNote.style.color = 'var(--red)';
+        }
+      }
+
       const { error } = await supabase.from('restaurants').update(updates).eq('id', restaurant.id);
       if(error) throw error;
       Object.assign(restaurant, updates);

@@ -1068,13 +1068,6 @@ function restartAuto(){ clearInterval(autoTimer); startAuto(); }
 startAuto();
 
 /* ============ POSTCODE SEARCH ============ */
-// Sample/demo restaurant data for Stoke-on-Trent — replace with real data once available.
-const DEMO_RESTAURANTS = [
-  { name: "Spice Villa", cuisine: "Indian", lat: 53.0027, lng: -2.1794, rating: null },
-  { name: "Golden Dragon", cuisine: "Chinese", lat: 53.0090, lng: -2.1850, rating: null },
-  { name: "Mario's Pizzeria", cuisine: "Pizza", lat: 52.9980, lng: -2.1700, rating: 4.6 },
-  { name: "Kebab House", cuisine: "Kebab", lat: 53.0120, lng: -2.1650, rating: null },
-];
 const COVERAGE_RADIUS_KM = 8;
 
 function haversineKm(lat1, lon1, lat2, lon2){
@@ -1107,13 +1100,13 @@ function renderResults(list, postcode){
   list.forEach(r => {
     const card = document.createElement('a');
     card.className = 'r-card';
-    card.href = '#'; // 👉 point this to the real restaurant page once it exists
+    card.href = 'restaurant.html?slug=' + encodeURIComponent(r.slug);
     card.innerHTML = `
-      <div class="thumb">${r.name.charAt(0)}</div>
+      <div class="thumb" ${r.logo_url ? `style="background-image:url('${r.logo_url}'); background-size:cover; background-position:center;"` : ''}>${r.logo_url ? '' : r.name.charAt(0)}</div>
       <div class="body">
         <div class="name">${r.name}</div>
-        <div class="meta">${r.cuisine}<span class="dot-sep"></span>${r.distanceLabel}</div>
-        <div class="rating">${r.rating ? '★ ' + r.rating : 'New'}</div>
+        <div class="meta">${r.cuisine || ''}<span class="dot-sep"></span>${r.distanceLabel}</div>
+        <div class="rating">New</div>
       </div>`;
     restaurantGrid.appendChild(card);
   });
@@ -1139,7 +1132,18 @@ async function handleSearch(){
 
     const { latitude, longitude } = data.result;
 
-    const withDistance = DEMO_RESTAURANTS
+    // Only live restaurants that have been geocoded (owner saved a
+    // recognised postcode in their dashboard) can appear here — RLS
+    // already restricts anon reads to is_live = true rows.
+    const { data: restaurants, error: fetchErr } = await supabase
+      .from('restaurants')
+      .select('name, slug, cuisine, logo_url, lat, lng')
+      .eq('is_live', true)
+      .not('lat', 'is', null)
+      .not('lng', 'is', null);
+    if(fetchErr) throw fetchErr;
+
+    const withDistance = (restaurants || [])
       .map(r => ({ ...r, distanceKm: haversineKm(latitude, longitude, r.lat, r.lng) }))
       .filter(r => r.distanceKm <= COVERAGE_RADIUS_KM)
       .sort((a, b) => a.distanceKm - b.distanceKm)
