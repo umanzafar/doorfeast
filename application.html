@@ -40,6 +40,13 @@
   .qhint{font-size:12.5px; color:var(--body); margin:-2px 0 14px; line-height:1.5;}
   input[type="text"], input[type="email"]{width:100%; border:1.5px solid var(--line); background:#fff; border-radius:10px; padding:12px 14px; font-size:14.5px; color:var(--ink);}
   input:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.12);}
+  .phone-row{display:flex; gap:8px;}
+  .phone-prefix{
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; width:56px;
+    border:1.5px solid var(--line); background:var(--cream); border-radius:10px;
+    font-weight:700; font-size:14.5px; color:var(--body);
+  }
+  .phone-row input{flex:1;}
   .option-list{display:flex; flex-direction:column; gap:9px;}
   .option{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line); border-radius:10px; padding:11px 14px; background:#fff; cursor:pointer; font-size:14.5px;}
   .option:hover{border-color:var(--red);}
@@ -103,7 +110,11 @@
       <div class="step" data-step="2">
         <p class="step-eyebrow">Step 3 of 9</p>
         <label class="qlabel">Phone number</label>
-        <input type="text" id="phone">
+        <p class="qhint">DoorFeast is only onboarding UK takeaways right now.</p>
+        <div class="phone-row">
+          <span class="phone-prefix">+44</span>
+          <input type="text" id="phone" placeholder="7700 900123">
+        </div>
       </div>
 
       <div class="step" data-step="3">
@@ -329,7 +340,7 @@
         user_id: user.id,
         business_name: document.getElementById('businessName').value.trim(),
         owner_name: document.getElementById('ownerName').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
+        phone: '+44 ' + document.getElementById('phone').value.trim(),
         email: document.getElementById('email').value.trim(),
         address: document.getElementById('address').value.trim(),
         cuisine: cuisine,
