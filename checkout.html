@@ -348,10 +348,12 @@
   }
 
   /* ============ STEP 3: ORDER SUMMARY ============ */
-  const BASKET_KEY = 'doorfeast_basket_sample-kitchen';
   function renderOrderSummary(){
     let basket = {};
-    try { basket = JSON.parse(localStorage.getItem(BASKET_KEY) || '{}'); } catch(e){}
+    const activeRestaurantId = localStorage.getItem('doorfeast_active_restaurant_id');
+    if(activeRestaurantId){
+      try { basket = JSON.parse(localStorage.getItem('doorfeast_basket_' + activeRestaurantId) || '{}'); } catch(e){}
+    }
     const entries = Object.values(basket);
     const subtotal = entries.reduce((sum, e) => sum + (e.price_pence || 0) * e.qty, 0);
     const discount = (customer.phone_verified && customer.discount_eligible) ? 500 : 0;

@@ -227,7 +227,11 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" id="welcomeManageBtn">Manage your restaurant →</button>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" id="welcomeManageBtn" style="flex:1;">Manage your restaurant →</button>
+      <a class="btn btn-secondary" id="publicViewBtn" href="#" target="_blank" rel="noopener" style="flex:1; text-align:center; text-decoration:none;">👁 Public view</a>
+    </div>
+    <p style="font-size:11.5px; color:var(--body); margin:10px 0 0;" id="publicViewNote"></p>
   </div>
 </div>
 
@@ -537,6 +541,9 @@ function renderBusinessInfoForm(data){
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business address</label>
       <input type="text" id="biz-address" value="${escapeHtml(data.address)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
 
+      <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Description</label>
+      <textarea id="biz-description" placeholder="A couple of sentences customers will see on your public page" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px; min-height:60px; font-family:inherit;">${escapeHtml(data.description || '')}</textarea>
+
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Cuisine type</label>
       <select id="biz-cuisine" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
         ${['Indian','Chinese','Pizza','Kebab','Fast Food','Other'].map(c => `<option ${data.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
@@ -585,6 +592,7 @@ function renderBusinessInfoForm(data){
         name: document.getElementById('biz-name').value.trim(),
         phone: document.getElementById('biz-phone').value.trim(),
         address: document.getElementById('biz-address').value.trim(),
+        description: document.getElementById('biz-description').value.trim() || null,
         cuisine: document.getElementById('biz-cuisine').value,
         opening_hours: { text: document.getElementById('biz-hours').value.trim() }
       };
@@ -877,6 +885,11 @@ function updateRestaurantIdentityUi(){
   renderRestaurantAvatarInto(document.getElementById('welcomeLogo'), restaurant.logo_url, restaurant.name);
   document.getElementById('dashPanelName').textContent = restaurant.name;
   document.getElementById('welcomeRestaurantName').textContent = restaurant.name;
+
+  document.getElementById('publicViewBtn').href = 'restaurant.html?slug=' + encodeURIComponent(restaurant.slug);
+  document.getElementById('publicViewNote').textContent = restaurant.is_live
+    ? 'This is exactly what customers see.'
+    : "You're not live yet — this preview only works for you, logged in. Customers can't see it or find it in search until you go live.";
 }
 
 // ============ AUTH GUARD + INIT ============

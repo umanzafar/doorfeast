@@ -556,15 +556,13 @@
 
   /* ============ BASKET ============ */
   // The basket lives in localStorage, written by restaurant.html — this
-  // page just reads whatever's there. Each entry is self-contained
-  // (name + price snapshot at add-time), so it renders without needing
-  // to know which restaurant it came from. Tied to the current
-  // single-placeholder-restaurant setup until Step 3 (real restaurant
-  // pages) lands — the key naming will need revisiting then.
-  const BASKET_KEY = 'doorfeast_basket_sample-kitchen';
-
+  // page just reads whatever's there. Baskets are per-restaurant now
+  // (Step 3 real restaurant pages landed), tracked via an "active
+  // restaurant" pointer restaurant.html sets alongside each basket.
   function readBasket(){
-    try { return JSON.parse(localStorage.getItem(BASKET_KEY) || '{}'); }
+    const activeRestaurantId = localStorage.getItem('doorfeast_active_restaurant_id');
+    if(!activeRestaurantId) return {};
+    try { return JSON.parse(localStorage.getItem('doorfeast_basket_' + activeRestaurantId) || '{}'); }
     catch(e){ return {}; }
   }
 

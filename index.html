@@ -1676,10 +1676,15 @@ addressForm.addEventListener('submit', async (e) => {
   }
 });
 
-/* ============ BASKET (reads what restaurant.html writes) ============ */
-const PANEL_BASKET_KEY = 'doorfeast_basket_sample-kitchen';
+/* ============ BASKET (reads what restaurant.html writes) ============
+   Baskets are now per-restaurant (restaurant.html can be a different
+   real restaurant each time), so this reads the "active restaurant"
+   pointer restaurant.html sets on every basket change to know which
+   basket key to look at. */
 function readPanelBasket(){
-  try { return JSON.parse(localStorage.getItem(PANEL_BASKET_KEY) || '{}'); }
+  const activeRestaurantId = localStorage.getItem('doorfeast_active_restaurant_id');
+  if(!activeRestaurantId) return {};
+  try { return JSON.parse(localStorage.getItem('doorfeast_basket_' + activeRestaurantId) || '{}'); }
   catch(e){ return {}; }
 }
 function loadPanelBasket(){

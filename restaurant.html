@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  html.auth-pending body{visibility:hidden;}
   :root{
     --red:#A40203; --red-dark:#7C0202; --gold:#D9A441;
     --cream:#FAF7F2; --card:#FFFFFF; --ink:#262220; --body:#6E6860; --line:#E8E1D4;
@@ -33,15 +34,29 @@
   .nav-logo{display:flex; align-items:center; gap:8px;}
   .nav-logo img{width:30px; border-radius:8px;}
   .nav-logo span{font-family:'Poppins',sans-serif; font-weight:800; font-size:15px;}
+  .preview-banner{
+    background:var(--ink); color:#fff; text-align:center; font-size:12.5px; font-weight:600;
+    padding:9px 16px;
+  }
 
   /* ============ RESTAURANT HEADER ============ */
   .r-header{
     max-width:900px; margin:0 auto; padding:28px 24px 20px;
+    display:flex; gap:18px; align-items:flex-start;
+  }
+  .r-logo{
+    width:64px; height:64px; border-radius:16px; flex-shrink:0; object-fit:cover;
+    border:1px solid var(--line); background:var(--card);
+  }
+  .r-logo-fallback{
+    width:64px; height:64px; border-radius:16px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--gold), var(--red));
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:24px;
   }
   .r-header h1{font-size:clamp(24px,4vw,32px); margin-bottom:8px;}
+  .r-desc{font-size:13.5px; color:var(--body); line-height:1.5; margin:0 0 12px; max-width:560px;}
   .r-meta{display:flex; flex-wrap:wrap; gap:10px 18px; font-size:13.5px; color:var(--body); margin-bottom:14px;}
-  .r-meta span{display:flex; align-items:center; gap:6px;}
-  .r-meta svg{width:15px; height:15px; flex-shrink:0;}
   .r-badges{display:flex; flex-wrap:wrap; gap:8px;}
   .r-badge{
     font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px;
@@ -87,6 +102,10 @@
   }
   .mi-qty-btn:hover{background:rgba(164,2,3,0.08);}
   .mi-qty-val{font-weight:700; font-size:14px; min-width:16px; text-align:center;}
+
+  .not-found{max-width:480px; margin:100px auto; padding:0 24px; text-align:center;}
+  .not-found h1{font-size:22px; margin-bottom:10px;}
+  .not-found p{font-size:14px; color:var(--body); line-height:1.6;}
 
   /* ============ BASKET BAR (collapsed, floating) ============ */
   .basket-bar{
@@ -161,14 +180,22 @@
   </a>
   <div class="nav-logo"><img src="logo.png" alt="DoorFeast"><span>DoorFeast</span></div>
 </header>
+<div class="preview-banner" id="previewBanner" style="display:none;">👁 You're viewing this as the owner — this page isn't public yet.</div>
 
-<div class="r-header">
-  <h1 id="rName">Loading…</h1>
-  <div class="r-meta" id="rMeta"></div>
-  <div class="r-badges" id="rBadges"></div>
+<div id="pageBody">
+  <div class="r-header" id="rHeaderWrap" style="display:none;">
+    <img class="r-logo" id="rLogoImg" style="display:none;">
+    <span class="r-logo-fallback" id="rLogoFallback" style="display:none;"></span>
+    <div>
+      <h1 id="rName">Loading…</h1>
+      <p class="r-desc" id="rDesc" style="display:none;"></p>
+      <div class="r-meta" id="rMeta"></div>
+      <div class="r-badges" id="rBadges"></div>
+    </div>
+  </div>
+
+  <div class="menu-wrap" id="menuWrap"></div>
 </div>
-
-<div class="menu-wrap" id="menuWrap"></div>
 
 <div class="basket-bar" id="basketBar">
   <span>View basket</span>
@@ -194,84 +221,13 @@
   </div>
 </div>
 
-<script>
-/* ============================================================
-   PLACEHOLDER DATA — this restaurant is not connected to Supabase
-   yet. Shape matches exactly what the real query will return
-   (restaurants row + menu_categories + menu_items), so swapping
-   this block for a real fetch later is a small, mechanical change.
-   ============================================================ */
-const PLACEHOLDER_RESTAURANT = {
-  name: "The Sample Kitchen",
-  cuisine: "British",
-  address: "12 High Street, Stoke-on-Trent",
-  opening_hours_label: "Mon–Sat 12pm–10pm, Sun 4pm–10pm",
-  does_delivery: true,
-  does_collection: true,
-  delivery_fee_pence: 250,
-  min_order_pence: 1000,
-  is_open_now: true
-};
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const PLACEHOLDER_MENU = [
-  {
-    category: "Starters",
-    items: [
-      { id: "s1", name: "Garlic Flatbread", description: "Stone-baked flatbread, garlic butter, herbs.", price_pence: 395, allergens: ["Gluten", "Dairy"], is_available: true },
-      { id: "s2", name: "Soup of the Day", description: "Ask staff for today's flavour.", price_pence: 450, allergens: ["Celery", "May contain dairy"], is_available: true },
-      { id: "s3", name: "Halloumi Fries", description: "Crispy halloumi, chilli honey drizzle.", price_pence: 550, allergens: ["Dairy", "Gluten"], is_available: false }
-    ]
-  },
-  {
-    category: "Mains",
-    items: [
-      { id: "m1", name: "Classic Beef Burger", description: "6oz beef patty, cheddar, house sauce, skin-on fries.", price_pence: 995, allergens: ["Gluten", "Dairy", "Egg", "Mustard"], is_available: true },
-      { id: "m2", name: "Butter Chicken Curry", description: "Slow-cooked chicken, tomato butter sauce, pilau rice.", price_pence: 1095, allergens: ["Dairy", "May contain nuts"], is_available: true },
-      { id: "m3", name: "Margherita Pizza", description: "San Marzano tomato, fior di latte, basil.", price_pence: 895, allergens: ["Gluten", "Dairy"], is_available: true }
-    ]
-  },
-  {
-    category: "Desserts",
-    items: [
-      { id: "d1", name: "Sticky Toffee Pudding", description: "Warm toffee sauce, vanilla ice cream.", price_pence: 495, allergens: ["Gluten", "Dairy", "Egg"], is_available: true },
-      { id: "d2", name: "Chocolate Brownie", description: "Served warm with cream.", price_pence: 450, allergens: ["Gluten", "Dairy", "Egg", "May contain nuts"], is_available: true }
-    ]
-  },
-  {
-    category: "Drinks",
-    items: [
-      { id: "dr1", name: "Soft Drink Can", description: null, price_pence: 150, allergens: ["None"], is_available: true },
-      { id: "dr2", name: "Sparkling Water", description: null, price_pence: 150, allergens: ["None"], is_available: true }
-    ]
-  }
-];
+const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ============================================================
-   RENDER RESTAURANT HEADER
-   ============================================================ */
-document.getElementById('rName').textContent = PLACEHOLDER_RESTAURANT.name;
-
-const rMeta = document.getElementById('rMeta');
-rMeta.innerHTML = `
-  <span>${PLACEHOLDER_RESTAURANT.cuisine}</span>
-  <span>${PLACEHOLDER_RESTAURANT.address}</span>
-  <span>${PLACEHOLDER_RESTAURANT.opening_hours_label}</span>
-`;
-
-const rBadges = document.getElementById('rBadges');
-let badgesHtml = '';
-if(PLACEHOLDER_RESTAURANT.is_open_now){
-  badgesHtml += `<span class="r-badge">Open now</span>`;
-} else {
-  badgesHtml += `<span class="r-badge closed">Closed</span>`;
-}
-if(PLACEHOLDER_RESTAURANT.does_delivery) badgesHtml += `<span class="r-badge">Delivery</span>`;
-if(PLACEHOLDER_RESTAURANT.does_collection) badgesHtml += `<span class="r-badge">Collection</span>`;
-rBadges.innerHTML = badgesHtml;
-
-/* ============================================================
-   RENDER MENU
-   ============================================================ */
 function escapeHtml(str){
   if(!str) return '';
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -280,10 +236,129 @@ function formatGBP(pence){
   return '£' + (pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+const slug = new URLSearchParams(window.location.search).get('slug');
+let restaurant = null;
+let menu = []; // [{ category, items: [...] }]
+let basket = {};
+let orderType = 'collection';
+let BASKET_KEY = 'doorfeast_basket';
+
+/* ============================================================
+   LOAD REAL DATA
+   RLS (migration_2) already allows this: anyone can read a restaurant
+   with is_live = true; the owner can additionally always read their
+   own restaurant/menu regardless of is_live — which is exactly what
+   makes this page double as an owner preview with no extra code path.
+   ============================================================ */
+async function loadRestaurant(){
+  if(!slug){
+    showNotFound("No restaurant specified.");
+    return;
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const { data: r, error } = await supabase
+    .from('restaurants')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if(error || !r){
+    showNotFound("We couldn't find this restaurant.");
+    return;
+  }
+
+  restaurant = r;
+  BASKET_KEY = 'doorfeast_basket_' + restaurant.id;
+  basket = readBasket();
+
+  const isOwnerPreview = !r.is_live && session && session.user;
+  if(isOwnerPreview){
+    // RLS already restricted the row above to "live, or mine" — if it came
+    // back and isn't live, the only way that happened is this viewer owns
+    // it. Still worth a visible banner so it's never mistaken for the
+    // live public page.
+    document.getElementById('previewBanner').style.display = 'block';
+  } else if(!r.is_live){
+    showNotFound("This restaurant isn't live yet.");
+    return;
+  }
+
+  const [{ data: cats }, { data: items }] = await Promise.all([
+    supabase.from('menu_categories').select('*').eq('restaurant_id', r.id).order('sort_order'),
+    supabase.from('menu_items').select('*').eq('restaurant_id', r.id).order('sort_order')
+  ]);
+
+  menu = (cats || []).map(cat => ({
+    category: cat.name,
+    items: (items || []).filter(i => i.category_id === cat.id)
+  })).filter(cat => cat.items.length > 0);
+
+  renderHeader();
+  renderMenu();
+  renderBasket();
+  document.documentElement.classList.remove('auth-pending');
+}
+
+function showNotFound(msg){
+  document.getElementById('pageBody').innerHTML = `
+    <div class="not-found">
+      <h1>${escapeHtml(msg)}</h1>
+      <p>Double check the link, or head back to the homepage to browse other takeaways.</p>
+    </div>`;
+  document.documentElement.classList.remove('auth-pending');
+}
+
+function renderHeader(){
+  document.getElementById('rHeaderWrap').style.display = 'flex';
+  document.title = restaurant.name + ' — DoorFeast';
+  document.getElementById('rName').textContent = restaurant.name;
+
+  if(restaurant.logo_url){
+    const img = document.getElementById('rLogoImg');
+    img.src = restaurant.logo_url;
+    img.alt = restaurant.name;
+    img.style.display = 'block';
+  } else {
+    const fallback = document.getElementById('rLogoFallback');
+    fallback.textContent = (restaurant.name || '?').charAt(0).toUpperCase();
+    fallback.style.display = 'flex';
+  }
+
+  const descEl = document.getElementById('rDesc');
+  if(restaurant.description){
+    descEl.textContent = restaurant.description;
+    descEl.style.display = 'block';
+  }
+
+  const hoursText = (restaurant.opening_hours && restaurant.opening_hours.text) || '';
+  document.getElementById('rMeta').innerHTML = `
+    <span>${escapeHtml(restaurant.cuisine || '')}</span>
+    <span>${escapeHtml(restaurant.address || '')}</span>
+    ${hoursText ? `<span>${escapeHtml(hoursText)}</span>` : ''}
+  `;
+
+  let badgesHtml = '';
+  if(restaurant.does_delivery) badgesHtml += `<span class="r-badge">Delivery</span>`;
+  if(restaurant.does_collection) badgesHtml += `<span class="r-badge">Collection</span>`;
+  if(!restaurant.does_delivery && !restaurant.does_collection) badgesHtml += `<span class="r-badge closed">Ordering not set up yet</span>`;
+  document.getElementById('rBadges').innerHTML = badgesHtml;
+
+  orderType = restaurant.does_collection ? 'collection' : 'delivery';
+}
+
+/* ============================================================
+   RENDER MENU
+   ============================================================ */
 const menuWrap = document.getElementById('menuWrap');
 
 function renderMenu(){
-  menuWrap.innerHTML = PLACEHOLDER_MENU.map(cat => `
+  if(menu.length === 0){
+    menuWrap.innerHTML = `<div class="not-found" style="margin:60px auto;"><p>This restaurant hasn't added any menu items yet.</p></div>`;
+    return;
+  }
+  menuWrap.innerHTML = menu.map(cat => `
     <div class="menu-category">
       <h2>${escapeHtml(cat.category)}</h2>
       ${cat.items.map(item => renderMenuItem(item)).join('')}
@@ -293,12 +368,13 @@ function renderMenu(){
 
 function renderMenuItem(item){
   const qty = basket[item.id] ? basket[item.id].qty : 0;
+  const allergens = (item.allergens || []).join(', ');
   return `
     <div class="menu-item ${item.is_available ? '' : 'unavailable'}">
       <div class="mi-info">
         <div class="mi-name">${escapeHtml(item.name)}</div>
         ${item.description ? `<p class="mi-desc">${escapeHtml(item.description)}</p>` : ''}
-        <span class="mi-allergens">Allergens: ${escapeHtml(item.allergens.join(', '))}</span>
+        <span class="mi-allergens">Allergens: ${escapeHtml(allergens || 'Not listed')}</span>
         ${item.is_available ? '' : '<span class="mi-soldout-tag">Sold out</span>'}
       </div>
       <div class="mi-actions">
@@ -317,7 +393,7 @@ function renderMenuItem(item){
 }
 
 function findItem(id){
-  for(const cat of PLACEHOLDER_MENU){
+  for(const cat of menu){
     const found = cat.items.find(i => i.id === id);
     if(found) return found;
   }
@@ -325,18 +401,17 @@ function findItem(id){
 }
 
 /* ============================================================
-   BASKET — kept in localStorage (not sessionStorage) so it's also
-   readable from the customer portal's Basket tab, which lives on a
-   different page/tab. Scoped per restaurant so different restaurants
-   don't mix baskets together. Each entry snapshots name + price at
-   add-time so any page can render it without re-looking-up the menu.
+   BASKET — kept in localStorage, keyed per-restaurant so multiple
+   real restaurants don't collide. Also remembers which restaurant is
+   "active" so the profile panel / checkout know which basket to read.
    ============================================================ */
-const BASKET_KEY = 'doorfeast_basket_sample-kitchen';
-let basket = JSON.parse(localStorage.getItem(BASKET_KEY) || '{}');
-let orderType = PLACEHOLDER_RESTAURANT.does_collection ? 'collection' : 'delivery';
-
+function readBasket(){
+  try { return JSON.parse(localStorage.getItem(BASKET_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
 function saveBasket(){
   localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
+  localStorage.setItem('doorfeast_active_restaurant_id', restaurant.id);
 }
 
 function addItem(id){
@@ -369,12 +444,10 @@ function basketTotals(){
   let subtotal = 0;
   let count = 0;
   for(const id in basket){
-    const item = findItem(id);
-    if(!item) continue;
-    subtotal += item.price_pence * basket[id].qty;
+    subtotal += basket[id].price_pence * basket[id].qty;
     count += basket[id].qty;
   }
-  const deliveryFee = orderType === 'delivery' ? (PLACEHOLDER_RESTAURANT.delivery_fee_pence || 0) : 0;
+  const deliveryFee = orderType === 'delivery' ? (restaurant.delivery_fee_pence || 0) : 0;
   const total = subtotal + deliveryFee;
   return { subtotal, deliveryFee, total, count };
 }
@@ -396,8 +469,8 @@ const minOrderNote = document.getElementById('minOrderNote');
 
 function renderOrderTypeToggle(){
   const options = [];
-  if(PLACEHOLDER_RESTAURANT.does_collection) options.push('collection');
-  if(PLACEHOLDER_RESTAURANT.does_delivery) options.push('delivery');
+  if(restaurant.does_collection) options.push('collection');
+  if(restaurant.does_delivery) options.push('delivery');
   orderTypeToggle.innerHTML = options.map(opt => `
     <button class="ot-btn ${orderType === opt ? 'active' : ''}" onclick="setOrderType('${opt}')">
       ${opt === 'collection' ? 'Collection' : 'Delivery'}
@@ -412,6 +485,7 @@ function setOrderType(type){
 }
 
 function renderBasket(){
+  if(!restaurant) return;
   const { subtotal, deliveryFee, total, count } = basketTotals();
 
   basketCount.textContent = count;
@@ -421,19 +495,15 @@ function renderBasket(){
   if(count === 0){
     basketBody.innerHTML = '<div class="basket-empty">Your basket is empty — add something tasty from the menu.</div>';
   } else {
-    basketBody.innerHTML = Object.keys(basket).map(id => {
-      const item = findItem(id);
-      if(!item) return '';
-      return `
-        <div class="basket-line">
-          <div>
-            <div class="bl-name">${basket[id].qty} × ${escapeHtml(item.name)}</div>
-            <div class="bl-price">${formatGBP(item.price_pence * basket[id].qty)}</div>
-            <button class="bl-remove" onclick="removeItem('${id}')">Remove</button>
-          </div>
+    basketBody.innerHTML = Object.keys(basket).map(id => `
+      <div class="basket-line">
+        <div>
+          <div class="bl-name">${basket[id].qty} × ${escapeHtml(basket[id].name)}</div>
+          <div class="bl-price">${formatGBP(basket[id].price_pence * basket[id].qty)}</div>
+          <button class="bl-remove" onclick="removeItem('${id}')">Remove</button>
         </div>
-      `;
-    }).join('');
+      </div>
+    `).join('');
   }
 
   renderOrderTypeToggle();
@@ -442,7 +512,7 @@ function renderBasket(){
   sumDeliveryFee.textContent = orderType === 'delivery' ? formatGBP(deliveryFee) : '£0.00';
   sumTotal.textContent = formatGBP(total);
 
-  const minOrder = PLACEHOLDER_RESTAURANT.min_order_pence || 0;
+  const minOrder = restaurant.min_order_pence || 0;
   const belowMin = orderType === 'delivery' && subtotal < minOrder && count > 0;
   minOrderNote.style.display = belowMin ? 'block' : 'none';
   if(belowMin){
@@ -450,6 +520,11 @@ function renderBasket(){
   }
   checkoutBtn.disabled = count === 0 || belowMin;
 }
+
+window.addItem = addItem;
+window.decrementItem = decrementItem;
+window.removeItem = removeItem;
+window.setOrderType = setOrderType;
 
 /* ============================================================
    BASKET PANEL OPEN/CLOSE
@@ -460,12 +535,10 @@ document.getElementById('basketClose').addEventListener('click', () => basketOve
 basketOverlay.addEventListener('click', (e) => { if(e.target === basketOverlay) basketOverlay.classList.remove('show'); });
 
 checkoutBtn.addEventListener('click', () => {
-  // 👉 checkout.html isn't wired up to real payments yet — see its own placeholder notice.
   window.location.href = 'checkout.html';
 });
 
-renderMenu();
-renderBasket();
+loadRestaurant();
 </script>
 </body>
 </html>
