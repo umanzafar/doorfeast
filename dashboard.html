@@ -37,10 +37,18 @@
   .profile-btn:hover .profile-avatar{box-shadow:0 0 0 4px rgba(164,2,3,0.12);}
 
   /* ============ WELCOME (main page behind the panel) ============ */
-  .welcome-main{max-width:640px; margin:0 auto; padding:90px 24px; text-align:center;}
-  .welcome-main h1{font-family:'Poppins',sans-serif; font-size:26px; margin:0 0 12px;}
-  .welcome-main p{font-size:14.5px; color:var(--body); line-height:1.6; margin:0;}
-  .welcome-main .ph-tap-icon{font-size:36px; margin-bottom:16px;}
+  .welcome-main{max-width:520px; margin:70px auto 0; padding:0 24px;}
+  .welcome-card{
+    background:var(--card); border:1px solid var(--line); border-radius:22px;
+    padding:44px 36px; text-align:center; box-shadow:0 20px 45px -28px rgba(27,24,21,0.2);
+  }
+  .welcome-logo{
+    width:76px; height:76px; border-radius:20px; margin:0 auto 18px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--gold), var(--red)); color:#fff; font-size:32px;
+    font-family:'Poppins',sans-serif; font-weight:800;
+  }
+  .welcome-main h1{font-family:'Poppins',sans-serif; font-size:22px; margin:0 0 10px;}
+  .welcome-main p{font-size:13.5px; color:var(--body); line-height:1.6; margin:0 0 22px;}
 
   /* ============ SLIDE-OUT PANEL (same pattern as the customer profile panel) ============ */
   .profile-overlay{
@@ -176,9 +184,12 @@
 </header>
 
 <div class="welcome-main">
-  <div class="ph-tap-icon">🏪</div>
-  <h1>Welcome back, <span id="welcomeRestaurantName">…</span></h1>
-  <p>Tap your icon in the top-right corner to manage your menu, business info, delivery settings, and orders.</p>
+  <div class="welcome-card">
+    <span class="welcome-logo" id="welcomeLogo">🏪</span>
+    <h1>Welcome back, <span id="welcomeRestaurantName">…</span></h1>
+    <p>Manage your menu, business info, delivery settings, and orders.</p>
+    <button class="btn btn-primary" id="welcomeManageBtn">Manage your restaurant →</button>
+  </div>
 </div>
 
 <!-- ============ SLIDE-OUT PANEL ============ -->
@@ -421,6 +432,7 @@ function openDashPanel(){
   showDashMenu();
 }
 dashProfileBtn.addEventListener('click', openDashPanel);
+document.getElementById('welcomeManageBtn').addEventListener('click', openDashPanel);
 dashClose.addEventListener('click', () => dashOverlay.classList.remove('show'));
 dashOverlay.addEventListener('click', (e) => { if(e.target === dashOverlay) dashOverlay.classList.remove('show'); });
 document.getElementById('dashBackBtn').addEventListener('click', showDashMenu);
@@ -451,10 +463,32 @@ function loadBusinessInfo(){
   renderBusinessInfoForm(restaurant);
 }
 
+function renderRestaurantAvatarInto(el, logoUrl, name){
+  if(!el) return;
+  if(logoUrl){
+    el.style.backgroundImage = `url('${logoUrl}')`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.textContent = '';
+  } else {
+    el.style.backgroundImage = 'none';
+    el.textContent = (name || '?').charAt(0).toUpperCase();
+  }
+}
+
 function renderBusinessInfoForm(data){
   const hoursText = (data.opening_hours && data.opening_hours.text) || '';
   businessInfoWrap.innerHTML = `
     <div class="card-form" style="background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 22px;">
+      <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+        <span class="profile-avatar-lg" id="biz-logo-preview" style="width:60px; height:60px; font-size:22px;"></span>
+        <div>
+          <label class="btn btn-secondary" for="biz-logo-input" style="display:inline-block; cursor:pointer; margin-bottom:0;">Change logo</label>
+          <input type="file" id="biz-logo-input" accept="image/*" style="display:none;">
+          <p style="font-size:11px; color:var(--body); margin:6px 0 0;">JPG or PNG, up to 5MB.</p>
+        </div>
+      </div>
+
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Business name</label>
       <input type="text" id="biz-name" value="${escapeHtml(data.name)}" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
 
@@ -475,6 +509,33 @@ function renderBusinessInfoForm(data){
       <button class="btn btn-primary" id="saveBizBtn">Save changes</button>
     </div>
   `;
+  renderRestaurantAvatarInto(document.getElementById('biz-logo-preview'), data.logo_url, data.name);
+
+  document.getElementById('biz-logo-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 5 * 1024 * 1024){
+      alert('That logo is too large — please choose one under 5MB.');
+      e.target.value = '';
+      return;
+    }
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${restaurant.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('restaurant-logos').upload(path, file, { upsert: true });
+      if(upErr) throw upErr;
+      const publicUrl = supabase.storage.from('restaurant-logos').getPublicUrl(path).data.publicUrl;
+      const { error: dbErr } = await supabase.from('restaurants').update({ logo_url: publicUrl }).eq('id', restaurant.id);
+      if(dbErr) throw dbErr;
+      restaurant.logo_url = publicUrl;
+      renderRestaurantAvatarInto(document.getElementById('biz-logo-preview'), publicUrl, restaurant.name);
+      updateRestaurantIdentityUi();
+      showToast('Logo updated.');
+    } catch(err){
+      console.error(err);
+      showToast("Couldn't upload that logo — please try again.");
+    }
+  });
 
   document.getElementById('saveBizBtn').addEventListener('click', async () => {
     const btn = document.getElementById('saveBizBtn');
@@ -772,9 +833,9 @@ async function toggleAvailable(id, available){
 window.toggleAvailable = toggleAvailable;
 
 function updateRestaurantIdentityUi(){
-  const initial = (restaurant.name || '?').charAt(0).toUpperCase();
-  document.getElementById('dashAvatarInitial').textContent = initial;
-  document.getElementById('dashPanelAvatar').textContent = initial;
+  renderRestaurantAvatarInto(document.getElementById('dashAvatarInitial'), restaurant.logo_url, restaurant.name);
+  renderRestaurantAvatarInto(document.getElementById('dashPanelAvatar'), restaurant.logo_url, restaurant.name);
+  renderRestaurantAvatarInto(document.getElementById('welcomeLogo'), restaurant.logo_url, restaurant.name);
   document.getElementById('dashPanelName').textContent = restaurant.name;
   document.getElementById('welcomeRestaurantName').textContent = restaurant.name;
 }
