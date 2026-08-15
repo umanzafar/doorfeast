@@ -197,6 +197,13 @@
     padding:11px 14px; font-size:12px; color:var(--amber); margin-bottom:18px;
   }
 
+  .cover-preview-wrap{position:relative; margin-bottom:14px;}
+  .cover-preview{
+    height:140px; border-radius:14px; background:linear-gradient(135deg, var(--gold), var(--red));
+    background-size:cover; background-position:center; border:1px solid var(--line);
+  }
+  .cover-change-btn{position:absolute; right:12px; bottom:12px; margin-bottom:0 !important; box-shadow:0 4px 10px rgba(0,0,0,0.15);}
+
   .hours-grid{border:1.5px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:18px;}
   .hours-row{display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
   .hours-row:last-child{border-bottom:none;}
@@ -581,6 +588,13 @@ function renderBusinessInfoForm(data){
   const hours = data.opening_hours || {};
   businessInfoWrap.innerHTML = `
     <div class="card-form" style="background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px 22px;">
+      <div class="cover-preview-wrap" id="cover-preview-wrap">
+        <div class="cover-preview" id="biz-cover-preview"></div>
+        <label class="btn btn-secondary cover-change-btn" for="biz-cover-input">Change cover photo</label>
+        <input type="file" id="biz-cover-input" accept="image/*" style="display:none;">
+      </div>
+      <p style="font-size:11px; color:var(--body); margin:-14px 0 20px;">This wide photo shows at the top of your public page and search cards. JPG or PNG, up to 5MB.</p>
+
       <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
         <span class="profile-avatar-lg" id="biz-logo-preview" style="width:60px; height:60px; font-size:22px;"></span>
         <div>
@@ -636,6 +650,34 @@ function renderBusinessInfoForm(data){
     </div>
   `;
   renderRestaurantAvatarInto(document.getElementById('biz-logo-preview'), data.logo_url, data.name);
+  if(data.cover_url){
+    document.getElementById('biz-cover-preview').style.backgroundImage = `url('${data.cover_url}')`;
+  }
+
+  document.getElementById('biz-cover-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 5 * 1024 * 1024){
+      alert('That photo is too large — please choose one under 5MB.');
+      e.target.value = '';
+      return;
+    }
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${restaurant.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('restaurant-covers').upload(path, file, { upsert: true });
+      if(upErr) throw upErr;
+      const publicUrl = supabase.storage.from('restaurant-covers').getPublicUrl(path).data.publicUrl;
+      const { error: dbErr } = await supabase.from('restaurants').update({ cover_url: publicUrl }).eq('id', restaurant.id);
+      if(dbErr) throw dbErr;
+      restaurant.cover_url = publicUrl;
+      document.getElementById('biz-cover-preview').style.backgroundImage = `url('${publicUrl}')`;
+      showToast('Cover photo updated.');
+    } catch(err){
+      console.error(err);
+      showToast("Couldn't upload that photo — please try again.");
+    }
+  });
 
   document.querySelectorAll('.hours-closed-cb').forEach(cb => {
     cb.addEventListener('change', () => {

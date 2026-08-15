@@ -394,20 +394,34 @@
     background:var(--card);
     border:1px solid var(--line);
     border-radius:16px;
-    overflow:hidden;
+    overflow:visible;
     text-decoration:none;
     color:var(--ink);
     transition:transform .15s, box-shadow .15s;
     display:block;
   }
   .r-card:hover{transform:translateY(-3px); box-shadow:0 16px 30px -16px rgba(38,34,32,0.3);}
-  .r-card .thumb{
+  .r-card .cover{
+    position:relative;
     height:120px;
     background:linear-gradient(135deg, var(--gold), var(--red));
-    display:flex; align-items:center; justify-content:center;
-    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:26px;
+    background-size:cover; background-position:center;
+    border-radius:16px 16px 0 0;
+    overflow:hidden;
   }
-  .r-card .body{padding:16px 16px 18px;}
+  .r-card .logo-badge{
+    position:absolute; left:14px; bottom:-22px; z-index:2;
+    width:52px; height:52px; border-radius:13px;
+    border:3px solid var(--card); background:var(--card);
+    box-shadow:0 6px 14px -4px rgba(38,34,32,0.35);
+    overflow:hidden;
+    background-size:cover; background-position:center;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:18px;
+  }
+  .r-card .logo-badge.has-photo{background-color:var(--card);}
+  .r-card .logo-badge.no-photo{background:linear-gradient(135deg, var(--gold), var(--red));}
+  .r-card .body{padding:32px 16px 18px;}
   .r-card .name{font-family:'Poppins',sans-serif; font-weight:700; font-size:15.5px; margin-bottom:4px;}
   .r-card .meta{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--body);}
   .r-card .dot-sep::before{content:"•"; margin:0 2px;}
@@ -1102,7 +1116,9 @@ function renderResults(list, postcode){
     card.className = 'r-card';
     card.href = 'restaurant.html?slug=' + encodeURIComponent(r.slug);
     card.innerHTML = `
-      <div class="thumb" ${r.logo_url ? `style="background-image:url('${r.logo_url}'); background-size:cover; background-position:center;"` : ''}>${r.logo_url ? '' : r.name.charAt(0)}</div>
+      <div class="cover" ${r.cover_url ? `style="background-image:url('${r.cover_url}')"` : ''}>
+        <div class="logo-badge ${r.logo_url ? 'has-photo' : 'no-photo'}" ${r.logo_url ? `style="background-image:url('${r.logo_url}')"` : ''}>${r.logo_url ? '' : r.name.charAt(0)}</div>
+      </div>
       <div class="body">
         <div class="name">${r.name}</div>
         <div class="meta">${r.cuisine || ''}<span class="dot-sep"></span>${r.distanceLabel}</div>
@@ -1137,7 +1153,7 @@ async function handleSearch(){
     // already restricts anon reads to is_live = true rows.
     const { data: restaurants, error: fetchErr } = await supabase
       .from('restaurants')
-      .select('name, slug, cuisine, logo_url, lat, lng')
+      .select('name, slug, cuisine, logo_url, cover_url, lat, lng')
       .eq('is_live', true)
       .not('lat', 'is', null)
       .not('lng', 'is', null);

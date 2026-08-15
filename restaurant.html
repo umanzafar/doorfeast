@@ -40,19 +40,27 @@
   }
 
   /* ============ RESTAURANT HEADER ============ */
-  .r-header{
-    max-width:900px; margin:0 auto; padding:28px 24px 20px;
-    display:flex; gap:18px; align-items:flex-start;
+  .r-cover{
+    position:relative; height:200px; max-width:900px; margin:0 auto;
   }
-  .r-logo{
-    width:64px; height:64px; border-radius:16px; flex-shrink:0; object-fit:cover;
-    border:1px solid var(--line); background:var(--card);
-  }
-  .r-logo-fallback{
-    width:64px; height:64px; border-radius:16px; flex-shrink:0;
+  .r-cover-img{
+    height:100%;
     background:linear-gradient(135deg, var(--gold), var(--red));
+    background-size:cover; background-position:center;
+  }
+  @media (min-width:920px){ .r-cover-img{ border-radius:0 0 20px 20px; overflow:hidden; } }
+  .r-cover-logo{
+    position:absolute; left:24px; bottom:-30px; z-index:2;
+    width:84px; height:84px; border-radius:18px;
+    border:4px solid var(--cream); background:var(--card);
+    box-shadow:0 8px 18px -6px rgba(38,34,32,0.35);
+    background-size:cover; background-position:center;
     display:flex; align-items:center; justify-content:center;
-    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:24px;
+    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:30px;
+  }
+  .r-cover-logo.no-photo{background:linear-gradient(135deg, var(--gold), var(--red));}
+  .r-header{
+    max-width:900px; margin:0 auto; padding:46px 24px 20px;
   }
   .r-header h1{font-size:clamp(24px,4vw,32px); margin-bottom:8px;}
   .r-desc{font-size:13.5px; color:var(--body); line-height:1.5; margin:0 0 12px; max-width:560px;}
@@ -183,9 +191,11 @@
 <div class="preview-banner" id="previewBanner" style="display:none;">👁 You're viewing this as the owner — this page isn't public yet.</div>
 
 <div id="pageBody">
+  <div class="r-cover" id="rCoverWrap" style="display:none;">
+    <div class="r-cover-img" id="rCoverImg"></div>
+    <div class="r-cover-logo no-photo" id="rCoverLogo"></div>
+  </div>
   <div class="r-header" id="rHeaderWrap" style="display:none;">
-    <img class="r-logo" id="rLogoImg" style="display:none;">
-    <span class="r-logo-fallback" id="rLogoFallback" style="display:none;"></span>
     <div>
       <h1 id="rName">Loading…</h1>
       <p class="r-desc" id="rDesc" style="display:none;"></p>
@@ -332,19 +342,22 @@ function formatOpeningHours(hours){
 }
 
 function renderHeader(){
+  document.getElementById('rCoverWrap').style.display = 'block';
   document.getElementById('rHeaderWrap').style.display = 'flex';
   document.title = restaurant.name + ' — DoorFeast';
   document.getElementById('rName').textContent = restaurant.name;
 
+  if(restaurant.cover_url){
+    document.getElementById('rCoverImg').style.backgroundImage = `url('${restaurant.cover_url}')`;
+  }
+
+  const logoBadge = document.getElementById('rCoverLogo');
   if(restaurant.logo_url){
-    const img = document.getElementById('rLogoImg');
-    img.src = restaurant.logo_url;
-    img.alt = restaurant.name;
-    img.style.display = 'block';
+    logoBadge.classList.remove('no-photo');
+    logoBadge.style.backgroundImage = `url('${restaurant.logo_url}')`;
   } else {
-    const fallback = document.getElementById('rLogoFallback');
-    fallback.textContent = (restaurant.name || '?').charAt(0).toUpperCase();
-    fallback.style.display = 'flex';
+    logoBadge.classList.add('no-photo');
+    logoBadge.textContent = (restaurant.name || '?').charAt(0).toUpperCase();
   }
 
   const descEl = document.getElementById('rDesc');
