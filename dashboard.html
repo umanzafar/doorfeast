@@ -144,6 +144,55 @@
     padding:40px 24px; text-align:center; color:var(--body); font-size:14px;
   }
   .placeholder-card .ph-icon{font-size:26px; margin-bottom:10px;}
+
+  .alert-silence-btn{
+    display:block; width:100%; border:none; border-radius:14px; padding:16px;
+    background:var(--red); color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:14.5px;
+    cursor:pointer; margin-bottom:18px; animation:alertPulse 1s infinite;
+  }
+  @keyframes alertPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(166,30,30,0.5); } 50%{ box-shadow:0 0 0 10px rgba(166,30,30,0); } }
+
+  .inbox-order-card{background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:14px;}
+  .inbox-order-card.is-new{border-color:var(--red); box-shadow:0 0 0 3px rgba(166,30,30,0.1);}
+  .ioc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; flex-wrap:wrap;}
+  .ioc-number{font-family:'Poppins',sans-serif; font-weight:800; font-size:16px;}
+  .ioc-time{font-size:11.5px; color:var(--body); margin-top:2px;}
+  .ioc-status-pill{font-size:11.5px; font-weight:700; padding:4px 11px; border-radius:999px; white-space:nowrap;}
+  .ioc-status-pill.paid{background:rgba(217,164,65,0.18); color:var(--amber);}
+  .ioc-status-pill.accepted, .ioc-status-pill.preparing{background:rgba(164,2,3,0.08); color:var(--red);}
+  .ioc-status-pill.ready{background:rgba(46,125,70,0.1); color:var(--green);}
+  .ioc-status-pill.completed{background:rgba(46,125,70,0.15); color:var(--green);}
+  .ioc-status-pill.rejected{background:rgba(166,30,30,0.1); color:var(--red);}
+
+  .ioc-customer{font-size:13px; margin-bottom:10px; line-height:1.6;}
+  .ioc-customer b{font-weight:700;}
+  .ioc-items{border-top:1px dashed var(--line); border-bottom:1px dashed var(--line); padding:10px 0; margin-bottom:10px;}
+  .ioc-item-line{display:flex; justify-content:space-between; font-size:13px; padding:3px 0;}
+  .ioc-total-line{display:flex; justify-content:space-between; font-weight:700; font-size:14px; margin-bottom:14px;}
+
+  .ioc-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .ioc-actions .btn{flex:1;}
+  .btn-reject{background:#fff; border:1.5px solid var(--red); color:var(--red);}
+  .btn-reject:hover{background:rgba(166,30,30,0.06);}
+
+  .ioc-reject-form{display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);}
+  .ioc-reject-form.show{display:block;}
+  .ioc-reject-form textarea{
+    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-size:13px; margin-bottom:10px; font-family:inherit; min-height:60px;
+  }
+
+  /* Only the print ticket is visible when printing — everything else on
+     the page is hidden via the print media query below. */
+  .print-ticket{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    .print-ticket, .print-ticket *{visibility:visible;}
+    .print-ticket{display:block; position:fixed; inset:0; padding:20px; font-family:'Inter',monospace;}
+    .print-ticket h2{font-size:18px; margin-bottom:10px;}
+    .print-ticket .pt-line{display:flex; justify-content:space-between; font-size:13px; padding:2px 0;}
+    .print-ticket hr{border:none; border-top:1px dashed #000; margin:10px 0;}
+  }
   .placeholder-card b{color:var(--ink);}
 
   .menu-grid{display:flex; flex-direction:column; gap:14px;}
@@ -374,16 +423,9 @@
       </div>
 
       <div class="dtab-content" id="dtab-orders">
-        <div class="section-head"><div><h2>Order inbox</h2><p>Live orders will appear here once payments go live.</p></div></div>
-        <div class="placeholder-card" style="text-align:left; padding:28px 26px;">
-          <div style="text-align:center;"><div class="ph-icon">🔔</div><b>Structure is in place now — real use once Stripe payments are live.</b></div>
-          <ul style="margin:16px 0 0; padding-left:20px; font-size:13px; line-height:1.8; color:var(--ink);">
-            <li>Incoming order alert with sound</li>
-            <li>Accept or reject order, set estimated prep time</li>
-            <li>Status updates: Preparing, Ready or Out for Delivery, Completed</li>
-            <li>Before Ready/Out for Delivery: required photo of the completed order</li>
-          </ul>
-        </div>
+        <div class="section-head"><div><h2>Order inbox</h2><p>Live orders — updates automatically, no need to refresh.</p></div></div>
+        <button class="alert-silence-btn" id="alertSilenceBtn" style="display:none;">🔔 New order! Tap to silence and view</button>
+        <div id="ordersInboxWrap"><div class="empty-state">Loading orders…</div></div>
       </div>
 
       <div class="dtab-content" id="dtab-history">
@@ -473,6 +515,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="print-ticket" id="printTicket"></div>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -1153,6 +1196,8 @@ document.getElementById('goliveToggle').addEventListener('change', async (e) => 
 
   await loadMenu();
   await loadWelcomeStats();
+  await loadInboxOrders();
+  subscribeToOrderInbox();
 })();
 
 // Quick-glance numbers on the landing screen so returning owners see real
@@ -1182,6 +1227,237 @@ async function loadWelcomeStats(){
     statusEl.className = 'stat-status draft';
     statusEl.innerHTML = '<span class="dot"></span>Not live yet';
   }
+}
+
+/* ============================================================
+   ORDER INBOX
+   An order only ever shows here once payment_status = 'paid' (CLAUDE.md
+   rule) — pending_payment orders (someone still mid-checkout) never
+   appear. Realtime pushes new paid orders in live; the trigger in
+   migration_14 guarantees every status change is logged to
+   order_status_history regardless of which client made it.
+   ============================================================ */
+const ACTIVE_STATUSES = ['paid', 'accepted', 'preparing', 'ready'];
+let inboxOrders = [];
+let alertBeepTimer = null;
+let audioCtx = null;
+
+function formatGBPInbox(pence){
+  return '£' + ((pence || 0) / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function formatTimeInbox(iso){
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadInboxOrders(){
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('restaurant_id', restaurant.id)
+    .eq('payment_status', 'paid')
+    .in('status', ACTIVE_STATUSES)
+    .order('created_at', { ascending: true });
+
+  const wrap = document.getElementById('ordersInboxWrap');
+  if(error){
+    wrap.innerHTML = '<div class="empty-state">Couldn\'t load orders. Please refresh.</div>';
+    return;
+  }
+  inboxOrders = data || [];
+  renderInbox();
+}
+
+function renderInbox(){
+  const wrap = document.getElementById('ordersInboxWrap');
+  if(inboxOrders.length === 0){
+    wrap.innerHTML = '<div class="empty-state">No active orders right now.</div>';
+    return;
+  }
+  wrap.innerHTML = inboxOrders.map(o => renderOrderCard(o)).join('');
+}
+
+function renderOrderActions(o){
+  if(o.status === 'paid'){
+    return `
+      <div class="ioc-actions">
+        <button class="btn btn-primary" onclick="acceptOrder('${o.id}')">Accept</button>
+        <button class="btn btn-reject" onclick="toggleRejectForm('${o.id}')">Reject</button>
+      </div>`;
+  }
+  if(o.status === 'accepted'){
+    return `
+      <div class="ioc-actions">
+        <button class="btn btn-primary" onclick="advanceOrder('${o.id}', 'preparing')">Mark preparing</button>
+        <button class="btn btn-secondary" onclick="printTicket('${o.id}')">🖨 Print ticket</button>
+      </div>`;
+  }
+  if(o.status === 'preparing'){
+    return `
+      <div class="ioc-actions">
+        <button class="btn btn-primary" onclick="advanceOrder('${o.id}', 'ready')">Mark ready</button>
+        <button class="btn btn-secondary" onclick="printTicket('${o.id}')">🖨 Print ticket</button>
+      </div>`;
+  }
+  if(o.status === 'ready'){
+    return `
+      <div class="ioc-actions">
+        <button class="btn btn-primary" onclick="advanceOrder('${o.id}', 'completed')">Mark completed</button>
+      </div>`;
+  }
+  return '';
+}
+
+function renderOrderCard(o){
+  const items = o.order_items || [];
+  return `
+    <div class="inbox-order-card ${o._isNew ? 'is-new' : ''}" data-id="${o.id}">
+      <div class="ioc-top">
+        <div>
+          <div class="ioc-number">${escapeHtml(o.order_number)}</div>
+          <div class="ioc-time">${formatTimeInbox(o.created_at)} · ${o.order_type === 'delivery' ? 'Delivery' : 'Collection'}</div>
+        </div>
+        <span class="ioc-status-pill ${o.status}">${escapeHtml(o.status)}</span>
+      </div>
+      <div class="ioc-customer">
+        <b>${escapeHtml(o.customer_name)}</b> · ${escapeHtml(o.customer_phone)}
+        ${o.order_type === 'delivery' && o.delivery_address ? `<br>${escapeHtml(o.delivery_address)}` : ''}
+        ${o.customer_note ? `<br><i>Note: ${escapeHtml(o.customer_note)}</i>` : ''}
+      </div>
+      <div class="ioc-items">
+        ${items.map(i => `<div class="ioc-item-line"><span>${i.quantity}× ${escapeHtml(i.item_name)}</span><span>${formatGBPInbox(i.line_total_pence)}</span></div>`).join('')}
+      </div>
+      <div class="ioc-total-line"><span>Total</span><span>${formatGBPInbox(o.total_pence)}</span></div>
+      ${renderOrderActions(o)}
+      <div class="ioc-reject-form" id="reject-form-${o.id}">
+        <textarea id="reject-reason-${o.id}" placeholder="Reason for rejecting — the customer will see this"></textarea>
+        <div class="ioc-actions">
+          <button class="btn btn-reject" onclick="confirmRejectOrder('${o.id}')">Confirm reject</button>
+          <button class="btn btn-secondary" onclick="toggleRejectForm('${o.id}')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function updateOrderStatus(id, updates){
+  try {
+    const { error } = await supabase.from('orders').update(updates).eq('id', id);
+    if(error) throw error;
+    showToast('Order updated.');
+    if(updates.status === 'completed' || updates.status === 'rejected'){
+      inboxOrders = inboxOrders.filter(o => o.id !== id);
+    } else {
+      const order = inboxOrders.find(o => o.id === id);
+      if(order) Object.assign(order, updates);
+    }
+    renderInbox();
+    loadWelcomeStats();
+  } catch(err){
+    console.error(err);
+    showToast('Something went wrong — please try again.');
+  }
+}
+
+window.acceptOrder = (id) => updateOrderStatus(id, { status: 'accepted', accepted_at: new Date().toISOString() });
+
+window.advanceOrder = (id, newStatus) => {
+  const updates = { status: newStatus };
+  if(newStatus === 'ready') updates.ready_at = new Date().toISOString();
+  if(newStatus === 'completed') updates.completed_at = new Date().toISOString();
+  return updateOrderStatus(id, updates);
+};
+
+window.toggleRejectForm = (id) => {
+  const form = document.getElementById(`reject-form-${id}`);
+  if(form) form.classList.toggle('show');
+};
+
+window.confirmRejectOrder = (id) => {
+  const textarea = document.getElementById(`reject-reason-${id}`);
+  const reason = textarea.value.trim();
+  if(!reason){ showToast('Please enter a reason.'); return; }
+  return updateOrderStatus(id, { status: 'rejected', rejection_reason: reason });
+};
+
+window.printTicket = (id) => {
+  const o = inboxOrders.find(x => x.id === id);
+  if(!o) return;
+  const items = o.order_items || [];
+  document.getElementById('printTicket').innerHTML = `
+    <h2>${escapeHtml(o.order_number)}</h2>
+    <div class="pt-line"><span>${o.order_type === 'delivery' ? 'DELIVERY' : 'COLLECTION'}</span><span>${formatTimeInbox(o.created_at)}</span></div>
+    <hr>
+    <div class="pt-line"><span><b>${escapeHtml(o.customer_name)}</b></span></div>
+    <div class="pt-line"><span>${escapeHtml(o.customer_phone)}</span></div>
+    ${o.delivery_address ? `<div class="pt-line"><span>${escapeHtml(o.delivery_address)}</span></div>` : ''}
+    <hr>
+    ${items.map(i => `<div class="pt-line"><span>${i.quantity}x ${escapeHtml(i.item_name)}</span><span>${formatGBPInbox(i.line_total_pence)}</span></div>`).join('')}
+    <hr>
+    <div class="pt-line"><span><b>TOTAL</b></span><span><b>${formatGBPInbox(o.total_pence)}</b></span></div>
+    ${o.customer_note ? `<hr><div class="pt-line"><span>Note: ${escapeHtml(o.customer_note)}</span></div>` : ''}
+  `;
+  window.print();
+};
+
+/* ============ SOUND ALERT — repeats until staff taps to silence ============ */
+function playBeepOnce(){
+  try {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch(e){ console.error(e); }
+}
+
+function startAlert(){
+  document.getElementById('alertSilenceBtn').style.display = 'block';
+  if(alertBeepTimer) return;
+  playBeepOnce();
+  alertBeepTimer = setInterval(playBeepOnce, 1500);
+}
+
+function stopAlert(){
+  document.getElementById('alertSilenceBtn').style.display = 'none';
+  if(alertBeepTimer){ clearInterval(alertBeepTimer); alertBeepTimer = null; }
+}
+
+document.getElementById('alertSilenceBtn').addEventListener('click', () => {
+  stopAlert();
+  inboxOrders.forEach(o => { o._isNew = false; });
+  renderInbox();
+});
+
+/* ============ REALTIME ============ */
+function subscribeToOrderInbox(){
+  supabase
+    .channel('order-inbox-' + restaurant.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurant.id}` }, async (payload) => {
+      if(payload.new.payment_status !== 'paid') return;
+      const { data: items } = await supabase.from('order_items').select('*').eq('order_id', payload.new.id);
+      inboxOrders.push({ ...payload.new, order_items: items || [], _isNew: true });
+      renderInbox();
+      startAlert();
+      loadWelcomeStats();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurant.id}` }, (payload) => {
+      // Catches changes made elsewhere (another tab, an admin action)
+      // that this session didn't itself trigger.
+      const idx = inboxOrders.findIndex(o => o.id === payload.new.id);
+      if(ACTIVE_STATUSES.includes(payload.new.status) && payload.new.payment_status === 'paid'){
+        if(idx >= 0) Object.assign(inboxOrders[idx], payload.new);
+      } else if(idx >= 0){
+        inboxOrders.splice(idx, 1);
+      }
+      renderInbox();
+    })
+    .subscribe();
 }
 </script>
 </body>
