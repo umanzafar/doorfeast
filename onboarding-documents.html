@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>DoorFeast — Finish setting up your takeaway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html.auth-pending body{visibility:hidden;}
+
+  :root{
+    --cream:#F7F3EC; --card:#FFFFFF; --ink:#1B1815; --body:#6E6A62;
+    --red:#A61E1E; --red-dark:#7C1616; --line:#E4DFD2;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; display:flex; justify-content:center; padding:56px 20px 80px;}
+  .wrap{width:100%; max-width:520px;}
+  .brandbar{display:flex; justify-content:center; margin-bottom:22px;}
+  .brandbar .logo-img{width:100px; height:auto; border-radius:14px; box-shadow:0 14px 30px -10px rgba(0,0,0,0.25);}
+  .hero{text-align:center; margin-bottom:22px;}
+  .hero h1{font-family:'Poppins',sans-serif; font-weight:800; font-size:24px; line-height:1.28; margin:0 0 10px;}
+  .hero p{font-size:14px; line-height:1.6; color:var(--body); margin:0; max-width:440px; margin:0 auto;}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:36px 32px 30px; box-shadow:0 20px 45px -25px rgba(27,24,21,0.25);}
+
+  .field-group{margin-bottom:26px;}
+  .field-group:last-of-type{margin-bottom:0;}
+  label.qlabel{display:block; font-family:'Poppins',sans-serif; font-weight:700; font-size:17px; margin-bottom:8px;}
+  .qhint{font-size:12.5px; color:var(--body); margin:-2px 0 14px; line-height:1.5;}
+
+  .option-list{display:flex; flex-direction:column; gap:9px;}
+  .option{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line); border-radius:10px; padding:11px 14px; background:#fff; cursor:pointer; font-size:14.5px;}
+  .option:hover{border-color:var(--red);}
+  .option input{accent-color:var(--red); width:16px; height:16px;}
+  .option input:checked + span{font-weight:600; color:var(--red);}
+  .option:has(input:checked){background:rgba(166,30,30,0.06); border-color:var(--red);}
+
+  .file-drop{
+    border:1.5px dashed var(--line); border-radius:12px; padding:18px;
+    text-align:center; cursor:pointer; transition:border-color .15s, background .15s;
+    position:relative;
+  }
+  .file-drop:hover{border-color:var(--red); background:rgba(166,30,30,0.03);}
+  .file-drop input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+  .file-drop .fd-label{font-size:13.5px; font-weight:600; color:var(--ink);}
+  .file-drop .fd-hint{font-size:11.5px; color:var(--body); margin-top:4px;}
+  .file-drop.has-file{border-color:var(--red); border-style:solid; background:rgba(166,30,30,0.04);}
+  .file-drop .fd-filename{font-size:12.5px; color:var(--red); font-weight:600; margin-top:6px; word-break:break-all;}
+
+  .actions{display:flex; gap:10px; margin-top:22px;}
+  .btn{border:none; border-radius:999px; padding:14px 24px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif;}
+  .btn-primary{flex:1; background:var(--red); color:#fff; box-shadow:0 12px 24px -8px rgba(166,30,30,0.45);}
+  .btn-primary:hover{background:var(--red-dark);}
+  .btn-primary:disabled{opacity:0.65; cursor:not-allowed;}
+
+  .privacy-note{text-align:center; font-size:11.5px; color:var(--body); margin-top:16px;}
+  .error-banner{display:none; background:#FBE7E5; border:1px solid #D8534B; color:#8A2E28; font-size:13px; padding:10px 14px; border-radius:10px; margin-bottom:20px;}
+  .error-banner.show{display:block;}
+  @media (max-width:480px){ .card{padding:26px 22px 24px;} .hero h1{font-size:21px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brandbar"><img src="logo.png" alt="DoorFeast" class="logo-img"></div>
+  <div class="hero">
+    <h1>You're approved — one last step</h1>
+    <p>Pick your cuisine and upload 3 documents so we can get you live.</p>
+  </div>
+
+  <div class="card">
+    <div id="errorBanner" class="error-banner">Something went wrong. Please try again in a moment.</div>
+
+    <form id="setupForm">
+      <div class="field-group">
+        <label class="qlabel">Cuisine type</label>
+        <div class="option-list" id="cuisineOptions">
+          <label class="option"><input type="radio" name="cuisine" value="Indian"><span>Indian</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Chinese"><span>Chinese</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Pizza"><span>Pizza</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Kebab"><span>Kebab</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Desserts"><span>Desserts</span></label>
+          <label class="option"><input type="radio" name="cuisine" value="Fast Food"><span>Fast Food</span></label>
+          <label class="option"><input type="radio" id="cuisineOtherCheck" name="cuisine" value="Other"><span>Other</span></label>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="qlabel">Food hygiene certificate</label>
+        <p class="qhint">Photo or PDF of your current certificate</p>
+        <label class="file-drop" id="dropHygiene">
+          <input type="file" id="hygieneCert" accept="image/*,application/pdf">
+          <div class="fd-label">Click to upload</div>
+          <div class="fd-hint">JPG, PNG or PDF</div>
+          <div class="fd-filename"></div>
+        </label>
+      </div>
+
+      <div class="field-group">
+        <label class="qlabel">Proof of business registration</label>
+        <p class="qhint">e.g. Companies House registration, VAT certificate, or council business registration</p>
+        <label class="file-drop" id="dropBizReg">
+          <input type="file" id="businessReg" accept="image/*,application/pdf">
+          <div class="fd-label">Click to upload</div>
+          <div class="fd-hint">JPG, PNG or PDF</div>
+          <div class="fd-filename"></div>
+        </label>
+      </div>
+
+      <div class="field-group">
+        <label class="qlabel">ID of the account holder</label>
+        <p class="qhint">Passport, driving licence, or national ID — for the person who'll manage payouts</p>
+        <label class="file-drop" id="dropIdDoc">
+          <input type="file" id="idDoc" accept="image/*,application/pdf">
+          <div class="fd-label">Click to upload</div>
+          <div class="fd-hint">JPG, PNG or PDF</div>
+          <div class="fd-filename"></div>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" id="submitBtn">Finish setup →</button>
+      </div>
+      <p class="privacy-note">Your documents are used only to verify your business and are never shared publicly.</p>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const MAX_FILE_MB = 8;
+
+  (async function(){
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session){
+    window.location.replace('signup.html');
+    return;
+  }
+  const user = session.user;
+
+  const { data: apps } = await supabase
+    .from('restaurant_applications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const application = apps && apps[0];
+
+  if(!application){
+    window.location.replace('application.html');
+    return;
+  }
+  if(application.status !== 'approved'){
+    window.location.replace('application-thankyou.html');
+    return;
+  }
+  if(application.cuisine && application.hygiene_cert_path && application.business_reg_path && application.id_doc_path){
+    window.location.replace('dashboard.html');
+    return;
+  }
+
+  document.documentElement.classList.remove('auth-pending');
+
+  const errorBanner = document.getElementById('errorBanner');
+  function showError(msg){
+    errorBanner.textContent = msg;
+    errorBanner.classList.add('show');
+  }
+  function clearError(){
+    errorBanner.classList.remove('show');
+  }
+
+  function wireFileDrop(dropId, inputId){
+    const drop = document.getElementById(dropId);
+    const input = document.getElementById(inputId);
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      const nameEl = drop.querySelector('.fd-filename');
+      if(file){
+        if(file.size > MAX_FILE_MB * 1024 * 1024){
+          nameEl.textContent = `File too large (max ${MAX_FILE_MB}MB) — please choose a smaller file.`;
+          drop.classList.remove('has-file');
+          input.value = '';
+          return;
+        }
+        drop.classList.add('has-file');
+        nameEl.textContent = file.name;
+      }
+    });
+  }
+  wireFileDrop('dropHygiene', 'hygieneCert');
+  wireFileDrop('dropBizReg', 'businessReg');
+  wireFileDrop('dropIdDoc', 'idDoc');
+
+  // Uploads to the private application-documents bucket, path prefixed by
+  // the user's own id (RLS only lets them — and admins — read it back).
+  async function uploadDoc(file, label){
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const path = `${user.id}/${label}-${Date.now()}-${safeName}`;
+    const { error } = await supabase.storage.from('application-documents').upload(path, file);
+    if(error) throw error;
+    return path;
+  }
+
+  const form = document.getElementById('setupForm');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearError();
+
+    const cuisineChecked = document.querySelector('input[name="cuisine"]:checked');
+    const hygieneInput = document.getElementById('hygieneCert');
+    const bizRegInput = document.getElementById('businessReg');
+    const idInput = document.getElementById('idDoc');
+
+    if(!cuisineChecked){ showError('Please choose a cuisine type.'); return; }
+    if(!hygieneInput.files[0]){ showError('Please upload your food hygiene certificate.'); return; }
+    if(!bizRegInput.files[0]){ showError('Please upload proof of business registration.'); return; }
+    if(!idInput.files[0]){ showError('Please upload an ID document.'); return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Uploading…";
+
+    let hygieneCertPath, businessRegPath, idDocPath;
+
+    try {
+      [hygieneCertPath, businessRegPath, idDocPath] = await Promise.all([
+        uploadDoc(hygieneInput.files[0], 'hygiene-cert'),
+        uploadDoc(bizRegInput.files[0], 'business-reg'),
+        uploadDoc(idInput.files[0], 'id-doc')
+      ]);
+
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('complete-onboarding', {
+        headers: { Authorization: `Bearer ${currentSession.access_token}` },
+        body: {
+          cuisine: cuisineChecked.value,
+          hygiene_cert_path: hygieneCertPath,
+          business_reg_path: businessRegPath,
+          id_doc_path: idDocPath
+        }
+      });
+      if(error) throw error;
+      if(data && data.error) throw new Error(data.error);
+
+      window.location.href = "dashboard.html";
+
+    } catch (err) {
+      console.error(err);
+      // If the documents uploaded fine but complete-onboarding failed, the
+      // files are orphaned in storage with nothing referencing them yet —
+      // clean them up rather than leaving them behind.
+      if(hygieneCertPath || businessRegPath || idDocPath){
+        const paths = [hygieneCertPath, businessRegPath, idDocPath].filter(Boolean);
+        await supabase.storage.from('application-documents').remove(paths);
+      }
+      showError("Something went wrong finishing setup. Please try again in a moment.");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Finish setup →";
+    }
+  });
+
+  })();
+</script>
+</body>
+</html>

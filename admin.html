@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>DoorFeast — Application Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -283,6 +284,15 @@
   }
   window.openDocument = openDocument;
 
+  // Cuisine/documents aren't collected until the owner completes
+  // onboarding-documents.html post-approval, so a path may not exist yet —
+  // render a disabled placeholder instead of a button that would call
+  // openDocument with a missing (or, worse, the literal string "null") path.
+  function docLinkOrPending(path, label){
+    if(!path) return `<button class="doc-link" disabled>${escapeHtml(label)} — not yet uploaded</button>`;
+    return `<button class="doc-link" onclick="openDocument('${escapeHtml(path)}', '${escapeHtml(label)}')">${escapeHtml(label)}</button>`;
+  }
+
   /* ============ LOAD & RENDER ============ */
   async function loadApplications(){
     refreshBtn.classList.add('spinning');
@@ -338,14 +348,14 @@
           <div><div class="app-field-label">Owner</div><div class="app-field-value">${escapeHtml(app.owner_name)}</div></div>
           <div><div class="app-field-label">Phone</div><div class="app-field-value">${escapeHtml(app.phone)}</div></div>
           <div><div class="app-field-label">Email</div><div class="app-field-value">${escapeHtml(app.email)}</div></div>
-          <div><div class="app-field-label">Cuisine</div><div class="app-field-value">${escapeHtml(app.cuisine)}</div></div>
+          <div><div class="app-field-label">Cuisine</div><div class="app-field-value">${app.cuisine ? escapeHtml(app.cuisine) : 'Not yet provided — pending owner setup'}</div></div>
           <div style="grid-column:1/-1;"><div class="app-field-label">Address</div><div class="app-field-value">${escapeHtml(app.address)}</div></div>
         </div>
 
         <div class="doc-links">
-          <button class="doc-link" onclick="openDocument('${app.hygiene_cert_path}', 'Hygiene Certificate')">Hygiene Certificate</button>
-          <button class="doc-link" onclick="openDocument('${app.business_reg_path}', 'Business Registration')">Business Registration</button>
-          <button class="doc-link" onclick="openDocument('${app.id_doc_path}', 'ID Document')">ID Document</button>
+          ${docLinkOrPending(app.hygiene_cert_path, 'Hygiene Certificate')}
+          ${docLinkOrPending(app.business_reg_path, 'Business Registration')}
+          ${docLinkOrPending(app.id_doc_path, 'ID Document')}
         </div>
 
         ${currentTab === 'rejected' && app.reject_reason ? `

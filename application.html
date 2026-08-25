@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>DoorFeast — Apply as a Takeaway</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,24 +48,6 @@
     font-weight:700; font-size:14.5px; color:var(--body);
   }
   .phone-row input{flex:1;}
-  .option-list{display:flex; flex-direction:column; gap:9px;}
-  .option{display:flex; align-items:center; gap:10px; border:1.5px solid var(--line); border-radius:10px; padding:11px 14px; background:#fff; cursor:pointer; font-size:14.5px;}
-  .option:hover{border-color:var(--red);}
-  .option input{accent-color:var(--red); width:16px; height:16px;}
-  .option input:checked + span{font-weight:600; color:var(--red);}
-  .option:has(input:checked){background:rgba(166,30,30,0.06); border-color:var(--red);}
-
-  .file-drop{
-    border:1.5px dashed var(--line); border-radius:12px; padding:18px;
-    text-align:center; cursor:pointer; transition:border-color .15s, background .15s;
-    position:relative;
-  }
-  .file-drop:hover{border-color:var(--red); background:rgba(166,30,30,0.03);}
-  .file-drop input{position:absolute; inset:0; opacity:0; cursor:pointer;}
-  .file-drop .fd-label{font-size:13.5px; font-weight:600; color:var(--ink);}
-  .file-drop .fd-hint{font-size:11.5px; color:var(--body); margin-top:4px;}
-  .file-drop.has-file{border-color:var(--red); border-style:solid; background:rgba(166,30,30,0.04);}
-  .file-drop .fd-filename{font-size:12.5px; color:var(--red); font-weight:600; margin-top:6px; word-break:break-all;}
 
   .actions{display:flex; gap:10px; margin-top:22px;}
   .btn{border:none; border-radius:999px; padding:14px 24px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif;}
@@ -85,7 +68,7 @@
   <div class="brandbar"><img src="logo.png" alt="DoorFeast" class="logo-img"></div>
   <div class="hero">
     <h1>Apply to list your takeaway on DoorFeast</h1>
-    <p>A few quick questions — our team reviews every application by hand and emails you the decision.</p>
+    <p>12% flat commission, no hidden fees, no weekly or monthly fee — get paid per order or on a day you choose. Takes about a minute; our team reviews every application by hand.</p>
   </div>
 
   <div class="progress" id="progress"></div>
@@ -96,19 +79,19 @@
     <form id="applicationForm">
 
       <div class="step active" data-step="0">
-        <p class="step-eyebrow">Step 1 of 9</p>
+        <p class="step-eyebrow">Step 1 of 4</p>
         <label class="qlabel">Business name</label>
         <input type="text" id="businessName">
       </div>
 
       <div class="step" data-step="1">
-        <p class="step-eyebrow">Step 2 of 9</p>
+        <p class="step-eyebrow">Step 2 of 4</p>
         <label class="qlabel">Owner name</label>
         <input type="text" id="ownerName">
       </div>
 
       <div class="step" data-step="2">
-        <p class="step-eyebrow">Step 3 of 9</p>
+        <p class="step-eyebrow">Step 3 of 4</p>
         <label class="qlabel">Phone number</label>
         <p class="qhint">DoorFeast is only onboarding UK takeaways right now.</p>
         <div class="phone-row">
@@ -118,72 +101,16 @@
       </div>
 
       <div class="step" data-step="3">
-        <p class="step-eyebrow">Step 4 of 9</p>
-        <label class="qlabel">Email</label>
-        <input type="email" id="email" placeholder="you@example.com">
-      </div>
-
-      <div class="step" data-step="4">
-        <p class="step-eyebrow">Step 5 of 9</p>
+        <p class="step-eyebrow">Step 4 of 4</p>
         <label class="qlabel">Business address</label>
         <input type="text" id="address">
-      </div>
-
-      <div class="step" data-step="5">
-        <p class="step-eyebrow">Step 6 of 9</p>
-        <label class="qlabel">Cuisine type</label>
-        <p class="qhint">Tap one to continue automatically.</p>
-        <div class="option-list" id="cuisineOptions">
-          <label class="option"><input type="radio" name="cuisine" value="Indian"><span>Indian</span></label>
-          <label class="option"><input type="radio" name="cuisine" value="Chinese"><span>Chinese</span></label>
-          <label class="option"><input type="radio" name="cuisine" value="Pizza"><span>Pizza</span></label>
-          <label class="option"><input type="radio" name="cuisine" value="Kebab"><span>Kebab</span></label>
-          <label class="option"><input type="radio" name="cuisine" value="Fast Food"><span>Fast Food</span></label>
-          <label class="option"><input type="radio" id="cuisineOtherCheck" name="cuisine" value="Other"><span>Other</span></label>
-        </div>
-      </div>
-
-      <div class="step" data-step="6">
-        <p class="step-eyebrow">Step 7 of 9</p>
-        <label class="qlabel">Food hygiene certificate</label>
-        <p class="qhint">Photo or PDF of your current certificate</p>
-        <label class="file-drop" id="dropHygiene">
-          <input type="file" id="hygieneCert" accept="image/*,application/pdf">
-          <div class="fd-label">Click to upload</div>
-          <div class="fd-hint">JPG, PNG or PDF</div>
-          <div class="fd-filename"></div>
-        </label>
-      </div>
-
-      <div class="step" data-step="7">
-        <p class="step-eyebrow">Step 8 of 9</p>
-        <label class="qlabel">Proof of business registration</label>
-        <p class="qhint">e.g. Companies House registration, VAT certificate, or council business registration</p>
-        <label class="file-drop" id="dropBizReg">
-          <input type="file" id="businessReg" accept="image/*,application/pdf">
-          <div class="fd-label">Click to upload</div>
-          <div class="fd-hint">JPG, PNG or PDF</div>
-          <div class="fd-filename"></div>
-        </label>
-      </div>
-
-      <div class="step" data-step="8">
-        <p class="step-eyebrow">Step 9 of 9</p>
-        <label class="qlabel">ID of the account holder</label>
-        <p class="qhint">Passport, driving licence, or national ID — for the person who'll manage payouts</p>
-        <label class="file-drop" id="dropIdDoc">
-          <input type="file" id="idDoc" accept="image/*,application/pdf">
-          <div class="fd-label">Click to upload</div>
-          <div class="fd-hint">JPG, PNG or PDF</div>
-          <div class="fd-filename"></div>
-        </label>
       </div>
 
       <div class="actions">
         <button type="button" class="btn btn-back" id="backBtn" style="display:none;">Previous</button>
         <button type="submit" class="btn btn-primary" id="nextBtn">Next</button>
       </div>
-      <p class="privacy-note">Your documents are used only to verify your business and are never shared publicly.</p>
+      <p class="privacy-note">We'll email you once your application's been reviewed — usually within a day or two.</p>
     </form>
   </div>
 </div>
@@ -194,26 +121,38 @@
   const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const MAX_FILE_MB = 8;
-  const TOTAL_STEPS = 9;
+  const TOTAL_STEPS = 4;
   let currentStep = 0;
+
+  // Wrapped in an async IIFE (same pattern as dashboard.html's init()) so
+  // an early `return` can actually bail out of setup — a bare top-level
+  // `return` inside a module is a SyntaxError.
+  (async function(){
 
   // Runs before anything paints (body stays visibility:hidden until this
   // resolves) — no session means they skipped signup, send them there.
   const { data: { session } } = await supabase.auth.getSession();
   if(!session){
     window.location.replace('signup.html');
+    return;
   }
   const user = session.user;
-  document.documentElement.classList.remove('auth-pending');
 
-  const emailInput = document.getElementById('email');
-  if(emailInput && user.email){
-    emailInput.value = user.email;
-    emailInput.readOnly = true;
-    emailInput.style.background = '#f2efe8';
-    emailInput.style.cursor = 'not-allowed';
+  // Already applied? Don't let them fill the wizard out a second time —
+  // route to wherever that application already put them, same logic as
+  // signup.html's goToOnboarding().
+  const { data: existingApps } = await supabase
+    .from('restaurant_applications')
+    .select('status')
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const existingApp = existingApps && existingApps[0];
+  if(existingApp){
+    window.location.replace(existingApp.status === 'approved' ? 'dashboard.html' : 'application-thankyou.html');
+    return;
   }
+
+  document.documentElement.classList.remove('auth-pending');
 
   /* ============ WIZARD NAVIGATION ============ */
   const progress = document.getElementById('progress');
@@ -257,55 +196,12 @@
     if(currentStep > 0) goToStep(currentStep - 1);
   });
 
-  // Auto-advance the moment a cuisine option is picked — still leaves the
-  // Next button working normally on every other step.
-  document.getElementById('cuisineOptions').addEventListener('change', () => {
-    if(currentStep === 5) goToStep(currentStep + 1);
-  });
-
-  function wireFileDrop(dropId, inputId){
-    const drop = document.getElementById(dropId);
-    const input = document.getElementById(inputId);
-    input.addEventListener('change', () => {
-      const file = input.files[0];
-      const nameEl = drop.querySelector('.fd-filename');
-      if(file){
-        if(file.size > MAX_FILE_MB * 1024 * 1024){
-          nameEl.textContent = `File too large (max ${MAX_FILE_MB}MB) — please choose a smaller file.`;
-          drop.classList.remove('has-file');
-          input.value = '';
-          return;
-        }
-        drop.classList.add('has-file');
-        nameEl.textContent = file.name;
-      }
-    });
-  }
-  wireFileDrop('dropHygiene', 'hygieneCert');
-  wireFileDrop('dropBizReg', 'businessReg');
-  wireFileDrop('dropIdDoc', 'idDoc');
-
   function validateStep(step){
     if(step === 0 && !document.getElementById('businessName').value.trim()){ showError('Please enter your business name.'); return false; }
     if(step === 1 && !document.getElementById('ownerName').value.trim()){ showError('Please enter the owner name.'); return false; }
     if(step === 2 && !document.getElementById('phone').value.trim()){ showError('Please enter a phone number.'); return false; }
-    if(step === 3 && !document.getElementById('email').value.trim()){ showError('Please enter an email address.'); return false; }
-    if(step === 4 && !document.getElementById('address').value.trim()){ showError('Please enter your business address.'); return false; }
-    if(step === 5 && !document.querySelector('input[name="cuisine"]:checked')){ showError('Please choose a cuisine type.'); return false; }
-    if(step === 6 && !document.getElementById('hygieneCert').files[0]){ showError('Please upload your food hygiene certificate.'); return false; }
-    if(step === 7 && !document.getElementById('businessReg').files[0]){ showError('Please upload proof of business registration.'); return false; }
-    if(step === 8 && !document.getElementById('idDoc').files[0]){ showError('Please upload an ID document.'); return false; }
+    if(step === 3 && !document.getElementById('address').value.trim()){ showError('Please enter your business address.'); return false; }
     return true;
-  }
-
-  // Uploads to the private application-documents bucket, path prefixed by
-  // the user's own id (RLS only lets them — and admins — read it back).
-  async function uploadDoc(file, label){
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const path = `${user.id}/${label}-${Date.now()}-${safeName}`;
-    const { error } = await supabase.storage.from('application-documents').upload(path, file);
-    if(error) throw error;
-    return path;
   }
 
   const form = document.getElementById('applicationForm');
@@ -321,46 +217,35 @@
 
     // Final step — actually submit.
     clearError();
-    const cuisine = document.querySelector('input[name="cuisine"]:checked').value;
-    const hygieneInput = document.getElementById('hygieneCert');
-    const bizRegInput = document.getElementById('businessReg');
-    const idInput = document.getElementById('idDoc');
-
     nextBtn.disabled = true;
-    nextBtn.textContent = "Uploading…";
+    nextBtn.textContent = "Submitting…";
 
-    try {
-      const [hygieneCertPath, businessRegPath, idDocPath] = await Promise.all([
-        uploadDoc(hygieneInput.files[0], 'hygiene-cert'),
-        uploadDoc(bizRegInput.files[0], 'business-reg'),
-        uploadDoc(idInput.files[0], 'id-doc')
-      ]);
+    let phone = document.getElementById('phone').value.trim();
+    if(phone.startsWith('0')) phone = phone.slice(1);
 
-      const { error: insertError } = await supabase.from('restaurant_applications').insert({
-        user_id: user.id,
-        business_name: document.getElementById('businessName').value.trim(),
-        owner_name: document.getElementById('ownerName').value.trim(),
-        phone: '+44 ' + document.getElementById('phone').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        cuisine: cuisine,
-        hygiene_cert_path: hygieneCertPath,
-        business_reg_path: businessRegPath,
-        id_doc_path: idDocPath
-      });
-      if(insertError) throw insertError;
+    const { error: insertError } = await supabase.from('restaurant_applications').insert({
+      user_id: user.id,
+      business_name: document.getElementById('businessName').value.trim(),
+      owner_name: document.getElementById('ownerName').value.trim(),
+      phone: '+44' + phone,
+      email: user.email,
+      address: document.getElementById('address').value.trim()
+    });
 
-      window.location.href = "application-thankyou.html";
-
-    } catch (err) {
-      console.error(err);
+    if(insertError){
+      console.error(insertError);
       showError("Something went wrong sending your application. Please try again in a moment.");
       nextBtn.disabled = false;
       nextBtn.textContent = "Submit application →";
+      return;
     }
+
+    window.location.href = "application-thankyou.html";
   });
 
   renderStep();
+
+  })();
 </script>
 </body>
 </html>

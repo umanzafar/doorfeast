@@ -114,6 +114,8 @@ Deno.serve(async (req) => {
       // postcode/delivery settings aren't collected on the application form —
       // left blank/false here, filled in later by the owner via the dashboard's
       // Business Info section (or by an admin directly in the table editor).
+      // cuisine isn't collected until onboarding-documents.html either
+      // (post-approval, via complete-onboarding) — left null here.
       const { data: newRestaurant, error: restaurantError } = await adminClient
         .from('restaurants')
         .insert({
@@ -122,7 +124,6 @@ Deno.serve(async (req) => {
           address: application.address,
           postcode: '',
           phone: application.phone,
-          cuisine: application.cuisine,
           is_live: false,
           does_delivery: false,
           does_collection: false,

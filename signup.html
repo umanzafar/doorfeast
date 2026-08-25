@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>DoorFeast — Partner Sign Up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,7 +81,7 @@
     <label for="email">Email</label>
     <input type="email" id="email" required autocomplete="email">
     <label for="password">Password</label>
-    <input type="password" id="password" required autocomplete="new-password" minlength="6">
+    <input type="password" id="password" required autocomplete="new-password" minlength="8">
     <button type="submit" class="btn btn-primary" id="submitBtn">Create account</button>
   </form>
 
@@ -123,7 +124,7 @@
     if(status === 429 || msg.includes('rate limit') || msg.includes('too many requests')) return "Too many attempts right now — please wait a few minutes and try again.";
     if(msg.includes('already registered')) return "That email's already registered — try logging in instead.";
     if(msg.includes('invalid login credentials')) return "Email or password is incorrect.";
-    if(msg.includes('password should be at least')) return "Password should be at least 6 characters.";
+    if(msg.includes('password should be at least')) return "Password should be at least 8 characters.";
     if(msg.includes('unable to validate email') || msg.includes('invalid email')) return "That email address doesn't look right.";
     return "Something went wrong — please try again.";
   }
@@ -133,15 +134,22 @@
   // RLS only lets a user read their own row of.
   async function goToOnboarding(){
     try {
+      // .limit(1) instead of .maybeSingle() — maybeSingle() throws if more
+      // than one row matches, which repeated test applications during
+      // development can easily produce. Take the most recent one instead
+      // of hard-failing on duplicates. (Same pattern as dashboard.html's
+      // auth guard.)
       const { data, error } = await supabase
         .from('restaurant_applications')
         .select('status')
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
       if(error) throw error;
+      const application = data && data[0];
 
-      if(!data){
+      if(!application){
         window.location.href = 'application.html';
-      } else if(data.status === 'approved'){
+      } else if(application.status === 'approved'){
         window.location.href = 'dashboard.html';
       } else {
         window.location.href = 'application-thankyou.html';

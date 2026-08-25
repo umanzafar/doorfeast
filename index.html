@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>DoorFeast — Good Food, Delivered Fair</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -689,7 +690,7 @@
         </a>
         <a href="/signup.html">
           Sign up as a takeaway partner
-          <span class="desc">Grow your business with lower fees</span>
+          <span class="desc">Grow your business with an audience</span>
         </a>
       </div>
     </div>
@@ -718,31 +719,8 @@
       <span class="slide-eyebrow">The Neighbourhood Takeaway Network</span>
       <h1>Good food, delivered fair.</h1>
       <p>Order directly from your local independent takeaways. Fair fees for them, hot food for you.</p>
-      <a href="#search" class="slide-btn">Find takeaways near you →</a>
     </div>
   </div>
-  <div class="slide" style="background-image:linear-gradient(90deg, rgba(38,34,32,0.75), rgba(38,34,32,0.15)), url('slide2.jpg')">
-    <div class="slide-content">
-      <span class="slide-eyebrow">Launching in Stoke-on-Trent</span>
-      <h1>Your local takeaway, one tap away.</h1>
-      <p>Supporting the independent takeaways that make your neighbourhood taste like home.</p>
-      <a href="#search" class="slide-btn">See what's nearby →</a>
-    </div>
-  </div>
-  <div class="slide" style="background-image:linear-gradient(90deg, rgba(38,34,32,0.75), rgba(38,34,32,0.15)), url('slide3.jpg')">
-    <div class="slide-content">
-      <span class="slide-eyebrow">For Restaurant Owners</span>
-      <h1>Keep more of every order.</h1>
-      <p>A flat 12% commission, no lock-in, and a real person to talk to — join our launch partner list today.</p>
-      <a href="/signup.html" class="slide-btn">Partner with us →</a>
-    </div>
-  </div>
-
-  <div class="carousel-arrows">
-    <button class="arrow-prev" aria-label="Previous slide">‹</button>
-    <button class="arrow-next" aria-label="Next slide">›</button>
-  </div>
-  <div class="carousel-dots" id="carouselDots"></div>
 </section>
 
 <!-- ============ POSTCODE SEARCH ============ -->
@@ -785,7 +763,7 @@
   <div id="stateNoCoverage" style="display:none;">
     <div class="no-coverage">
       <h3>We're not in your area yet</h3>
-      <p>DoorFeast is currently only live in Stoke-on-Trent, but we're expanding fast. Leave your email and we'll let you know the moment we launch near you.</p>
+      <p>DoorFeast is currently only live in Stoke-on-Trent. Leave your email and we'll let you know if we launch near you.</p>
       <div class="notify-row">
         <input type="email" id="notifyEmail" placeholder="you@example.com">
         <button id="notifyBtn">Notify me</button>
@@ -827,45 +805,6 @@
   </div>
 </section>
 
-<!-- ============ TAKEAWAY CALCULATOR ============ -->
-<section class="calc-section">
-  <div class="calc-inner">
-    <div class="calc-pitch reveal">
-      <span class="calc-eyebrow">For Takeaway Owners</span>
-      <h2>See exactly what you'd <span class="hl-red">take home</span> on DoorFeast.</h2>
-      <p>Type an order value — or your rough weekly total — and watch the numbers update as you type. No hidden fees, no bundled marketing charges, no surprise deductions.</p>
-      <ul class="calc-points">
-       <li>12% flat commission — the same for every order</li>
-       <li>Payment processing shown as a clear line, not baked in</li>
-       <li>Payouts to your bank on a predictable schedule</li>
-       </ul>
-    </div>
-    
-    <div class="calc-card reveal" style="transition-delay:0.1s">
-      <label class="calc-label" for="calcInput">Order value (£)</label>
-      <input type="number" id="calcInput" class="calc-input" placeholder="e.g. 25.00" min="0" step="0.01">
-
-      <div class="calc-results">
-        <div class="calc-row">
-          <span>DoorFeast commission (12%)</span>
-          <strong id="calcCommission">£0.00</strong>
-        </div>
-        <div class="calc-row">
-          <span>Estimated payment processing fee</span>
-          <strong id="calcStripe">£0.00</strong>
-        </div>
-        <div class="calc-row calc-row-final">
-          <span>Estimated amount you take home</span>
-          <strong id="calcPayout">£0.00</strong>
-        </div>
-      </div>
-      <p class="calc-note">Processing fee is an estimate based on standard UK card rates — your actual Stripe fee may vary slightly depending on card type.</p>
-
-      <a href="/signup.html" class="calc-register-btn">Register as a takeaway →</a>
-    </div>
-  </div>
-</section>
-
 <!-- ============ REVIEWS ============ -->
 <section class="reviews-section reveal">
   <h2>Reviews coming soon</h2>
@@ -892,23 +831,7 @@
       <a href="#">Cookies Policy</a>
     </div>
     <div class="footer-col">
-      <p class="footer-heading">Top Cuisines</p>
-      <a href="#">Indian</a>
-      <a href="#">Chinese</a>
-      <a href="#">Pizza</a>
-      <a href="#">Kebab</a>
-      <a href="#" class="footer-viewall">View all</a>
-    </div>
-    <div class="footer-col">
-      <p class="footer-heading">Locations</p>
-      <a href="#">Stoke-on-Trent</a>
-      <a href="#" class="footer-viewall">View all</a>
-    </div>
-    <div class="footer-col">
       <p class="footer-heading">Company</p>
-      <a href="#">About Us</a>
-      <a href="#">Careers</a>
-      <a href="#">Blog</a>
       <a href="#">Our Brand</a>
     </div>
   </div>
@@ -964,7 +887,8 @@
           <span>Account</span>
           <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
-        <button class="profile-menu-item" data-ptab="rewards">
+        <!-- Rewards tab hidden until the £5 offer has a funding decision behind it. renderPanelRewards() and its fraud-prevention data (migration_7) are left intact for when it's re-enabled. -->
+        <button class="profile-menu-item" data-ptab="rewards" style="display:none;">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8v13M3 12h18M12 8c-1.5-4-6-4-6-1.5S9 8 12 8Zm0 0c1.5-4 6-4 6-1.5S15 8 12 8Z"/></svg>
           <span>Rewards</span>
           <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -1048,38 +972,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const SUPABASE_URL = 'https://ooiajowrhwvidyydqhnl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vaWFqb3dyaHd2aWR5eWRxaG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNTY0MDAsImV4cCI6MjEwMTYzMjQwMH0.gbPWyPYehj7_-xyJk3SgvkFpAUWLrI-FdFIYX39V_f4';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* ============ CAROUSEL ============ */
-const slides = document.querySelectorAll('.slide');
-const dotsWrap = document.getElementById('carouselDots');
-let current = 0;
-let autoTimer;
-
-slides.forEach((_, i) => {
-  const dot = document.createElement('button');
-  dot.className = 'dot' + (i === 0 ? ' active' : '');
-  dot.addEventListener('click', () => goTo(i));
-  dotsWrap.appendChild(dot);
-});
-const dots = dotsWrap.querySelectorAll('.dot');
-
-function goTo(i){
-  slides[current].classList.remove('active');
-  dots[current].classList.remove('active');
-  current = (i + slides.length) % slides.length;
-  slides[current].classList.add('active');
-  dots[current].classList.add('active');
-}
-document.querySelector('.arrow-prev').addEventListener('click', () => { goTo(current - 1); restartAuto(); });
-document.querySelector('.arrow-next').addEventListener('click', () => { goTo(current + 1); restartAuto(); });
-
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function startAuto(){
-  if(prefersReducedMotion) return;
-  autoTimer = setInterval(() => goTo(current + 1), 5500);
-}
-function restartAuto(){ clearInterval(autoTimer); startAuto(); }
-startAuto();
 
 /* ============ POSTCODE SEARCH ============ */
 const COVERAGE_RADIUS_KM = 8;
@@ -1182,34 +1074,6 @@ async function handleSearch(){
 
 postcodeBtn.addEventListener('click', handleSearch);
 postcodeInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') handleSearch(); });
-
-/* ============ TAKEAWAY COMMISSION CALCULATOR ============ */
-const calcInput = document.getElementById('calcInput');
-const calcCommission = document.getElementById('calcCommission');
-const calcStripe = document.getElementById('calcStripe');
-const calcPayout = document.getElementById('calcPayout');
-
-function formatGBP(n){
-  return '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function updateCalculator(){
-  const orderValue = parseFloat(calcInput.value);
-  if(isNaN(orderValue) || orderValue < 0){
-    calcCommission.textContent = '£0.00';
-    calcStripe.textContent = '£0.00';
-    calcPayout.textContent = '£0.00';
-    return;
-  }
-  const commission = orderValue * 0.12;
-  const stripeFee = (orderValue * 0.015) + 0.20;
-  const payout = orderValue - commission - stripeFee;
-
-  calcCommission.textContent = formatGBP(commission);
-  calcStripe.textContent = formatGBP(stripeFee);
-  calcPayout.textContent = formatGBP(Math.max(payout, 0));
-}
-calcInput.addEventListener('input', updateCalculator);
 
 /* ============ NOTIFY ME (out of coverage) ============ */
 document.getElementById('notifyBtn').addEventListener('click', async () => {

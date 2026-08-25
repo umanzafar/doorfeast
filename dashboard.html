@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>DoorFeast — Partner Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -665,7 +666,7 @@ function renderBusinessInfoForm(data){
 
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Cuisine type</label>
       <select id="biz-cuisine" style="width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; margin-bottom:16px;">
-        ${['Indian','Chinese','Pizza','Kebab','Fast Food','Other'].map(c => `<option ${data.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
+        ${['Indian','Chinese','Pizza','Kebab','Desserts','Fast Food','Other'].map(c => `<option ${data.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
       </select>
 
       <label style="font-size:12.5px; font-weight:600; color:var(--body); display:block; margin-bottom:6px;">Opening hours</label>
@@ -1187,6 +1188,14 @@ document.getElementById('goliveToggle').addEventListener('change', async (e) => 
       await supabase.auth.signOut();
       window.location.href = 'signup.html';
     });
+    return;
+  }
+
+  // cuisine is only set once the owner has completed onboarding-documents.html
+  // (cuisine + all 3 documents, via complete-onboarding) — approved isn't the
+  // same as fully set up, so don't let them into the dashboard until then.
+  if(!ownedRestaurant.cuisine){
+    window.location.replace('onboarding-documents.html');
     return;
   }
 
