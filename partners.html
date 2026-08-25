@@ -34,19 +34,23 @@
 
   /* ============ NAV ============ */
   header.nav{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:16px 28px;
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(250,247,242,0.92);
+    backdrop-filter:blur(8px);
     border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 28px;
   }
   .nav-logo{display:flex; align-items:center; gap:10px; text-decoration:none;}
   .nav-logo img{width:38px; border-radius:9px;}
   .nav-logo span{font-family:'Poppins',sans-serif; font-weight:800; font-size:18px; color:var(--ink);}
-  .nav-back{text-decoration:none; font-size:14px; font-weight:600; color:var(--body); padding:9px 16px; border-radius:999px; transition:background .15s;}
+  .nav-back{text-decoration:none; font-size:14px; font-weight:600; color:var(--ink); padding:9px 16px; border-radius:999px; transition:background .15s;}
   .nav-back:hover{background:rgba(38,34,32,0.06);}
 
   /* ============ HERO ============ */
   .hero-banner{
     position:relative;
+    margin-top:64px;
     height:min(60vh, 460px);
     min-height:340px;
     display:flex; align-items:center;
