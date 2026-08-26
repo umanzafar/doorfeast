@@ -230,17 +230,14 @@
   .carousel{
     position:relative;
     margin-top:64px;
-    height:min(72vh, 560px);
-    min-height:380px;
-    overflow:hidden;
   }
   .slide{
-    position:absolute; inset:0;
+    position:relative;
+    min-height:min(72vh, 560px);
     display:flex; align-items:center;
-    opacity:0; transition:opacity .6s ease;
+    padding:32px 0;
     background-size:cover; background-position:center;
   }
-  .slide.active{opacity:1;}
   .slide::after{
     content:"";
     position:absolute; inset:0;
@@ -300,7 +297,7 @@
   .dot.active{background:#fff; width:22px; border-radius:5px;}
 
   @media (max-width:640px){
-    .carousel{height:64vh; min-height:420px;}
+    .slide{min-height:420px;}
     .slide-content{padding:0 24px;}
     .carousel-arrows{display:none;}
   }
@@ -695,7 +692,7 @@
       <!-- TODO: replace with the real DoorFeast support number -->
       <a href="tel:+44XXXXXXXXXX" class="hero-phone">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Call us — +44 XXXX XXXXXX
+        Call us on +44 XXXX XXXXXX
       </a>
     </div>
   </div>
