@@ -247,6 +247,30 @@
     padding:11px 14px; font-size:12px; color:var(--amber); margin-bottom:18px;
   }
 
+  .menu-build-banner{
+    background:rgba(46,125,70,0.08); border:1px solid rgba(46,125,70,0.25); border-radius:10px;
+    padding:12px 14px; font-size:13px; color:var(--ink); margin-bottom:18px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .menu-build-banner .mbb-status{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+    padding:3px 9px; border-radius:999px; background:rgba(46,125,70,0.15); color:var(--green); white-space:nowrap;
+  }
+  .menu-build-card{
+    background:var(--card); border:1.5px dashed var(--line); border-radius:14px;
+    padding:20px; margin-bottom:22px;
+  }
+  .menu-build-card p.mb-title{font-size:14px; font-weight:700; margin:0 0 12px;}
+  .menu-build-card input[type="file"]{
+    width:100%; font-size:12.5px; margin-bottom:10px;
+  }
+  .menu-build-card textarea{
+    width:100%; min-height:56px; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-family:inherit; font-size:13px; resize:vertical; margin-bottom:12px;
+  }
+  .menu-build-card textarea:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.1);}
+  .mb-filenames{font-size:11.5px; color:var(--body); margin:-4px 0 10px;}
+
   .cover-preview-wrap{position:relative; margin-bottom:14px;}
   .cover-preview{
     height:140px; border-radius:14px; background:linear-gradient(135deg, var(--gold), var(--red));
@@ -408,6 +432,16 @@
         <div class="photo-note">
           <b>Coming with Order Inbox:</b> once live order handling is on, you'll be required to upload a photo of each completed order before marking it Ready — evidence for refund disputes. Not active yet.
         </div>
+
+        <div class="menu-build-banner" id="menuBuildBanner" style="display:none;"></div>
+        <div class="menu-build-card" id="menuBuildCard">
+          <p class="mb-title">Want us to build your menu? Upload photos and we'll do the rest.</p>
+          <input type="file" id="menuBuildFiles" accept="image/*,application/pdf" multiple>
+          <div class="mb-filenames" id="menuBuildFilenames"></div>
+          <textarea id="menuBuildNote" placeholder="Anything we should know? (optional)"></textarea>
+          <button type="button" class="btn btn-primary" id="menuBuildSubmitBtn">Submit for our team to build</button>
+        </div>
+
         <div class="menu-grid" id="menuGrid">
           <div class="empty-state">Loading your menu…</div>
         </div>
@@ -426,6 +460,7 @@
       <div class="dtab-content" id="dtab-orders">
         <div class="section-head"><div><h2>Order inbox</h2><p>Live orders — updates automatically, no need to refresh.</p></div></div>
         <button class="alert-silence-btn" id="alertSilenceBtn" style="display:none;">🔔 New order! Tap to silence and view</button>
+        <div class="inbox-stats" id="inboxStatsWrap"></div>
         <div id="ordersInboxWrap"><div class="empty-state">Loading orders…</div></div>
       </div>
 
@@ -985,6 +1020,86 @@ function renderMenu(){
   `).join('');
 }
 
+/* ============================================================
+   HYBRID MENU-BUILDING INTAKE
+   Owner uploads photos of their menu instead of typing every item in
+   themselves; a human on our team builds it from the photos. This is the
+   intake side only — the banner below gives visible confirmation that
+   something happened (not a silent queue), and updates once an admin
+   marks the request done in admin.html's Menu Requests tab.
+   ============================================================ */
+const menuBuildBanner = document.getElementById('menuBuildBanner');
+const menuBuildFiles = document.getElementById('menuBuildFiles');
+const menuBuildFilenames = document.getElementById('menuBuildFilenames');
+const menuBuildNote = document.getElementById('menuBuildNote');
+const menuBuildSubmitBtn = document.getElementById('menuBuildSubmitBtn');
+
+menuBuildFiles.addEventListener('change', () => {
+  const files = Array.from(menuBuildFiles.files || []);
+  menuBuildFilenames.textContent = files.length ? `${files.length} file${files.length > 1 ? 's' : ''} selected: ${files.map(f => f.name).join(', ')}` : '';
+});
+
+async function loadMenuBuildStatus(){
+  const { data } = await supabase
+    .from('menu_build_requests')
+    .select('*')
+    .eq('restaurant_id', restaurant.id)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const latest = data && data[0];
+  if(!latest){
+    menuBuildBanner.style.display = 'none';
+    return;
+  }
+  const statusLabel = latest.status === 'done' ? 'Done' : latest.status === 'in_progress' ? 'In progress' : 'Pending';
+  const fileCount = (latest.file_paths || []).length;
+  menuBuildBanner.style.display = 'flex';
+  menuBuildBanner.innerHTML = `
+    <span>Your menu is being built by our team — ${fileCount} photo${fileCount === 1 ? '' : 's'} submitted.</span>
+    <span class="mbb-status">${statusLabel}</span>
+  `;
+}
+
+menuBuildSubmitBtn.addEventListener('click', async () => {
+  const files = Array.from(menuBuildFiles.files || []);
+  if(files.length === 0){
+    showToast('Choose at least one photo first.');
+    return;
+  }
+
+  menuBuildSubmitBtn.disabled = true;
+  menuBuildSubmitBtn.textContent = 'Uploading…';
+
+  try {
+    const paths = await Promise.all(files.map(async (file) => {
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      const path = `${restaurant.owner_user_id}/${Date.now()}-${safeName}`;
+      const { error } = await supabase.storage.from('menu-build-uploads').upload(path, file);
+      if(error) throw error;
+      return path;
+    }));
+
+    const { error: insertError } = await supabase.from('menu_build_requests').insert({
+      restaurant_id: restaurant.id,
+      file_paths: paths,
+      note: menuBuildNote.value.trim() || null
+    });
+    if(insertError) throw insertError;
+
+    menuBuildFiles.value = '';
+    menuBuildFilenames.textContent = '';
+    menuBuildNote.value = '';
+    showToast('Submitted — our team will build your menu from these.');
+    await loadMenuBuildStatus();
+  } catch(err){
+    console.error(err);
+    showToast('Something went wrong — please try again.');
+  } finally {
+    menuBuildSubmitBtn.disabled = false;
+    menuBuildSubmitBtn.textContent = 'Submit for our team to build';
+  }
+});
+
 document.getElementById('addItemBtn').addEventListener('click', () => {
   editingId = null;
   modalTitle.textContent = 'Add menu item';
@@ -1118,6 +1233,27 @@ function updateRestaurantIdentityUi(){
 document.getElementById('goliveToggle').addEventListener('change', async (e) => {
   const goingLive = e.target.checked;
   if(goingLive){
+    // Documents are already guaranteed complete by this point — the
+    // dashboard's own auth guard redirects to onboarding-documents.html
+    // before anyone with missing documents can even reach this toggle.
+    // The rest of the checklist isn't guaranteed, so check it here.
+    const missing = [];
+    const { count: menuItemCount } = await supabase
+      .from('menu_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('restaurant_id', restaurant.id);
+    if(!menuItemCount) missing.push('a menu item loaded');
+    if(!restaurant.opening_hours || Object.keys(restaurant.opening_hours).length === 0) missing.push('opening hours set');
+    if(!restaurant.checklist_stripe_connected) missing.push('payment confirmed by an admin');
+    if(!restaurant.checklist_device_registered) missing.push('a device registered by an admin');
+    if(!restaurant.checklist_test_order_completed) missing.push('a completed test order confirmed by an admin');
+
+    if(missing.length > 0){
+      alert("Not ready to go live yet — still missing:\n\n" + missing.map(m => "• " + m).join("\n") + "\n\nCheck with an admin if you think this is wrong.");
+      e.target.checked = false;
+      return;
+    }
+
     const ok = confirm("Go live now?\n\nCustomers will be able to find and browse you in search. Online payments aren't set up yet, so they won't be able to actually place a paid order.");
     if(!ok){
       e.target.checked = false;
@@ -1191,10 +1327,23 @@ document.getElementById('goliveToggle').addEventListener('change', async (e) => 
     return;
   }
 
-  // cuisine is only set once the owner has completed onboarding-documents.html
-  // (cuisine + all 3 documents, via complete-onboarding) — approved isn't the
-  // same as fully set up, so don't let them into the dashboard until then.
-  if(!ownedRestaurant.cuisine){
+  // Checking cuisine alone used to be a safe proxy for "onboarding
+  // finished," because complete-onboarding always sets cuisine and all 3
+  // documents together. That broke once admin-add-partner could exist —
+  // it sets cuisine directly (the admin already knows it from the call),
+  // independent of documents, so a partner created that way could reach
+  // the dashboard having never uploaded anything. Check the real thing —
+  // the linked application's 3 document paths — not the proxy.
+  const { data: linkedApplication } = await supabase
+    .from('restaurant_applications')
+    .select('hygiene_cert_path, business_reg_path, id_doc_path')
+    .eq('restaurant_id', ownedRestaurant.id)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const application = linkedApplication && linkedApplication[0];
+  const documentsComplete = application && application.hygiene_cert_path && application.business_reg_path && application.id_doc_path;
+
+  if(!documentsComplete){
     window.location.replace('onboarding-documents.html');
     return;
   }
@@ -1204,6 +1353,7 @@ document.getElementById('goliveToggle').addEventListener('change', async (e) => 
   document.documentElement.classList.remove('auth-pending');
 
   await loadMenu();
+  await loadMenuBuildStatus();
   await loadWelcomeStats();
   await loadInboxOrders();
   subscribeToOrderInbox();
@@ -1273,7 +1423,30 @@ async function loadInboxOrders(){
     return;
   }
   inboxOrders = data || [];
+  await renderInboxStats();
   renderInbox();
+}
+
+// Always shown — 0s when there's nothing rather than a plain "no orders"
+// line, so the inbox reads as a real dashboard even before any orders
+// have come in.
+async function renderInboxStats(){
+  const newCount = inboxOrders.filter(o => o.status === 'paid').length;
+  const inProgressCount = inboxOrders.filter(o => ['accepted', 'preparing', 'ready'].includes(o.status)).length;
+
+  const { count: fulfilledCount } = await supabase
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', restaurant.id)
+    .eq('status', 'completed');
+
+  document.getElementById('inboxStatsWrap').innerHTML = `
+    <div class="stat-row">
+      <div class="stat-tile"><div class="stat-label">New</div><div class="stat-value">${newCount}</div></div>
+      <div class="stat-tile"><div class="stat-label">In Progress</div><div class="stat-value">${inProgressCount}</div></div>
+      <div class="stat-tile"><div class="stat-label">Fulfilled</div><div class="stat-value">${fulfilledCount ?? 0}</div></div>
+    </div>
+  `;
 }
 
 function renderInbox(){

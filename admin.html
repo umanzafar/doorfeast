@@ -131,6 +131,54 @@
   @media (max-width:600px){
     .topbar, .tabs, .content{padding-left:16px; padding-right:16px;}
   }
+
+  /* ============ ADD PARTNER ============ */
+  .add-partner-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; max-width:520px;
+  }
+  .form-row{margin-bottom:16px;}
+  .form-row label{display:block; font-size:12.5px; font-weight:700; color:var(--body); margin-bottom:6px;}
+  .form-row input, .form-row select{
+    width:100%; border:1.5px solid var(--line); border-radius:10px; padding:11px 13px;
+    font-size:14px; font-family:inherit; color:var(--ink); background:#fff;
+  }
+  .form-row input:focus, .form-row select:focus{outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(166,30,30,0.1);}
+  .add-partner-result{
+    margin-top:18px; padding:16px 18px; border-radius:12px;
+    background:rgba(46,125,70,0.08); border:1px solid rgba(46,125,70,0.25);
+    font-size:13px; color:var(--ink); display:none;
+  }
+  .add-partner-result.show{display:block;}
+  .add-partner-result.is-error{background:rgba(166,30,30,0.06); border-color:rgba(166,30,30,0.25);}
+  .recovery-link-box{
+    display:flex; gap:8px; margin-top:10px; align-items:center;
+  }
+  .recovery-link-box input{
+    flex:1; border:1.5px solid var(--line); border-radius:8px; padding:9px 11px;
+    font-size:12px; font-family:monospace; background:#fff; color:var(--ink);
+  }
+  .copy-link-btn{
+    border:1.5px solid var(--line); background:#fff; border-radius:8px; padding:9px 14px;
+    font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .copy-link-btn:hover{border-color:var(--red); color:var(--red);}
+
+  /* ============ GO-LIVE CHECKLIST ============ */
+  .checklist{
+    border-top:1px dashed var(--line); margin-top:14px; padding-top:14px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px 16px;
+  }
+  .checklist-item{display:flex; align-items:center; gap:8px; font-size:12.5px;}
+  .checklist-item.auto{color:var(--body);}
+  .checklist-item .ci-dot{
+    width:9px; height:9px; border-radius:50%; flex-shrink:0;
+    background:rgba(38,34,32,0.15);
+  }
+  .checklist-item.done .ci-dot{background:var(--green);}
+  .checklist-item label{display:flex; align-items:center; gap:8px; cursor:pointer;}
+  .checklist-item input[type="checkbox"]{width:15px; height:15px; accent-color:var(--green); cursor:pointer;}
+  .checklist-note{font-size:11px; color:var(--body); margin-top:8px; line-height:1.5;}
 </style>
 </head>
 <body>
@@ -165,12 +213,58 @@
     <button class="tab active" data-tab="pending">Pending <span class="count" id="countPending">0</span></button>
     <button class="tab" data-tab="approved">Approved <span class="count" id="countApproved">0</span></button>
     <button class="tab" data-tab="rejected">Rejected <span class="count" id="countRejected">0</span></button>
+    <button class="tab" data-tab="addpartner">+ Add Partner</button>
+    <button class="tab" data-tab="menurequests">Menu Requests <span class="count" id="countMenuRequests">0</span></button>
   </div>
 
   <!-- ============ CONTENT ============ -->
   <div class="content">
     <div class="app-list" id="appList">
       <div class="empty-state">Loading applications…</div>
+    </div>
+
+    <div class="add-partner-card" id="addPartnerCard" style="display:none;">
+      <form id="addPartnerForm">
+        <div class="form-row">
+          <label for="apBusinessName">Shop name</label>
+          <input type="text" id="apBusinessName" required>
+        </div>
+        <div class="form-row">
+          <label for="apOwnerName">Owner name</label>
+          <input type="text" id="apOwnerName" required>
+        </div>
+        <div class="form-row">
+          <label for="apPhone">Phone</label>
+          <input type="text" id="apPhone" placeholder="+44 7700 900123" required>
+        </div>
+        <div class="form-row">
+          <label for="apEmail">Email</label>
+          <input type="email" id="apEmail" placeholder="owner@example.com" required>
+        </div>
+        <div class="form-row">
+          <label for="apCuisine">Cuisine</label>
+          <select id="apCuisine" required>
+            <option value="" disabled selected>Choose one</option>
+            <option>Indian</option>
+            <option>Chinese</option>
+            <option>Pizza</option>
+            <option>Kebab</option>
+            <option>Desserts</option>
+            <option>Fast Food</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="apAddress">Address</label>
+          <input type="text" id="apAddress" required>
+        </div>
+        <button type="submit" class="btn btn-approve" id="addPartnerSubmit">Create partner</button>
+      </form>
+      <div class="add-partner-result" id="addPartnerResult"></div>
+    </div>
+
+    <div class="app-list" id="menuRequestsList" style="display:none;">
+      <div class="empty-state">Loading menu requests…</div>
     </div>
   </div>
 </div>
@@ -294,6 +388,12 @@
   }
 
   /* ============ LOAD & RENDER ============ */
+  // Keyed by restaurant_id — go-live checklist data for approved apps
+  // (opening hours + the 3 manual flags from restaurants, plus a live
+  // menu item count). Only fetched for approved apps since that's the
+  // only tab the checklist shows on.
+  let restaurantExtras = {};
+
   async function loadApplications(){
     refreshBtn.classList.add('spinning');
     try {
@@ -311,6 +411,8 @@
       document.getElementById('countPending').textContent = appData.pending.length;
       document.getElementById('countApproved').textContent = appData.approved.length;
       document.getElementById('countRejected').textContent = appData.rejected.length;
+
+      await loadRestaurantExtras();
       renderTab();
     } catch(err){
       console.error(err);
@@ -319,6 +421,77 @@
       refreshBtn.classList.remove('spinning');
     }
   }
+
+  async function loadRestaurantExtras(){
+    const restaurantIds = appData.approved.map(a => a.restaurant_id).filter(Boolean);
+    restaurantExtras = {};
+    if(restaurantIds.length === 0) return;
+
+    const [{ data: restaurants }, { data: menuItems }] = await Promise.all([
+      supabase.from('restaurants')
+        .select('id, opening_hours, checklist_stripe_connected, checklist_device_registered, checklist_test_order_completed')
+        .in('id', restaurantIds),
+      supabase.from('menu_items').select('restaurant_id').in('restaurant_id', restaurantIds)
+    ]);
+
+    (restaurants || []).forEach(r => {
+      restaurantExtras[r.id] = { ...r, menuItemCount: 0 };
+    });
+    (menuItems || []).forEach(item => {
+      if(restaurantExtras[item.restaurant_id]) restaurantExtras[item.restaurant_id].menuItemCount++;
+    });
+  }
+
+  // Go-live checklist: menu/docs/hours are auto-detected from data already
+  // loaded; Stripe/device/test-order are manual admin checkboxes since
+  // there's no automated way to verify them yet.
+  function renderChecklist(restaurantId){
+    const extra = restaurantExtras[restaurantId];
+    if(!extra) return '';
+    const app = appData.approved.find(a => a.restaurant_id === restaurantId);
+    const docsComplete = app && app.hygiene_cert_path && app.business_reg_path && app.id_doc_path;
+    const hoursSet = extra.opening_hours && Object.keys(extra.opening_hours).length > 0;
+    const menuLoaded = extra.menuItemCount > 0;
+
+    function autoItem(label, isDone){
+      return `<div class="checklist-item auto ${isDone ? 'done' : ''}"><span class="ci-dot"></span>${label}</div>`;
+    }
+    function manualItem(label, field, isChecked){
+      return `
+        <div class="checklist-item ${isChecked ? 'done' : ''}">
+          <label>
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleToggleChecklist('${restaurantId}', '${field}', this.checked)">
+            ${label}
+          </label>
+        </div>`;
+    }
+
+    return `
+      <div class="checklist">
+        ${autoItem('Menu loaded', menuLoaded)}
+        ${autoItem('Documents verified', docsComplete)}
+        ${autoItem('Hours set', hoursSet)}
+        ${manualItem('Stripe connected', 'checklist_stripe_connected', extra.checklist_stripe_connected)}
+        ${manualItem('Device registered', 'checklist_device_registered', extra.checklist_device_registered)}
+        ${manualItem('Test order completed', 'checklist_test_order_completed', extra.checklist_test_order_completed)}
+      </div>
+      <p class="checklist-note">Stripe Connect requires a registered business — if this shop doesn't have one yet, confirm payment is handled another way before checking this.</p>
+    `;
+  }
+
+  window.handleToggleChecklist = async function(restaurantId, field, checked){
+    try {
+      const { error } = await supabase.from('restaurants').update({ [field]: checked }).eq('id', restaurantId);
+      if(error) throw error;
+      if(restaurantExtras[restaurantId]) restaurantExtras[restaurantId][field] = checked;
+      showToast('Saved.');
+    } catch(err){
+      console.error(err);
+      showToast('Something went wrong — please try again.');
+      await loadRestaurantExtras();
+      renderTab();
+    }
+  };
 
   function renderTab(){
     const list = appData[currentTab] || [];
@@ -362,6 +535,8 @@
           <div class="reject-reason-box"><b>Reason sent to applicant:</b> ${escapeHtml(app.reject_reason)}</div>
         ` : ''}
 
+        ${currentTab === 'approved' && app.restaurant_id ? renderChecklist(app.restaurant_id) : ''}
+
         ${currentTab === 'pending' ? `
           <div class="action-row">
             <button class="btn btn-approve" onclick="handleApprove('${app.id}', this)">Approve</button>
@@ -390,16 +565,167 @@
   }
 
   /* ============ TABS ============ */
+  const addPartnerCard = document.getElementById('addPartnerCard');
+  const menuRequestsList = document.getElementById('menuRequestsList');
+
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentTab = tab.dataset.tab;
-      renderTab();
+
+      appList.style.display = 'none';
+      addPartnerCard.style.display = 'none';
+      menuRequestsList.style.display = 'none';
+
+      if(currentTab === 'addpartner'){
+        addPartnerCard.style.display = 'block';
+      } else if(currentTab === 'menurequests'){
+        menuRequestsList.style.display = 'flex';
+        loadMenuRequests();
+      } else {
+        appList.style.display = 'flex';
+        renderTab();
+      }
     });
   });
 
-  refreshBtn.addEventListener('click', loadApplications);
+  /* ============ ADD PARTNER ============
+     Real onboarding path for a sales-led signup — calls admin-add-partner,
+     which verifies admin status server-side and does everything (creating
+     the Auth user, the application, the restaurant) with service_role.
+     Nothing here can be spoofed from devtools. */
+  const addPartnerForm = document.getElementById('addPartnerForm');
+  const addPartnerSubmit = document.getElementById('addPartnerSubmit');
+  const addPartnerResult = document.getElementById('addPartnerResult');
+
+  addPartnerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    addPartnerResult.classList.remove('show', 'is-error');
+    addPartnerSubmit.disabled = true;
+    addPartnerSubmit.textContent = 'Creating…';
+
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-add-partner', {
+        body: {
+          business_name: document.getElementById('apBusinessName').value.trim(),
+          owner_name: document.getElementById('apOwnerName').value.trim(),
+          phone: document.getElementById('apPhone').value.trim(),
+          email: document.getElementById('apEmail').value.trim(),
+          cuisine: document.getElementById('apCuisine').value,
+          address: document.getElementById('apAddress').value.trim()
+        }
+      });
+      if(error) throw error;
+      if(data && data.error) throw new Error(data.error);
+
+      addPartnerResult.classList.add('show');
+      if(data.recovery_link){
+        addPartnerResult.innerHTML = `
+          <b>Partner created.</b> Send this link so they can set a password and log in:
+          <div class="recovery-link-box">
+            <input type="text" id="recoveryLinkInput" readonly value="${escapeHtml(data.recovery_link)}">
+            <button type="button" class="copy-link-btn" id="copyRecoveryLinkBtn">Copy</button>
+          </div>`;
+        document.getElementById('copyRecoveryLinkBtn').addEventListener('click', () => {
+          const input = document.getElementById('recoveryLinkInput');
+          input.select();
+          navigator.clipboard.writeText(input.value).then(() => showToast('Link copied.'));
+        });
+      } else {
+        addPartnerResult.textContent = data.warning || 'Partner created.';
+      }
+
+      addPartnerForm.reset();
+      await loadApplications();
+    } catch(err){
+      console.error(err);
+      addPartnerResult.classList.add('show', 'is-error');
+      addPartnerResult.textContent = err.message || 'Something went wrong — please try again.';
+    } finally {
+      addPartnerSubmit.disabled = false;
+      addPartnerSubmit.textContent = 'Create partner';
+    }
+  });
+
+  /* ============ MENU REQUESTS ============
+     The other side of dashboard.html's hybrid menu-building upload — a
+     human on the team builds each restaurant's menu from the photos they
+     submitted, then marks it done here so the owner's banner updates. */
+  let menuRequests = [];
+
+  async function openMenuBuildFile(path, label){
+    if(!path){ showToast(`No ${label} on file.`); return; }
+    const { data, error } = await supabase.storage.from('menu-build-uploads').createSignedUrl(path, 300);
+    if(error || !data){ showToast(`Couldn't open ${label}.`); return; }
+    window.open(data.signedUrl, '_blank', 'noopener');
+  }
+  window.openMenuBuildFile = openMenuBuildFile;
+
+  async function loadMenuRequests(){
+    menuRequestsList.innerHTML = '<div class="empty-state">Loading menu requests…</div>';
+    try {
+      const { data, error } = await supabase
+        .from('menu_build_requests')
+        .select('*, restaurants(name)')
+        .order('created_at', { ascending: false });
+      if(error) throw error;
+      menuRequests = data || [];
+      document.getElementById('countMenuRequests').textContent = menuRequests.filter(r => r.status !== 'done').length;
+      renderMenuRequests();
+    } catch(err){
+      console.error(err);
+      menuRequestsList.innerHTML = '<div class="empty-state">Couldn\'t load menu requests. Hit Refresh to try again.</div>';
+    }
+  }
+
+  function renderMenuRequests(){
+    if(menuRequests.length === 0){
+      menuRequestsList.innerHTML = '<div class="empty-state">No menu-build requests yet.</div>';
+      return;
+    }
+    menuRequestsList.innerHTML = menuRequests.map(req => `
+      <div class="app-card">
+        <div class="app-card-top">
+          <div>
+            <p class="app-title">${escapeHtml(req.restaurants ? req.restaurants.name : 'Unknown restaurant')}</p>
+            <p class="app-sub">Submitted ${fmtDate(req.created_at)}</p>
+          </div>
+          <span class="status-badge ${req.status === 'done' ? 'status-approved' : 'status-pending'}">${escapeHtml(req.status === 'done' ? 'Done' : req.status === 'in_progress' ? 'In progress' : 'Pending')}</span>
+        </div>
+        ${req.note ? `<div class="reject-reason-box"><b>Note from owner:</b> ${escapeHtml(req.note)}</div>` : ''}
+        <div class="doc-links">
+          ${(req.file_paths || []).map((path, i) => `<button class="doc-link" onclick="openMenuBuildFile('${escapeHtml(path)}', 'Photo ${i + 1}')">Photo ${i + 1}</button>`).join('')}
+        </div>
+        ${req.status !== 'done' ? `
+          <div class="action-row">
+            <button class="btn btn-approve" onclick="handleMarkMenuRequestDone('${req.id}', this)">Mark as done</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+  }
+
+  window.handleMarkMenuRequestDone = async function(id, btn){
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const { error } = await supabase.from('menu_build_requests').update({ status: 'done' }).eq('id', id);
+      if(error) throw error;
+      showToast('Marked as done.');
+      await loadMenuRequests();
+    } catch(err){
+      console.error(err);
+      showToast('Something went wrong — please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Mark as done';
+    }
+  };
+
+  refreshBtn.addEventListener('click', () => {
+    if(currentTab === 'menurequests') loadMenuRequests();
+    else loadApplications();
+  });
 
   /* ============ ACTIONS — both call the decide-application Edge Function,
      which verifies admin status server-side and does the actual writes
