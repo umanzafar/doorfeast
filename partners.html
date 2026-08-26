@@ -78,6 +78,13 @@
     transition:background .15s, transform .15s;
   }
   .hero-btn:hover{background:var(--red-dark); transform:translateY(-2px);}
+  .hero-phone{
+    display:flex; align-items:center; gap:7px; width:fit-content;
+    color:rgba(255,255,255,0.92); font-size:13.5px; font-weight:600; text-decoration:none;
+    margin-top:14px;
+  }
+  .hero-phone:hover{color:#fff;}
+  .hero-phone svg{width:15px; height:15px; flex-shrink:0;}
   @media (max-width:640px){
     .hero-banner{height:56vh; min-height:380px;}
     .hero-content{padding:0 24px;}
@@ -301,7 +308,10 @@
     <img src="logo.png" alt="DoorFeast">
     <span>DoorFeast</span>
   </a>
-  <a href="/index.html" class="nav-back">← Back to DoorFeast</a>
+  <div style="display:flex; align-items:center; gap:4px;">
+    <a href="/signup.html?mode=login" class="nav-back">Log in</a>
+    <a href="/index.html" class="nav-back">← Back to DoorFeast</a>
+  </div>
 </header>
 
 <!-- ============ HERO ============ -->
@@ -311,6 +321,11 @@
     <h1>Grow your business, keep more of every order.</h1>
     <p>Join the neighbourhood takeaway network — a flat 12% commission, no lock-in, and a real person to talk to.</p>
     <a href="/signup.html" class="hero-btn">Register as a takeaway →</a>
+    <!-- TODO: replace with the real DoorFeast support number -->
+    <a href="tel:+44XXXXXXXXXX" class="hero-phone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Call us — +44 XXXX XXXXXX
+    </a>
   </div>
 </section>
 

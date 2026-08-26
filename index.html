@@ -55,24 +55,11 @@
     background:var(--red); color:#fff; position:relative;
   }
   .nav-links .btn-signup:hover{background:var(--red-dark);}
-  .signup-dropdown{position:relative;}
-  .signup-menu{
-    position:absolute; top:calc(100% + 8px); right:0;
-    background:var(--card); border:1px solid var(--line); border-radius:14px;
-    box-shadow:0 16px 32px -12px rgba(38,34,32,0.25);
-    padding:8px; min-width:220px;
-    opacity:0; pointer-events:none; transform:translateY(-6px);
-    transition:opacity .15s, transform .15s;
+  .nav-secondary{
+    color:var(--body) !important; font-weight:600; font-size:13.5px !important;
+    border-right:1px solid var(--line); margin-right:6px; padding-right:16px !important;
   }
-  .signup-dropdown:hover .signup-menu,
-  .signup-dropdown:focus-within .signup-menu{
-    opacity:1; pointer-events:auto; transform:translateY(0);
-  }
-  .signup-menu a{
-    display:block; color:var(--ink); background:none; padding:11px 12px; border-radius:9px; font-size:13.5px;
-  }
-  .signup-menu a:hover{background:rgba(38,34,32,0.06);}
-  .signup-menu .desc{display:block; font-size:11.5px; color:var(--body); font-weight:400; margin-top:1px;}
+  .nav-secondary:hover{color:var(--ink) !important;}
 
   .bell-wrap{position:relative;}
   .bell-btn{
@@ -281,6 +268,13 @@
     transition:transform .15s;
   }
   .slide-btn:hover{transform:translateY(-2px);}
+  .hero-phone{
+    display:inline-flex; align-items:center; gap:7px;
+    color:rgba(255,255,255,0.92); font-size:13.5px; font-weight:600; text-decoration:none;
+    margin-top:2px;
+  }
+  .hero-phone:hover{color:#fff;}
+  .hero-phone svg{width:15px; height:15px; flex-shrink:0;}
 
   .carousel-arrows button{
     position:absolute; top:50%; transform:translateY(-50%);
@@ -670,30 +664,9 @@
     <span>DoorFeast</span>
   </div>
   <div class="nav-links" id="navLinksLoggedOut">
-    <div class="signup-dropdown" tabindex="0">
-      <a href="#" onclick="return false;">Log in</a>
-      <div class="signup-menu">
-        <a href="/customer/index.html?mode=login">
-          Log in as a customer
-        </a>
-        <a href="/signup.html?mode=login">
-          Log in as a takeaway partner
-        </a>
-      </div>
-    </div>
-    <div class="signup-dropdown" tabindex="0">
-      <a href="#" class="btn-signup" onclick="return false;">Sign up</a>
-      <div class="signup-menu">
-        <a href="/customer/index.html">
-          Sign up as a customer
-          <span class="desc">Get £5 off your first order</span>
-        </a>
-        <a href="/signup.html">
-          Sign up as a takeaway partner
-          <span class="desc">Grow your business with an audience</span>
-        </a>
-      </div>
-    </div>
+    <a href="/partners.html" class="nav-secondary">For takeaways</a>
+    <a href="/customer/index.html?mode=login">Log in</a>
+    <a href="/customer/index.html" class="btn-signup">Sign up</a>
   </div>
   <div class="nav-links" id="navLinksLoggedIn" style="display:none;">
     <div class="bell-wrap">
@@ -719,6 +692,11 @@
       <span class="slide-eyebrow">The Neighbourhood Takeaway Network</span>
       <h1>Good food, delivered fair.</h1>
       <p>Order directly from your local independent takeaways. Fair fees for them, hot food for you.</p>
+      <!-- TODO: replace with the real DoorFeast support number -->
+      <a href="tel:+44XXXXXXXXXX" class="hero-phone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Call us — +44 XXXX XXXXXX
+      </a>
     </div>
   </div>
 </section>
