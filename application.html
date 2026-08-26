@@ -140,19 +140,52 @@
 
   // Already applied? Don't let them fill the wizard out a second time —
   // route to wherever that application already put them, same logic as
-  // signup.html's goToOnboarding().
+  // signup.html's goToOnboarding(). A 'draft' means they started but
+  // didn't finish — resume it instead of redirecting away.
   const { data: existingApps } = await supabase
     .from('restaurant_applications')
-    .select('status')
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(1);
   const existingApp = existingApps && existingApps[0];
-  if(existingApp){
+  if(existingApp && existingApp.status !== 'draft'){
     window.location.replace(existingApp.status === 'approved' ? 'dashboard.html' : 'application-thankyou.html');
     return;
   }
 
   document.documentElement.classList.remove('auth-pending');
+
+  // draftId is the id of the row being saved into as they progress. If
+  // resuming, it's the existing draft; otherwise a fresh draft row is
+  // created immediately so there's something to save into from step 1.
+  // If that insert fails for some reason, draftId stays null and
+  // save-and-continue is silently skipped — final submit still falls back
+  // to a plain insert, so a draft-save hiccup never blocks applying.
+  let draftId = null;
+  if(existingApp){
+    draftId = existingApp.id;
+  } else {
+    const { data: draftRow, error: draftError } = await supabase
+      .from('restaurant_applications')
+      .insert({ user_id: user.id, business_name: '', owner_name: '', phone: '', email: user.email, address: '', status: 'draft' })
+      .select('id')
+      .single();
+    if(!draftError && draftRow) draftId = draftRow.id;
+  }
+
+  // Resuming a draft: pre-fill whatever was already saved, and land on
+  // the first step that's still empty rather than making them start over.
+  if(existingApp && existingApp.status === 'draft'){
+    document.getElementById('businessName').value = existingApp.business_name || '';
+    document.getElementById('ownerName').value = existingApp.owner_name || '';
+    document.getElementById('phone').value = (existingApp.phone || '').replace(/^\+44/, '');
+    document.getElementById('address').value = existingApp.address || '';
+
+    if(!existingApp.business_name) currentStep = 0;
+    else if(!existingApp.owner_name) currentStep = 1;
+    else if(!existingApp.phone) currentStep = 2;
+    else currentStep = 3;
+  }
 
   /* ============ WIZARD NAVIGATION ============ */
   const progress = document.getElementById('progress');
@@ -204,6 +237,24 @@
     return true;
   }
 
+  // Best-effort — a failed draft save never blocks moving to the next
+  // step or submitting; it just means that particular save didn't stick.
+  async function saveDraft(){
+    if(!draftId) return;
+    let phone = document.getElementById('phone').value.trim();
+    if(phone.startsWith('0')) phone = phone.slice(1);
+    try {
+      await supabase.from('restaurant_applications').update({
+        business_name: document.getElementById('businessName').value.trim(),
+        owner_name: document.getElementById('ownerName').value.trim(),
+        phone: phone ? '+44' + phone : '',
+        address: document.getElementById('address').value.trim()
+      }).eq('id', draftId);
+    } catch(err){
+      console.error(err);
+    }
+  }
+
   const form = document.getElementById('applicationForm');
 
   form.addEventListener('submit', async (e) => {
@@ -211,11 +262,16 @@
     if(!validateStep(currentStep)) return;
 
     if(currentStep < TOTAL_STEPS - 1){
+      await saveDraft();
       goToStep(currentStep + 1);
       return;
     }
 
-    // Final step — actually submit.
+    // Final step — actually submit. If a draft row exists, this turns it
+    // from 'draft' into 'pending' rather than inserting a second row; if
+    // draftId never got set (e.g. the initial draft insert failed), this
+    // falls back to a plain insert exactly like before save-and-continue
+    // existed, so that failure never blocks applying.
     clearError();
     nextBtn.disabled = true;
     nextBtn.textContent = "Submitting…";
@@ -223,17 +279,21 @@
     let phone = document.getElementById('phone').value.trim();
     if(phone.startsWith('0')) phone = phone.slice(1);
 
-    const { error: insertError } = await supabase.from('restaurant_applications').insert({
-      user_id: user.id,
+    const applicationData = {
       business_name: document.getElementById('businessName').value.trim(),
       owner_name: document.getElementById('ownerName').value.trim(),
       phone: '+44' + phone,
       email: user.email,
-      address: document.getElementById('address').value.trim()
-    });
+      address: document.getElementById('address').value.trim(),
+      status: 'pending'
+    };
 
-    if(insertError){
-      console.error(insertError);
+    const { error: submitError } = draftId
+      ? await supabase.from('restaurant_applications').update(applicationData).eq('id', draftId)
+      : await supabase.from('restaurant_applications').insert({ user_id: user.id, ...applicationData });
+
+    if(submitError){
+      console.error(submitError);
       showError("Something went wrong sending your application. Please try again in a moment.");
       nextBtn.disabled = false;
       nextBtn.textContent = "Submit application →";
