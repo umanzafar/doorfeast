@@ -146,6 +146,15 @@
   }
   .placeholder-card .ph-icon{font-size:26px; margin-bottom:10px;}
 
+  .promo-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px;}
+  .promo-grid .placeholder-card{padding:28px 18px;}
+
+  .date-filter-select{
+    border:1.5px solid var(--line); border-radius:10px; padding:9px 12px;
+    font-size:13px; font-family:inherit; color:var(--ink); background:#fff; cursor:pointer;
+  }
+  .date-filter-select:focus{outline:none; border-color:var(--red);}
+
   .alert-silence-btn{
     display:block; width:100%; border:none; border-radius:14px; padding:16px;
     background:var(--red); color:#fff; font-family:'Poppins',sans-serif; font-weight:700; font-size:14.5px;
@@ -471,23 +480,44 @@
       </div>
 
       <div class="dtab-content" id="dtab-payouts">
-        <div class="section-head"><div><h2>Payouts</h2><p>Where your earnings will show up once payments are live.</p></div></div>
-        <div class="placeholder-card">
-          <div class="ph-icon">💳</div>
-          <b>Payouts will appear here once Stripe Connect is set up.</b>
+        <div class="section-head"><div><h2>Payouts</h2><p>Estimated figures — Stripe Connect isn't set up yet, so nothing here has actually been paid out.</p></div></div>
+        <div class="photo-note">
+          <b>Stripe Connect pending:</b> these numbers show what you'd be owed based on completed orders. Real payouts start once Stripe Connect is live — see Hard Rule 7.
         </div>
+        <div class="stat-row" id="payoutsStatsWrap"></div>
       </div>
 
       <div class="dtab-content" id="dtab-reports">
-        <div class="section-head"><div><h2>Reports</h2><p>Understand how your restaurant is performing on DoorFeast.</p></div></div>
+        <div class="section-head">
+          <div><h2>Reports</h2><p>Understand how your restaurant is performing on DoorFeast.</p></div>
+          <select id="reportsDateFilter" class="date-filter-select">
+            <option value="all">All time</option>
+            <option value="today">Today</option>
+            <option value="week">This week</option>
+            <option value="month">This month</option>
+          </select>
+        </div>
         <div class="stat-row" id="reportsStatsWrap"></div>
       </div>
 
       <div class="dtab-content" id="dtab-promotions">
-        <div class="section-head"><div><h2>Promotions</h2></div></div>
-        <div class="placeholder-card">
-          <div class="ph-icon">🎯</div>
-          <b>Promotions, coming soon.</b>
+        <div class="section-head"><div><h2>Promotions</h2><p>Reach customers directly across channels — nothing active yet.</p></div></div>
+        <div class="promo-grid">
+          <div class="placeholder-card">
+            <div class="ph-icon">✉️</div>
+            <b>Email promotion</b>
+            <p style="margin:8px 0 0; font-size:12.5px; color:var(--body);">0 active campaigns</p>
+          </div>
+          <div class="placeholder-card">
+            <div class="ph-icon">💬</div>
+            <b>SMS promotion</b>
+            <p style="margin:8px 0 0; font-size:12.5px; color:var(--body);">0 active campaigns</p>
+          </div>
+          <div class="placeholder-card">
+            <div class="ph-icon">📱</div>
+            <b>Social media promotion</b>
+            <p style="margin:8px 0 0; font-size:12.5px; color:var(--body);">0 active campaigns</p>
+          </div>
         </div>
       </div>
     </div>
@@ -603,7 +633,8 @@ document.querySelectorAll('.profile-menu-item').forEach(item => {
     if(key === 'business' && !businessInfoLoaded) loadBusinessInfo();
     if(key === 'delivery' && !deliveryInfoLoaded) loadDeliveryInfo();
     if(key === 'history' && !historyLoaded) loadOrderHistory();
-    if(key === 'reports' && !reportsLoaded) loadReports();
+    if(key === 'payouts' && !payoutsLoaded) loadPayouts();
+    if(key === 'reports' && !reportsLoaded) loadReports('all');
   });
 });
 
@@ -1612,6 +1643,7 @@ document.getElementById('alertSilenceBtn').addEventListener('click', () => {
    bullet list describing features that don't exist yet. They're all 0
    until real orders start coming in, same as the inbox stats were. */
 let historyLoaded = false;
+let payoutsLoaded = false;
 let reportsLoaded = false;
 
 async function loadOrderHistory(){
@@ -1663,9 +1695,12 @@ async function loadOrderHistory(){
   `).join('');
 }
 
-async function loadReports(){
-  reportsLoaded = true;
-  const statsWrap = document.getElementById('reportsStatsWrap');
+// Estimated only — nothing here is a real payment until Stripe Connect
+// is live (Hard Rule 7). "Pending balance" is what completed orders
+// would net after commission, computed fresh from real order data.
+async function loadPayouts(){
+  payoutsLoaded = true;
+  const statsWrap = document.getElementById('payoutsStatsWrap');
 
   const { data: orders, error } = await supabase
     .from('orders')
@@ -1673,6 +1708,52 @@ async function loadReports(){
     .eq('restaurant_id', restaurant.id)
     .eq('payment_status', 'paid')
     .eq('status', 'completed');
+
+  if(error){
+    statsWrap.innerHTML = '<div class="empty-state">Couldn\'t load payouts. Please try again.</div>';
+    return;
+  }
+
+  const orderList = orders || [];
+  const gross = orderList.reduce((sum, o) => sum + (o.total_pence || 0), 0);
+  const commission = orderList.reduce((sum, o) => sum + (o.commission_pence || 0), 0);
+  const pendingBalance = gross - commission;
+
+  statsWrap.innerHTML = `
+    <div class="stat-tile"><div class="stat-label">Pending Balance</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(pendingBalance)}</div></div>
+    <div class="stat-tile"><div class="stat-label">Lifetime Gross</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(gross)}</div></div>
+    <div class="stat-tile"><div class="stat-label">Commission Taken</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(commission)}</div></div>
+  `;
+}
+
+function periodStartDate(period){
+  const now = new Date();
+  if(period === 'today') return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if(period === 'week'){
+    const d = new Date(now);
+    const day = (d.getDay() + 6) % 7; // Monday-start week
+    d.setDate(d.getDate() - day);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  if(period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  return null; // 'all'
+}
+
+async function loadReports(period){
+  reportsLoaded = true;
+  const statsWrap = document.getElementById('reportsStatsWrap');
+
+  let query = supabase
+    .from('orders')
+    .select('total_pence, commission_pence')
+    .eq('restaurant_id', restaurant.id)
+    .eq('payment_status', 'paid')
+    .eq('status', 'completed');
+
+  const since = periodStartDate(period);
+  if(since) query = query.gte('created_at', since.toISOString());
+
+  const { data: orders, error } = await query;
 
   if(error){
     statsWrap.innerHTML = '<div class="empty-state">Couldn\'t load reports. Please try again.</div>';
@@ -1691,6 +1772,10 @@ async function loadReports(){
     <div class="stat-tile"><div class="stat-label">Avg Order</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(avgOrderValue)}</div></div>
   `;
 }
+
+document.getElementById('reportsDateFilter').addEventListener('change', (e) => {
+  loadReports(e.target.value);
+});
 
 /* ============ REALTIME ============ */
 function subscribeToOrderInbox(){
