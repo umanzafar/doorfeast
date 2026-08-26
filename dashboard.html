@@ -163,7 +163,7 @@
   .ioc-status-pill.accepted, .ioc-status-pill.preparing{background:rgba(164,2,3,0.08); color:var(--red);}
   .ioc-status-pill.ready{background:rgba(46,125,70,0.1); color:var(--green);}
   .ioc-status-pill.completed{background:rgba(46,125,70,0.15); color:var(--green);}
-  .ioc-status-pill.rejected{background:rgba(166,30,30,0.1); color:var(--red);}
+  .ioc-status-pill.rejected, .ioc-status-pill.cancelled{background:rgba(166,30,30,0.1); color:var(--red);}
 
   .ioc-customer{font-size:13px; margin-bottom:10px; line-height:1.6;}
   .ioc-customer b{font-weight:700;}
@@ -465,14 +465,9 @@
       </div>
 
       <div class="dtab-content" id="dtab-history">
-        <div class="section-head"><div><h2>Order history</h2><p>Search and filter past orders once you start receiving them.</p></div></div>
-        <div class="placeholder-card" style="text-align:left; padding:28px 26px;">
-          <div style="text-align:center;"><div class="ph-icon">🧾</div><b>No order history yet.</b></div>
-          <ul style="margin:16px 0 0; padding-left:20px; font-size:13px; line-height:1.8; color:var(--ink);">
-            <li>Searchable, filterable list of past orders: date, value, status</li>
-            <li>Commission and fee breakdown shown per order</li>
-          </ul>
-        </div>
+        <div class="section-head"><div><h2>Order history</h2><p>Completed and cancelled orders.</p></div></div>
+        <div class="stat-row" id="historyStatsWrap"></div>
+        <div id="historyListWrap"><div class="empty-state">Loading order history…</div></div>
       </div>
 
       <div class="dtab-content" id="dtab-payouts">
@@ -485,14 +480,7 @@
 
       <div class="dtab-content" id="dtab-reports">
         <div class="section-head"><div><h2>Reports</h2><p>Understand how your restaurant is performing on DoorFeast.</p></div></div>
-        <div class="placeholder-card" style="text-align:left; padding:28px 26px;">
-          <div style="text-align:center;"><div class="ph-icon">📊</div><b>Basic version — grows once real order volume exists.</b></div>
-          <ul style="margin:16px 0 0; padding-left:20px; font-size:13px; line-height:1.8; color:var(--ink);">
-            <li>Total orders and revenue over a selected period</li>
-            <li>Commission taken by DoorFeast, shown clearly</li>
-            <li>Best selling items, busiest days and times</li>
-          </ul>
-        </div>
+        <div class="stat-row" id="reportsStatsWrap"></div>
       </div>
 
       <div class="dtab-content" id="dtab-promotions">
@@ -614,6 +602,8 @@ document.querySelectorAll('.profile-menu-item').forEach(item => {
     document.getElementById('dtab-' + key).classList.add('active');
     if(key === 'business' && !businessInfoLoaded) loadBusinessInfo();
     if(key === 'delivery' && !deliveryInfoLoaded) loadDeliveryInfo();
+    if(key === 'history' && !historyLoaded) loadOrderHistory();
+    if(key === 'reports' && !reportsLoaded) loadReports();
   });
 });
 
@@ -1615,6 +1605,92 @@ document.getElementById('alertSilenceBtn').addEventListener('click', () => {
   inboxOrders.forEach(o => { o._isNew = false; });
   renderInbox();
 });
+
+/* ============ ORDER HISTORY & REPORTS ============
+   Same "real stats instead of a one-liner" treatment as the Order Inbox
+   above — real numbers computed from actual order data instead of a
+   bullet list describing features that don't exist yet. They're all 0
+   until real orders start coming in, same as the inbox stats were. */
+let historyLoaded = false;
+let reportsLoaded = false;
+
+async function loadOrderHistory(){
+  historyLoaded = true;
+  const wrap = document.getElementById('historyListWrap');
+  const statsWrap = document.getElementById('historyStatsWrap');
+
+  const { data: orders, error } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('restaurant_id', restaurant.id)
+    .eq('payment_status', 'paid')
+    .in('status', ['completed', 'cancelled'])
+    .order('created_at', { ascending: false });
+
+  if(error){
+    wrap.innerHTML = '<div class="empty-state">Couldn\'t load order history. Please try again.</div>';
+    return;
+  }
+
+  const orderList = orders || [];
+  const completed = orderList.filter(o => o.status === 'completed');
+  const cancelled = orderList.filter(o => o.status === 'cancelled');
+  const revenue = completed.reduce((sum, o) => sum + (o.total_pence || 0), 0);
+
+  statsWrap.innerHTML = `
+    <div class="stat-tile"><div class="stat-label">Completed</div><div class="stat-value">${completed.length}</div></div>
+    <div class="stat-tile"><div class="stat-label">Cancelled</div><div class="stat-value">${cancelled.length}</div></div>
+    <div class="stat-tile"><div class="stat-label">Revenue</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(revenue)}</div></div>
+  `;
+
+  if(orderList.length === 0){
+    wrap.innerHTML = '<div class="empty-state">No completed or cancelled orders yet — they\'ll show up here once you start receiving orders.</div>';
+    return;
+  }
+
+  wrap.innerHTML = orderList.map(o => `
+    <div class="inbox-order-card">
+      <div class="ioc-top">
+        <div>
+          <div class="ioc-number">${escapeHtml(o.order_number)}</div>
+          <div class="ioc-time">${formatTimeInbox(o.created_at)} · ${o.order_type === 'delivery' ? 'Delivery' : 'Collection'}</div>
+        </div>
+        <span class="ioc-status-pill ${o.status}">${escapeHtml(o.status)}</span>
+      </div>
+      <div class="ioc-customer"><b>${escapeHtml(o.customer_name)}</b></div>
+      <div class="ioc-total-line"><span>Total</span><span>${formatGBPInbox(o.total_pence)}</span></div>
+    </div>
+  `).join('');
+}
+
+async function loadReports(){
+  reportsLoaded = true;
+  const statsWrap = document.getElementById('reportsStatsWrap');
+
+  const { data: orders, error } = await supabase
+    .from('orders')
+    .select('total_pence, commission_pence')
+    .eq('restaurant_id', restaurant.id)
+    .eq('payment_status', 'paid')
+    .eq('status', 'completed');
+
+  if(error){
+    statsWrap.innerHTML = '<div class="empty-state">Couldn\'t load reports. Please try again.</div>';
+    return;
+  }
+
+  const orderList = orders || [];
+  const revenue = orderList.reduce((sum, o) => sum + (o.total_pence || 0), 0);
+  const commission = orderList.reduce((sum, o) => sum + (o.commission_pence || 0), 0);
+  const avgOrderValue = orderList.length ? Math.round(revenue / orderList.length) : 0;
+
+  statsWrap.innerHTML = `
+    <div class="stat-tile"><div class="stat-label">Total Orders</div><div class="stat-value">${orderList.length}</div></div>
+    <div class="stat-tile"><div class="stat-label">Revenue</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(revenue)}</div></div>
+    <div class="stat-tile"><div class="stat-label">Commission</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(commission)}</div></div>
+    <div class="stat-tile"><div class="stat-label">Avg Order</div><div class="stat-value" style="font-size:19px;">${formatGBPInbox(avgOrderValue)}</div></div>
+  `;
+}
 
 /* ============ REALTIME ============ */
 function subscribeToOrderInbox(){
