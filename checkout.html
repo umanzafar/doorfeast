@@ -109,7 +109,7 @@
     <div class="step active" data-step="0">
       <p class="step-eyebrow">Step 1 of 3</p>
       <h2>Verify your number</h2>
-      <p class="hint">Needed to confirm your order and, if you're eligible, apply your £5 first-order discount.</p>
+      <p class="hint">Needed to confirm your order and, if you're eligible, apply your £3 first-order discount.</p>
       <div id="verifiedBanner" style="display:none;" class="verified-banner">✓ Phone number verified</div>
       <div id="phoneStep">
         <label for="co-phone">Mobile number</label>
@@ -227,7 +227,7 @@
      Same mechanism as the Rewards tab used to use — Supabase's own
      phone-OTP flow applied to an already-logged-in account. Moved here
      since verification belongs at the point of ordering, not gating
-     whether someone can even see the £5 offer. */
+     whether someone can even see the £3 offer. */
   function renderPhoneStep(){
     if(customer.phone_verified){
       document.getElementById('verifiedBanner').style.display = 'flex';
@@ -279,9 +279,9 @@
       // notifications" RLS policy from migration_6.
       await supabase.from('customer_notifications').insert({
         customer_id: customer.id,
-        title: customer.discount_eligible ? 'You earned £5 off your first order! 🎁' : 'Phone verified',
+        title: customer.discount_eligible ? 'You earned £3 off your first order! 🎁' : 'Phone verified',
         message: customer.discount_eligible
-          ? 'Your phone is verified — your £5 discount will apply automatically at checkout.'
+          ? 'Your phone is verified — your £3 discount will apply automatically at checkout.'
           : "Your phone was verified, but this account isn't eligible for the first-order discount."
       });
     } catch(err){
@@ -348,21 +348,64 @@
     return true;
   }
 
-  /* ============ STEP 3: ORDER SUMMARY ============ */
-  function renderOrderSummary(){
+  /* ============ STEP 3: ORDER SUMMARY ============
+     Discount rule: a promo code applied in the basket always overrides
+     the automatic £3 first-order discount — never both. If no promo is
+     applied (or it's no longer valid), the automatic £3 applies instead
+     when the customer qualifies. This mirrors restaurant.html's basket
+     math but re-checks the promo live against the database rather than
+     trusting whatever was cached in localStorage when it was applied,
+     since a code can expire or get deactivated between then and now. */
+  async function renderOrderSummary(){
     let basket = {};
     const activeRestaurantId = localStorage.getItem('doorfeast_active_restaurant_id');
     if(activeRestaurantId){
       try { basket = JSON.parse(localStorage.getItem('doorfeast_basket_' + activeRestaurantId) || '{}'); } catch(e){}
     }
     const entries = Object.values(basket);
-    const subtotal = entries.reduce((sum, e) => sum + (e.price_pence || 0) * e.qty, 0);
-    const discount = (customer.phone_verified && customer.discount_eligible) ? 500 : 0;
+    // unitPrice is current; price_pence is a fallback for a basket saved
+    // by an older version of restaurant.html before option-group support.
+    const subtotal = entries.reduce((sum, e) => sum + (e.unitPrice !== undefined ? e.unitPrice : (e.price_pence || 0)) * e.qty, 0);
+
+    let discount = 0;
+    let discountLabel = '';
+
+    let cachedPromo = null;
+    if(activeRestaurantId){
+      try { cachedPromo = JSON.parse(localStorage.getItem('doorfeast_promo_' + activeRestaurantId) || 'null'); } catch(e){}
+    }
+
+    let livePromo = null;
+    if(cachedPromo){
+      // Re-fetch rather than trust the cached copy — RLS only returns it
+      // if it's still active and in-date, so a null result here means
+      // it's expired/deactivated since it was applied.
+      const { data } = await supabase.from('promotions').select('*').eq('id', cachedPromo.id).maybeSingle();
+      livePromo = data || null;
+    }
+
+    const promoEligible = livePromo && subtotal > 0 && (!livePromo.min_order_pence || subtotal >= livePromo.min_order_pence);
+    if(promoEligible){
+      if(livePromo.type === 'percent'){
+        discount = Math.round(subtotal * livePromo.value / 100);
+        if(livePromo.max_discount_pence) discount = Math.min(discount, livePromo.max_discount_pence);
+      } else if(livePromo.type === 'fixed'){
+        discount = Math.min(livePromo.value, subtotal);
+      } else if(livePromo.type === 'free_delivery'){
+        discount = 0; // no delivery fee line exists in this summary yet
+      }
+      discountLabel = `Promo "${livePromo.code}"`;
+    } else if(customer.phone_verified && customer.discount_eligible){
+      discount = 300;
+      discountLabel = 'First-order discount';
+    }
+
     const total = Math.max(subtotal - discount, 0);
 
     document.getElementById('orderSummary').innerHTML = `
       <div class="order-line"><span>Subtotal</span><span>${formatGBP(subtotal)}</span></div>
-      ${discount > 0 ? `<div class="order-line discount"><span>First-order discount</span><span>-${formatGBP(discount)}</span></div>` : ''}
+      ${discount > 0 ? `<div class="order-line discount"><span>${discountLabel}</span><span>-${formatGBP(discount)}</span></div>` : ''}
+      ${cachedPromo && !promoEligible ? `<div class="order-line"><span style="color:var(--red);">Promo code no longer valid — removed</span><span></span></div>` : ''}
       <div class="order-line total"><span>Total</span><span>${formatGBP(total)}</span></div>
     `;
   }
