@@ -423,6 +423,20 @@
     background:rgba(164,2,3,0.08); padding:3px 9px; border-radius:999px;
     margin-top:10px;
   }
+  .r-status{
+    position:absolute; top:10px; left:10px; z-index:2;
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;
+    background:rgba(38,34,32,0.85); color:#fff; backdrop-filter:blur(4px);
+  }
+  .r-status.open{background:rgba(46,125,70,0.92);}
+  .r-card.is-closed{opacity:0.62;}
+  .r-card.is-closed .cover{filter:grayscale(45%);}
+
+  .closed-heading{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin:36px 0 20px;
+  }
+  .closed-heading h3{font-size:16px; color:var(--body); font-weight:700;}
 
   .no-coverage{
     text-align:center;
@@ -732,6 +746,11 @@
       <span id="resultsCount"></span>
     </div>
     <div class="restaurant-grid" id="restaurantGrid"></div>
+
+    <div id="closedSection" style="display:none;">
+      <div class="closed-heading"><h3>Closed for now</h3></div>
+      <div class="restaurant-grid" id="closedGrid"></div>
+    </div>
   </div>
 
   <!-- STATE 3: no coverage -->
@@ -967,6 +986,8 @@ const stateEmpty = document.getElementById('stateEmpty');
 const stateResults = document.getElementById('stateResults');
 const stateNoCoverage = document.getElementById('stateNoCoverage');
 const restaurantGrid = document.getElementById('restaurantGrid');
+const closedSection = document.getElementById('closedSection');
+const closedGrid = document.getElementById('closedGrid');
 const resultsTitle = document.getElementById('resultsTitle');
 const resultsCount = document.getElementById('resultsCount');
 
@@ -976,23 +997,73 @@ function showState(state){
   stateNoCoverage.style.display = state === 'nocoverage' ? 'block' : 'none';
 }
 
+// opening_hours is { mon: "12:00-22:00", tue: "closed", ... } (same shape
+// dashboard.html writes and restaurant.html reads). Returns true/false, or
+// null if the owner hasn't set hours yet — treated as "unknown", not closed,
+// so a restaurant doesn't disappear just because hours aren't filled in.
+// Uses the visitor's local clock, which is a reasonable approximation for a
+// Stoke-on-Trent-only pilot.
+const DOW = ['sun','mon','tue','wed','thu','fri','sat'];
+function parseRange(val){
+  if(!val || val === 'closed') return null;
+  const [open, close] = val.split('-');
+  const [oh, om] = open.split(':').map(Number);
+  const [ch, cm] = close.split(':').map(Number);
+  return { openM: oh * 60 + om, closeM: ch * 60 + cm };
+}
+function isOpenNow(hours){
+  if(!hours || typeof hours !== 'object' || Object.keys(hours).length === 0) return null;
+  const now = new Date();
+  const nowM = now.getHours() * 60 + now.getMinutes();
+
+  const today = parseRange(hours[DOW[now.getDay()]]);
+  if(today){
+    if(today.closeM > today.openM){
+      if(nowM >= today.openM && nowM < today.closeM) return true;
+    } else if(nowM >= today.openM || nowM < today.closeM){
+      // closes after midnight
+      return true;
+    }
+  }
+
+  // still within yesterday's overnight window (e.g. open till 2am)
+  const yesterday = parseRange(hours[DOW[(now.getDay() + 6) % 7]]);
+  if(yesterday && yesterday.closeM <= yesterday.openM && nowM < yesterday.closeM) return true;
+
+  return false;
+}
+
+function renderCard(r){
+  const card = document.createElement('a');
+  card.className = 'r-card' + (r.openNow === false ? ' is-closed' : '');
+  card.href = 'restaurant.html?slug=' + encodeURIComponent(r.slug);
+  const statusBadge = r.openNow === true ? `<span class="r-status open">Open now</span>`
+    : r.openNow === false ? `<span class="r-status">Closed now</span>` : '';
+  card.innerHTML = `
+    <div class="cover" ${r.cover_url ? `style="background-image:url('${r.cover_url}')"` : ''}>
+      ${statusBadge}
+      <div class="logo-badge ${r.logo_url ? 'has-photo' : 'no-photo'}" ${r.logo_url ? `style="background-image:url('${r.logo_url}')"` : ''}>${r.logo_url ? '' : r.name.charAt(0)}</div>
+    </div>
+    <div class="body">
+      <div class="name">${r.name}</div>
+      <div class="meta">${r.cuisine || ''}<span class="dot-sep"></span>${r.distanceLabel}</div>
+      <div class="rating">New</div>
+    </div>`;
+  return card;
+}
+
 function renderResults(list, postcode){
+  const withStatus = list.map(r => ({ ...r, openNow: isOpenNow(r.opening_hours) }));
+  const open = withStatus.filter(r => r.openNow !== false);
+  const closed = withStatus.filter(r => r.openNow === false);
+
   restaurantGrid.innerHTML = '';
-  list.forEach(r => {
-    const card = document.createElement('a');
-    card.className = 'r-card';
-    card.href = 'restaurant.html?slug=' + encodeURIComponent(r.slug);
-    card.innerHTML = `
-      <div class="cover" ${r.cover_url ? `style="background-image:url('${r.cover_url}')"` : ''}>
-        <div class="logo-badge ${r.logo_url ? 'has-photo' : 'no-photo'}" ${r.logo_url ? `style="background-image:url('${r.logo_url}')"` : ''}>${r.logo_url ? '' : r.name.charAt(0)}</div>
-      </div>
-      <div class="body">
-        <div class="name">${r.name}</div>
-        <div class="meta">${r.cuisine || ''}<span class="dot-sep"></span>${r.distanceLabel}</div>
-        <div class="rating">New</div>
-      </div>`;
-    restaurantGrid.appendChild(card);
-  });
+  open.forEach(r => restaurantGrid.appendChild(renderCard(r)));
+
+  closedGrid.innerHTML = '';
+  closed.forEach(r => closedGrid.appendChild(renderCard(r)));
+  closedSection.style.display = closed.length > 0 ? 'block' : 'none';
+
   resultsTitle.textContent = `Takeaways near ${postcode.toUpperCase()}`;
   resultsCount.textContent = `${list.length} found`;
   showState('results');
@@ -1020,7 +1091,7 @@ async function handleSearch(){
     // already restricts anon reads to is_live = true rows.
     const { data: restaurants, error: fetchErr } = await supabase
       .from('restaurants')
-      .select('name, slug, cuisine, logo_url, cover_url, lat, lng')
+      .select('name, slug, cuisine, logo_url, cover_url, lat, lng, opening_hours')
       .eq('is_live', true)
       .not('lat', 'is', null)
       .not('lng', 'is', null);
