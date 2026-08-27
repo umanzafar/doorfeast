@@ -193,6 +193,10 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       Addresses
     </div>
+    <div class="nav-item" data-section="favourites">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+      Favourites
+    </div>
     <div class="nav-item" data-section="basket">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 2H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
       Basket
@@ -235,6 +239,11 @@
           <button class="btn btn-primary" id="addAddressBtn">+ Add address</button>
         </div>
         <div id="addressesWrap"><div class="card"><div class="empty-state">Loading your addresses…</div></div></div>
+      </div>
+
+      <div class="section" id="section-favourites">
+        <div class="section-head"><div><h2>Favourites</h2><p>Restaurants you've saved.</p></div></div>
+        <div id="favouritesWrap"><div class="card"><div class="empty-state">Loading your favourites…</div></div></div>
       </div>
 
       <div class="section" id="section-basket">
@@ -322,9 +331,10 @@
     account: { title: 'Account', sub: 'Your name, email, and contact details.' },
     orders: { title: 'My Orders', sub: 'Your past and current orders.' },
     addresses: { title: 'Saved Addresses', sub: 'Manage the addresses you deliver to.' },
+    favourites: { title: 'Favourites', sub: "Restaurants you've saved." },
     basket: { title: 'Your Basket', sub: "Whatever's currently in your basket from browsing a restaurant." }
   };
-  const loaded = { orders: false, addresses: false, basket: false };
+  const loaded = { orders: false, addresses: false, favourites: false, basket: false };
 
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -337,6 +347,7 @@
       document.getElementById('topbarSub').textContent = sectionMeta[key].sub;
       if(key === 'orders' && !loaded.orders) loadOrders();
       if(key === 'addresses' && !loaded.addresses) loadAddresses();
+      if(key === 'favourites' && !loaded.favourites) loadFavourites();
       if(key === 'basket') loadBasket(); // always re-read — basket can change from another tab
     });
   });
@@ -555,6 +566,52 @@
     }
   });
 
+  /* ============ FAVOURITES ============ */
+  async function loadFavourites(){
+    loaded.favourites = true;
+    const wrap = document.getElementById('favouritesWrap');
+    const { data, error } = await supabase
+      .from('customer_favorites')
+      .select('id, restaurants(name, slug, cuisine, logo_url)')
+      .eq('customer_id', customer.id)
+      .order('created_at', { ascending: false });
+
+    if(error){
+      wrap.innerHTML = `<div class="card"><div class="empty-state">Couldn't load your favourites. Please try again.</div></div>`;
+      return;
+    }
+    renderFavourites(data || []);
+  }
+
+  function renderFavourites(favourites){
+    const wrap = document.getElementById('favouritesWrap');
+    if(favourites.length === 0){
+      wrap.innerHTML = `<div class="card"><div class="empty-state">No favourites yet — tap the heart on a restaurant page to save it here.</div></div>`;
+      return;
+    }
+    wrap.innerHTML = `<div class="card">` + favourites.map(f => `
+      <div class="addr-card">
+        <div>
+          <div class="addr-label-row">
+            <span class="addr-label">${escapeHtml(f.restaurants ? f.restaurants.name : 'Restaurant')}</span>
+          </div>
+          <div class="addr-lines">${escapeHtml(f.restaurants ? f.restaurants.cuisine || '' : '')}</div>
+        </div>
+        <div class="addr-actions">
+          <a class="btn-ghost" href="../restaurant.html?slug=${encodeURIComponent(f.restaurants ? f.restaurants.slug : '')}">View menu</a>
+          <button class="btn-ghost danger" onclick="removeFavourite('${f.id}')">Remove</button>
+        </div>
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  window.removeFavourite = async function(id){
+    const { error } = await supabase.from('customer_favorites').delete().eq('id', id);
+    if(error){ showToast('Something went wrong — please try again.'); return; }
+    showToast('Removed from favourites.');
+    await loadFavourites();
+  };
+
   /* ============ BASKET ============ */
   // The basket lives in localStorage, written by restaurant.html — this
   // page just reads whatever's there. Baskets are per-restaurant now
@@ -582,15 +639,19 @@
       return;
     }
 
-    const subtotal = entries.reduce((sum, e) => sum + (e.price_pence * e.qty), 0);
+    // unitPrice is current; price_pence is a fallback for a basket saved
+    // by an older version of restaurant.html before option-group support.
+    const lineUnitPrice = e => e.unitPrice !== undefined ? e.unitPrice : (e.price_pence || 0);
+    const subtotal = entries.reduce((sum, e) => sum + (lineUnitPrice(e) * e.qty), 0);
     wrap.innerHTML = `<div class="card">` +
       entries.map(e => `
         <div class="basket-line">
           <div>
             <div class="bl-name">${escapeHtml(e.name || 'Item')}</div>
+            ${(e.options && e.options.length) ? `<div class="bl-qty">${escapeHtml(e.options.map(o => o.name).join(', '))}</div>` : ''}
             <div class="bl-qty">Qty ${e.qty}</div>
           </div>
-          <div class="bl-price">${formatGBP((e.price_pence || 0) * e.qty)}</div>
+          <div class="bl-price">${formatGBP(lineUnitPrice(e) * e.qty)}</div>
         </div>
       `).join('') +
       `<div class="basket-summary-row"><span>Subtotal</span><span>${formatGBP(subtotal)}</span></div>

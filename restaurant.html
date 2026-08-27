@@ -62,8 +62,10 @@
   .r-cover-logo.no-photo{background:linear-gradient(135deg, var(--gold), var(--red));}
   .r-header{
     max-width:900px; margin:0 auto; padding:46px 24px 20px;
+    display:flex; justify-content:space-between; gap:16px;
   }
-  .r-header h1{font-size:clamp(24px,4vw,32px); margin-bottom:8px;}
+  .r-header h1{font-size:clamp(24px,4vw,32px); margin-bottom:8px; display:inline;}
+  .r-name-row{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
   .r-desc{font-size:13.5px; color:var(--body); line-height:1.5; margin:0 0 12px; max-width:560px;}
   .r-meta{display:flex; flex-wrap:wrap; gap:10px 18px; font-size:13.5px; color:var(--body); margin-bottom:14px;}
   .r-badges{display:flex; flex-wrap:wrap; gap:8px;}
@@ -72,6 +74,27 @@
     background:rgba(164,2,3,0.08); color:var(--red);
   }
   .r-badge.closed{background:rgba(38,34,32,0.08); color:var(--body);}
+  .r-badge.open-now{background:rgba(46,125,70,0.1); color:var(--green);}
+  .r-fav-btn{
+    flex-shrink:0; width:40px; height:40px; border-radius:50%; border:1.5px solid var(--line);
+    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:var(--body); transition:.15s;
+  }
+  .r-fav-btn:hover{border-color:var(--red); color:var(--red);}
+  .r-fav-btn svg{width:19px; height:19px;}
+  .r-fav-btn.active{border-color:var(--red); color:var(--red);}
+  .r-fav-btn.active svg{fill:var(--red);}
+
+  /* ============ DEALS ============ */
+  .deals-wrap{max-width:900px; margin:0 auto; padding:20px 24px 0;}
+  .deals-wrap h3{font-size:14.5px; margin:0 0 12px;}
+  .deals-row{display:flex; gap:12px; overflow-x:auto; padding-bottom:4px;}
+  .deal-card{
+    flex-shrink:0; min-width:200px; background:linear-gradient(135deg, rgba(217,164,65,0.14), rgba(164,2,3,0.06));
+    border:1px solid rgba(217,164,65,0.35); border-radius:14px; padding:14px 16px;
+  }
+  .deal-code{font-family:'Poppins',sans-serif; font-weight:800; font-size:14px; color:var(--red); margin-bottom:4px;}
+  .deal-desc{font-size:12px; color:var(--body); line-height:1.5;}
 
   /* ============ MENU ============ */
   .menu-wrap{max-width:900px; margin:0 auto; padding:0 24px 60px;}
@@ -83,6 +106,10 @@
   }
   .menu-item:last-child{border-bottom:none;}
   .menu-item.unavailable{opacity:0.5;}
+  .mi-photo{
+    width:64px; height:64px; border-radius:10px; flex-shrink:0; background-size:cover; background-position:center;
+    background-color:var(--line);
+  }
   .mi-info{flex:1; min-width:0;}
   .mi-name{font-family:'Poppins',sans-serif; font-weight:700; font-size:15px; margin-bottom:3px;}
   .mi-desc{font-size:13px; color:var(--body); line-height:1.5; margin:0 0 6px;}
@@ -174,6 +201,26 @@
   .checkout-btn:hover{background:var(--red-dark);}
   .checkout-btn:disabled{opacity:0.5; cursor:not-allowed;}
   .min-order-note{font-size:12px; color:var(--red); text-align:center; margin-top:8px;}
+  .bs-row.discount{color:var(--green); font-weight:600;}
+
+  .promo-row{display:flex; gap:8px; margin-bottom:14px;}
+  .promo-row input{
+    flex:1; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13.5px;
+    text-transform:uppercase; font-family:inherit;
+  }
+  .promo-row input:focus{outline:none; border-color:var(--red);}
+  .promo-apply-btn{
+    border:1.5px solid var(--ink); background:#fff; color:var(--ink); border-radius:10px;
+    padding:0 16px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  .promo-apply-btn:hover{background:var(--ink); color:#fff;}
+  .promo-applied{
+    display:flex; align-items:center; justify-content:space-between; background:rgba(46,125,70,0.08);
+    border:1px solid rgba(46,125,70,0.3); border-radius:10px; padding:9px 12px; margin-bottom:14px;
+    font-size:12.5px; color:var(--green); font-weight:600;
+  }
+  .promo-applied button{border:none; background:none; color:var(--green); font-weight:700; cursor:pointer; text-decoration:underline;}
+  .promo-error{font-size:12px; color:var(--red); margin:-8px 0 12px;}
 
   /* ============ OPTIONS MODAL (sizes / extras) ============ */
   .opt-overlay{
@@ -237,11 +284,21 @@
   </div>
   <div class="r-header" id="rHeaderWrap" style="display:none;">
     <div>
-      <h1 id="rName">Loading…</h1>
+      <div class="r-name-row">
+        <h1 id="rName">Loading…</h1>
+      </div>
       <p class="r-desc" id="rDesc" style="display:none;"></p>
       <div class="r-meta" id="rMeta"></div>
       <div class="r-badges" id="rBadges"></div>
     </div>
+    <button class="r-fav-btn" id="favBtn" style="display:none;" title="Save to favourites">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+    </button>
+  </div>
+
+  <div class="deals-wrap" id="dealsWrap" style="display:none;">
+    <h3>Available deals</h3>
+    <div class="deals-row" id="dealsRow"></div>
   </div>
 
   <div class="menu-wrap" id="menuWrap"></div>
@@ -262,7 +319,19 @@
     <div class="basket-body" id="basketBody"></div>
     <div class="basket-summary">
       <div class="order-type-toggle" id="orderTypeToggle"></div>
+
+      <div id="promoEntry" class="promo-row">
+        <input type="text" id="promoInput" placeholder="Promo code">
+        <button type="button" class="promo-apply-btn" id="promoApplyBtn">Apply</button>
+      </div>
+      <p class="promo-error" id="promoError" style="display:none;"></p>
+      <div id="promoApplied" class="promo-applied" style="display:none;">
+        <span id="promoAppliedText"></span>
+        <button type="button" id="promoRemoveBtn">Remove</button>
+      </div>
+
       <div class="bs-row"><span>Subtotal</span><span id="sumSubtotal">£0.00</span></div>
+      <div class="bs-row discount" id="sumDiscountRow" style="display:none;"><span>Discount</span><span id="sumDiscount">-£0.00</span></div>
       <div class="bs-row"><span id="deliveryFeeLabel">Delivery fee</span><span id="sumDeliveryFee">£0.00</span></div>
       <div class="bs-row total"><span>Total</span><span id="sumTotal">£0.00</span></div>
       <button class="checkout-btn" id="checkoutBtn" disabled>Go to checkout</button>
@@ -313,6 +382,11 @@ let menu = []; // [{ category, items: [...] }]
 let basket = {};
 let orderType = 'collection';
 let BASKET_KEY = 'doorfeast_basket';
+let customer = null;       // customers row for the logged-in session, if any
+let isFavorited = false;
+let deals = [];            // active promotions for this restaurant + platform-wide
+let appliedPromo = null;   // { id, code, type, value, min_order_pence, max_discount_pence }
+let PROMO_KEY = 'doorfeast_promo';
 
 // Sizes/extras for a batch of menu items. Only available choices are
 // shown to customers; a group left with zero available choices (e.g.
@@ -353,6 +427,11 @@ async function loadRestaurant(){
 
   const { data: { session } } = await supabase.auth.getSession();
 
+  if(session && session.user){
+    const { data: custRow } = await supabase.from('customers').select('id').eq('user_id', session.user.id).maybeSingle();
+    customer = custRow || null;
+  }
+
   const { data: r, error } = await supabase
     .from('restaurants')
     .select('*')
@@ -366,7 +445,9 @@ async function loadRestaurant(){
 
   restaurant = r;
   BASKET_KEY = 'doorfeast_basket_' + restaurant.id;
+  PROMO_KEY = 'doorfeast_promo_' + restaurant.id;
   basket = readBasket();
+  appliedPromo = readPromo();
 
   const isOwnerPreview = !r.is_live && session && session.user;
   if(isOwnerPreview){
@@ -394,7 +475,18 @@ async function loadRestaurant(){
       .map(i => ({ ...i, optionGroups: optionGroupsByItem[i.id] || [] }))
   })).filter(cat => cat.items.length > 0);
 
+  const [favResult, dealsResult] = await Promise.all([
+    customer
+      ? supabase.from('customer_favorites').select('id').eq('customer_id', customer.id).eq('restaurant_id', r.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from('promotions').select('*').or(`restaurant_id.eq.${r.id},funded_by.eq.platform`)
+  ]);
+  isFavorited = !!favResult.data;
+  deals = dealsResult.data || [];
+
   renderHeader();
+  renderFavButton();
+  renderDeals();
   renderMenu();
   renderBasket();
   document.documentElement.classList.remove('auth-pending');
@@ -456,19 +548,122 @@ function renderHeader(){
   }
 
   const hoursText = formatOpeningHours(restaurant.opening_hours);
+  const feeParts = [];
+  if(restaurant.does_delivery) feeParts.push(restaurant.delivery_fee_pence ? `Delivery ${formatGBP(restaurant.delivery_fee_pence)}` : 'Free delivery');
+  if(restaurant.does_delivery && restaurant.min_order_pence) feeParts.push(`Min order ${formatGBP(restaurant.min_order_pence)}`);
   document.getElementById('rMeta').innerHTML = `
     <span>${escapeHtml(restaurant.cuisine || '')}</span>
     <span>${escapeHtml(restaurant.address || '')}</span>
     ${hoursText ? `<span>${escapeHtml(hoursText)}</span>` : ''}
+    ${feeParts.map(p => `<span>${escapeHtml(p)}</span>`).join('')}
   `;
 
+  const openNow = isOpenNow(restaurant.opening_hours);
   let badgesHtml = '';
+  if(openNow === true) badgesHtml += `<span class="r-badge open-now">Open now</span>`;
+  else if(openNow === false) badgesHtml += `<span class="r-badge closed">Closed now</span>`;
   if(restaurant.does_delivery) badgesHtml += `<span class="r-badge">Delivery</span>`;
   if(restaurant.does_collection) badgesHtml += `<span class="r-badge">Collection</span>`;
   if(!restaurant.does_delivery && !restaurant.does_collection) badgesHtml += `<span class="r-badge closed">Ordering not set up yet</span>`;
   document.getElementById('rBadges').innerHTML = badgesHtml;
 
   orderType = restaurant.does_collection ? 'collection' : 'delivery';
+}
+
+// opening_hours is { mon: "12:00-22:00", tue: "closed", ... }. Returns
+// true/false, or null if hours aren't set yet (treated as unknown, not
+// closed). Same logic as index.html's homepage cards — duplicated here
+// since every page in this project is a self-contained file.
+const DOW = ['sun','mon','tue','wed','thu','fri','sat'];
+function parseRange(val){
+  if(!val || val === 'closed') return null;
+  const [open, close] = val.split('-');
+  const [oh, om] = open.split(':').map(Number);
+  const [ch, cm] = close.split(':').map(Number);
+  return { openM: oh * 60 + om, closeM: ch * 60 + cm };
+}
+function isOpenNow(hours){
+  if(!hours || typeof hours !== 'object' || Object.keys(hours).length === 0) return null;
+  const now = new Date();
+  const nowM = now.getHours() * 60 + now.getMinutes();
+
+  const today = parseRange(hours[DOW[now.getDay()]]);
+  if(today){
+    if(today.closeM > today.openM){
+      if(nowM >= today.openM && nowM < today.closeM) return true;
+    } else if(nowM >= today.openM || nowM < today.closeM){
+      return true;
+    }
+  }
+
+  const yesterday = parseRange(hours[DOW[(now.getDay() + 6) % 7]]);
+  if(yesterday && yesterday.closeM <= yesterday.openM && nowM < yesterday.closeM) return true;
+
+  return false;
+}
+
+/* ============================================================
+   FAVOURITES
+   ============================================================ */
+const favBtn = document.getElementById('favBtn');
+
+function renderFavButton(){
+  favBtn.style.display = 'flex';
+  favBtn.classList.toggle('active', isFavorited);
+  favBtn.title = isFavorited ? 'Remove from favourites' : 'Save to favourites';
+}
+
+favBtn.addEventListener('click', async () => {
+  if(!customer){
+    window.location.href = 'customer/index.html';
+    return;
+  }
+  favBtn.disabled = true;
+  try {
+    if(isFavorited){
+      const { error } = await supabase.from('customer_favorites').delete()
+        .eq('customer_id', customer.id).eq('restaurant_id', restaurant.id);
+      if(error) throw error;
+      isFavorited = false;
+    } else {
+      const { error } = await supabase.from('customer_favorites').insert({ customer_id: customer.id, restaurant_id: restaurant.id });
+      if(error) throw error;
+      isFavorited = true;
+    }
+    renderFavButton();
+  } catch(err){
+    // silent — favouriting is a nice-to-have, not worth a toast interrupting browsing
+  } finally {
+    favBtn.disabled = false;
+  }
+});
+
+/* ============================================================
+   DEALS — real promotions (migration_21), not decorative
+   ============================================================ */
+function describeDeal(promo){
+  const parts = [];
+  if(promo.type === 'percent') parts.push(`${promo.value}% off`);
+  else if(promo.type === 'fixed') parts.push(`${formatGBP(promo.value)} off`);
+  else if(promo.type === 'free_delivery') parts.push('Free delivery');
+  if(promo.min_order_pence) parts.push(`orders over ${formatGBP(promo.min_order_pence)}`);
+  if(promo.max_discount_pence && promo.type === 'percent') parts.push(`up to ${formatGBP(promo.max_discount_pence)}`);
+  return parts.join(', ');
+}
+
+function renderDeals(){
+  const dealsWrap = document.getElementById('dealsWrap');
+  if(deals.length === 0){
+    dealsWrap.style.display = 'none';
+    return;
+  }
+  dealsWrap.style.display = 'block';
+  document.getElementById('dealsRow').innerHTML = deals.map(promo => `
+    <div class="deal-card">
+      <div class="deal-code">${escapeHtml(promo.code)}</div>
+      <div class="deal-desc">${escapeHtml(describeDeal(promo))}</div>
+    </div>
+  `).join('');
 }
 
 /* ============================================================
@@ -518,6 +713,7 @@ function renderMenuItem(item){
 
   return `
     <div class="menu-item ${item.is_available ? '' : 'unavailable'}">
+      ${item.photo_url ? `<div class="mi-photo" style="background-image:url('${item.photo_url}')"></div>` : ''}
       <div class="mi-info">
         <div class="mi-name">${escapeHtml(item.name)}</div>
         ${item.description ? `<p class="mi-desc">${escapeHtml(item.description)}</p>` : ''}
@@ -562,6 +758,15 @@ function readBasket(){
 function saveBasket(){
   localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
   localStorage.setItem('doorfeast_active_restaurant_id', restaurant.id);
+}
+
+function readPromo(){
+  try { return JSON.parse(localStorage.getItem(PROMO_KEY) || 'null'); }
+  catch(e){ return null; }
+}
+function savePromo(){
+  if(appliedPromo) localStorage.setItem(PROMO_KEY, JSON.stringify(appliedPromo));
+  else localStorage.removeItem(PROMO_KEY);
 }
 
 // Every basket entry is keyed by a "line key": the item id alone for a
@@ -611,6 +816,9 @@ function removeItem(lineKey){
   renderBasket();
 }
 
+// Discount is computed and shown here as an estimate only — nothing
+// server-side recalculates or enforces it yet, since create-order
+// (CLAUDE.md Step 5) doesn't exist. See migration_21's header comment.
 function basketTotals(){
   let subtotal = 0;
   let count = 0;
@@ -618,9 +826,58 @@ function basketTotals(){
     subtotal += basket[key].unitPrice * basket[key].qty;
     count += basket[key].qty;
   }
-  const deliveryFee = orderType === 'delivery' ? (restaurant.delivery_fee_pence || 0) : 0;
-  const total = subtotal + deliveryFee;
-  return { subtotal, deliveryFee, total, count };
+  let deliveryFee = orderType === 'delivery' ? (restaurant.delivery_fee_pence || 0) : 0;
+
+  let discount = 0;
+  const promoEligible = appliedPromo && subtotal > 0 && (!appliedPromo.min_order_pence || subtotal >= appliedPromo.min_order_pence);
+  if(promoEligible){
+    if(appliedPromo.type === 'percent'){
+      discount = Math.round(subtotal * appliedPromo.value / 100);
+      if(appliedPromo.max_discount_pence) discount = Math.min(discount, appliedPromo.max_discount_pence);
+    } else if(appliedPromo.type === 'fixed'){
+      discount = Math.min(appliedPromo.value, subtotal);
+    } else if(appliedPromo.type === 'free_delivery'){
+      discount = deliveryFee;
+      deliveryFee = 0;
+    }
+  }
+
+  const total = Math.max(0, subtotal + deliveryFee - discount);
+  return { subtotal, deliveryFee, discount, total, count, promoEligible };
+}
+
+async function applyPromoCode(){
+  const input = document.getElementById('promoInput');
+  const errEl = document.getElementById('promoError');
+  errEl.style.display = 'none';
+  const codeRaw = input.value.trim();
+  if(!codeRaw) return;
+
+  // deals already holds every currently-active, in-date promotion for
+  // this restaurant (plus platform-wide ones) — same list the "Available
+  // deals" banner reads from, so no extra query needed here.
+  const match = deals.find(d => d.code.toLowerCase() === codeRaw.toLowerCase());
+  if(!match){
+    errEl.textContent = "That code isn't valid for this restaurant.";
+    errEl.style.display = 'block';
+    return;
+  }
+  const { subtotal } = basketTotals();
+  if(match.min_order_pence && subtotal < match.min_order_pence){
+    errEl.textContent = `This code needs a minimum order of ${formatGBP(match.min_order_pence)}.`;
+    errEl.style.display = 'block';
+    return;
+  }
+  appliedPromo = match;
+  savePromo();
+  input.value = '';
+  renderBasket();
+}
+
+function removePromoCode(){
+  appliedPromo = null;
+  savePromo();
+  renderBasket();
 }
 
 /* ============================================================
@@ -657,7 +914,7 @@ function setOrderType(type){
 
 function renderBasket(){
   if(!restaurant) return;
-  const { subtotal, deliveryFee, total, count } = basketTotals();
+  const { subtotal, deliveryFee, discount, total, count, promoEligible } = basketTotals();
 
   basketCount.textContent = count;
   basketBarTotal.textContent = formatGBP(subtotal);
@@ -693,6 +950,21 @@ function renderBasket(){
   sumDeliveryFee.textContent = orderType === 'delivery' ? formatGBP(deliveryFee) : '£0.00';
   sumTotal.textContent = formatGBP(total);
 
+  const promoEntry = document.getElementById('promoEntry');
+  const promoApplied = document.getElementById('promoApplied');
+  if(appliedPromo){
+    promoEntry.style.display = 'none';
+    promoApplied.style.display = 'flex';
+    document.getElementById('promoAppliedText').textContent = promoEligible
+      ? `"${appliedPromo.code}" applied — ${describeDeal(appliedPromo)}`
+      : `"${appliedPromo.code}" needs a minimum order of ${formatGBP(appliedPromo.min_order_pence)}`;
+  } else {
+    promoEntry.style.display = 'flex';
+    promoApplied.style.display = 'none';
+  }
+  document.getElementById('sumDiscountRow').style.display = discount > 0 ? 'flex' : 'none';
+  document.getElementById('sumDiscount').textContent = '-' + formatGBP(discount);
+
   const minOrder = restaurant.min_order_pence || 0;
   const belowMin = orderType === 'delivery' && subtotal < minOrder && count > 0;
   minOrderNote.style.display = belowMin ? 'block' : 'none';
@@ -719,6 +991,10 @@ basketOverlay.addEventListener('click', (e) => { if(e.target === basketOverlay) 
 checkoutBtn.addEventListener('click', () => {
   window.location.href = 'checkout.html';
 });
+
+document.getElementById('promoApplyBtn').addEventListener('click', applyPromoCode);
+document.getElementById('promoInput').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); applyPromoCode(); } });
+document.getElementById('promoRemoveBtn').addEventListener('click', removePromoCode);
 
 /* ============================================================
    OPTIONS MODAL — sizes / extras picker, shown before an item with

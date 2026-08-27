@@ -250,6 +250,9 @@
   .modal textarea{min-height:70px; resize:vertical;}
   .required-note{color:var(--red); font-size:11px; margin:-10px 0 14px;}
   .modal-actions{display:flex; gap:10px; margin-top:6px;}
+  .code-input-row{display:flex; gap:8px; align-items:center;}
+  .code-input-row input{flex:1;}
+  .code-input-row .btn-secondary{padding:0 16px; white-space:nowrap; font-size:12.5px;}
 
   .options-section{border-top:1px solid var(--line); padding-top:16px; margin-top:2px;}
   .options-section > label{margin-bottom:2px;}
@@ -520,7 +523,13 @@
       </div>
 
       <div class="dtab-content" id="dtab-promotions">
-        <div class="section-head"><div><h2>Promotions</h2><p>Reach customers directly across channels — nothing active yet.</p></div></div>
+        <div class="section-head">
+          <div><h2>Discount codes</h2><p>A real code customers can apply in their basket — shows on your restaurant page too.</p></div>
+          <button class="btn btn-primary" id="addPromoBtn">+ Add discount code</button>
+        </div>
+        <div id="promoListWrap"><div class="empty-state">Loading your discount codes…</div></div>
+
+        <div class="section-head" style="margin-top:32px;"><div><h2>Other promotions</h2><p>Reach customers directly across channels — nothing active yet.</p></div></div>
         <div class="promo-grid">
           <div class="placeholder-card">
             <div class="ph-icon">✉️</div>
@@ -545,6 +554,52 @@
       <a href="mailto:support@doorfeast.co.uk" style="text-align:center; font-size:12.5px; font-weight:600; color:var(--body); text-decoration:none;">Contact us</a>
       <button class="btn btn-secondary" id="dashLogoutBtn" style="width:100%;">Log out</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="promoModalOverlay">
+  <div class="modal">
+    <h3>Add discount code</h3>
+    <form id="promoForm">
+      <label>Code</label>
+      <div class="code-input-row">
+        <input type="text" id="promoCode" placeholder="e.g. SAVE10" required style="text-transform:uppercase; margin-bottom:0;">
+        <button type="button" class="btn btn-secondary" id="generateCodeBtn">Generate</button>
+      </div>
+      <p class="options-saving-note" style="margin:-6px 0 14px;">Share whatever code you settle on with your customers — by text, on a receipt, on social media, however works for you.</p>
+
+      <label>Discount type</label>
+      <select id="promoType">
+        <option value="percent">Percentage off</option>
+        <option value="fixed">Fixed amount off</option>
+        <option value="free_delivery">Free delivery</option>
+      </select>
+
+      <div id="promoValueRow">
+        <label id="promoValueLabel">Percentage off (%)</label>
+        <input type="number" id="promoValue" min="0" step="1" value="10">
+      </div>
+
+      <label>Minimum order (£, optional)</label>
+      <input type="number" id="promoMinOrder" step="0.01" min="0" placeholder="No minimum">
+
+      <div id="promoMaxRow">
+        <label>Maximum discount (£, optional)</label>
+        <input type="number" id="promoMaxDiscount" step="0.01" min="0" placeholder="No cap">
+      </div>
+
+      <label>Ends (optional)</label>
+      <input type="date" id="promoEndDate">
+
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:16px;">
+        <input type="checkbox" id="promoActive" checked style="width:auto; margin:0;"> Active immediately
+      </label>
+
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary" id="promoSaveBtn" style="flex:1;">Save code</button>
+        <button type="button" class="btn btn-secondary" id="promoCancelBtn">Cancel</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -662,6 +717,7 @@ document.querySelectorAll('.profile-menu-item').forEach(item => {
     if(key === 'history' && !historyLoaded) loadOrderHistory();
     if(key === 'payouts' && !payoutsLoaded) loadPayouts();
     if(key === 'reports' && !reportsLoaded) loadReports('all');
+    if(key === 'promotions' && !promotionsLoaded) loadPromotions();
   });
 });
 
@@ -1820,6 +1876,7 @@ document.getElementById('alertSilenceBtn').addEventListener('click', () => {
 let historyLoaded = false;
 let payoutsLoaded = false;
 let reportsLoaded = false;
+let promotionsLoaded = false;
 
 async function loadOrderHistory(){
   historyLoaded = true;
@@ -1977,6 +2034,181 @@ function subscribeToOrderInbox(){
     })
     .subscribe();
 }
+
+/* ============================================================
+   DISCOUNT CODES — real promotions (migration_21), restaurant-funded
+   only. Applied client-side in restaurant.html's basket; nothing
+   server-side enforces usage_limit / per_customer_limit /
+   first_order_only yet since create-order (Step 5) doesn't exist.
+   ============================================================ */
+let promotions = [];
+
+function describePromoRow(p){
+  const parts = [];
+  if(p.type === 'percent') parts.push(`${p.value}% off`);
+  else if(p.type === 'fixed') parts.push(`£${(p.value / 100).toFixed(2)} off`);
+  else parts.push('Free delivery');
+  if(p.min_order_pence) parts.push(`min order £${(p.min_order_pence / 100).toFixed(2)}`);
+  if(p.max_discount_pence && p.type === 'percent') parts.push(`capped at £${(p.max_discount_pence / 100).toFixed(2)}`);
+  if(p.ends_at) parts.push(`ends ${new Date(p.ends_at).toLocaleDateString('en-GB')}`);
+  return parts.join(' · ');
+}
+
+async function loadPromotions(){
+  promotionsLoaded = true;
+  const wrap = document.getElementById('promoListWrap');
+  try {
+    const { data, error } = await supabase
+      .from('promotions').select('*').eq('restaurant_id', restaurant.id).order('created_at', { ascending: false });
+    if(error) throw error;
+    promotions = data || [];
+    renderPromotions();
+  } catch(err){
+    wrap.innerHTML = '<div class="empty-state">Couldn\'t load your discount codes. Please try again.</div>';
+  }
+}
+
+function renderPromotions(){
+  const wrap = document.getElementById('promoListWrap');
+  if(promotions.length === 0){
+    wrap.innerHTML = '<div class="empty-state">No discount codes yet — add one so customers can apply it in their basket.</div>';
+    return;
+  }
+  wrap.innerHTML = '<div class="menu-grid">' + promotions.map(p => `
+    <div class="menu-item-card ${p.is_active ? '' : 'unavailable'}">
+      <div class="mi-left">
+        <div class="mi-title-row">
+          <span class="mi-title">${escapeHtml(p.code)}</span>
+          <span class="mi-tag">${p.type === 'percent' ? 'Percent' : p.type === 'fixed' ? 'Fixed' : 'Free delivery'}</span>
+        </div>
+        <p class="mi-desc">${escapeHtml(describePromoRow(p))}</p>
+      </div>
+      <div class="mi-actions">
+        <div>
+          <label class="toggle-switch">
+            <input type="checkbox" ${p.is_active ? 'checked' : ''} onchange="togglePromoActive('${p.id}', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-label">${p.is_active ? 'Active' : 'Inactive'}</div>
+        </div>
+        <div class="mi-actions-row">
+          <button class="icon-btn danger" onclick="deletePromo('${p.id}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('') + '</div>';
+}
+
+const promoModalOverlay = document.getElementById('promoModalOverlay');
+const promoForm = document.getElementById('promoForm');
+const promoTypeSelect = document.getElementById('promoType');
+
+function updatePromoTypeFields(){
+  const type = promoTypeSelect.value;
+  const valueRow = document.getElementById('promoValueRow');
+  const maxRow = document.getElementById('promoMaxRow');
+  if(type === 'free_delivery'){
+    valueRow.style.display = 'none';
+    maxRow.style.display = 'none';
+  } else {
+    valueRow.style.display = 'block';
+    document.getElementById('promoValueLabel').textContent = type === 'percent' ? 'Percentage off (%)' : 'Amount off (£)';
+    maxRow.style.display = type === 'percent' ? 'block' : 'none';
+  }
+}
+promoTypeSelect.addEventListener('change', updatePromoTypeFields);
+
+// Unambiguous alphabet — no 0/O or 1/I/L — so a code read off a receipt
+// or heard over the phone doesn't get miskeyed by the customer.
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function generateRandomCode(){
+  let code;
+  do {
+    code = '';
+    for(let i = 0; i < 6; i++) code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  } while(promotions.some(p => p.code.toUpperCase() === code));
+  return code;
+}
+
+document.getElementById('generateCodeBtn').addEventListener('click', () => {
+  document.getElementById('promoCode').value = generateRandomCode();
+});
+
+document.getElementById('addPromoBtn').addEventListener('click', () => {
+  promoForm.reset();
+  document.getElementById('promoActive').checked = true;
+  document.getElementById('promoCode').value = generateRandomCode();
+  updatePromoTypeFields();
+  promoModalOverlay.classList.add('show');
+});
+document.getElementById('promoCancelBtn').addEventListener('click', () => promoModalOverlay.classList.remove('show'));
+promoModalOverlay.addEventListener('click', (e) => { if(e.target === promoModalOverlay) promoModalOverlay.classList.remove('show'); });
+
+promoForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const type = promoTypeSelect.value;
+  const code = document.getElementById('promoCode').value.trim().toUpperCase();
+  if(!code) return;
+
+  const valueRaw = parseFloat(document.getElementById('promoValue').value || 0);
+  const value = type === 'free_delivery' ? 0 : type === 'percent' ? Math.round(valueRaw) : Math.round(valueRaw * 100);
+  const minOrderRaw = document.getElementById('promoMinOrder').value;
+  const maxDiscountRaw = document.getElementById('promoMaxDiscount').value;
+  const endDateRaw = document.getElementById('promoEndDate').value;
+
+  const row = {
+    restaurant_id: restaurant.id,
+    funded_by: 'restaurant',
+    code,
+    type,
+    value,
+    min_order_pence: minOrderRaw ? Math.round(parseFloat(minOrderRaw) * 100) : null,
+    max_discount_pence: (type === 'percent' && maxDiscountRaw) ? Math.round(parseFloat(maxDiscountRaw) * 100) : null,
+    ends_at: endDateRaw ? new Date(endDateRaw + 'T23:59:59').toISOString() : null,
+    is_active: document.getElementById('promoActive').checked
+  };
+
+  const saveBtn = document.getElementById('promoSaveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+  try {
+    const { error } = await supabase.from('promotions').insert(row);
+    if(error) throw error;
+    promoModalOverlay.classList.remove('show');
+    showToast('Discount code added.');
+    await loadPromotions();
+  } catch(err){
+    showToast(err.message && err.message.includes('duplicate') ? "You've already got a code with that name." : 'Something went wrong — please try again.');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save code';
+  }
+});
+
+window.togglePromoActive = async (id, checked) => {
+  try {
+    const { error } = await supabase.from('promotions').update({ is_active: checked }).eq('id', id);
+    if(error) throw error;
+    const p = promotions.find(p => p.id === id);
+    if(p) p.is_active = checked;
+    renderPromotions();
+  } catch(err){
+    showToast('Could not update that code.');
+    await loadPromotions();
+  }
+};
+
+window.deletePromo = async (id) => {
+  if(!confirm("Delete this discount code? This can't be undone.")) return;
+  try {
+    const { error } = await supabase.from('promotions').delete().eq('id', id);
+    if(error) throw error;
+    promotions = promotions.filter(p => p.id !== id);
+    renderPromotions();
+  } catch(err){
+    showToast('Could not delete that code.');
+  }
+};
 </script>
 </body>
 </html>
