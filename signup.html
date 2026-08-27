@@ -88,6 +88,14 @@
   <p class="toggle-mode" id="toggleMode">
     Already have an account? <a id="toggleLink">Log in</a>
   </p>
+
+  <div id="verifyPanel" style="display:none;">
+    <p style="font-size:14px; line-height:1.6; text-align:center; margin:0 0 18px;">
+      We've sent a confirmation link to <b id="verifyEmail"></b>. Click it to verify your email, then come back here to continue.
+    </p>
+    <button type="button" class="btn btn-primary" id="resendBtn">Resend email</button>
+    <p class="toggle-mode"><a id="backToSignup">Use a different email</a></p>
+  </div>
 </div>
 
 <script type="module">
@@ -105,6 +113,30 @@
   const toggleMode = document.getElementById('toggleMode');
   const formTitle = document.getElementById('formTitle');
   const formSub = document.getElementById('formSub');
+  const verifyPanel = document.getElementById('verifyPanel');
+  const verifyEmail = document.getElementById('verifyEmail');
+  const resendBtn = document.getElementById('resendBtn');
+
+  // Shown only for email/password sign-up when Supabase didn't hand back a
+  // session immediately — i.e. "Confirm email" is on and this address
+  // hasn't clicked the link yet. Google sign-in never goes through this;
+  // it always lands with a session already set.
+  function showVerifyPanel(email){
+    verifyEmail.textContent = email;
+    verifyPanel.style.display = 'block';
+    emailForm.style.display = 'none';
+    googleBtn.style.display = 'none';
+    document.querySelector('.divider').style.display = 'none';
+    toggleMode.style.display = 'none';
+    formSub.textContent = 'Almost there — just confirm your email.';
+  }
+  function hideVerifyPanel(){
+    verifyPanel.style.display = 'none';
+    emailForm.style.display = 'block';
+    googleBtn.style.display = 'flex';
+    document.querySelector('.divider').style.display = 'flex';
+    toggleMode.style.display = 'block';
+  }
 
   // ?mode=login lets index.html's "Log in as a takeaway partner" link land
   // here already in login mode, matching customer/index.html's pattern.
@@ -124,6 +156,7 @@
     if(status === 429 || msg.includes('rate limit') || msg.includes('too many requests')) return "Too many attempts right now — please wait a few minutes and try again.";
     if(msg.includes('already registered')) return "That email's already registered — try logging in instead.";
     if(msg.includes('invalid login credentials')) return "Email or password is incorrect.";
+    if(msg.includes('email not confirmed')) return "Please confirm your email first — check the link we sent you.";
     if(msg.includes('password should be at least')) return "Password should be at least 8 characters.";
     if(msg.includes('unable to validate email') || msg.includes('invalid email')) return "That email address doesn't look right.";
     return "Something went wrong — please try again.";
@@ -190,16 +223,59 @@
     submitBtn.textContent = mode === 'signup' ? 'Creating account…' : 'Logging in…';
 
     try {
-      const { error } = mode === 'signup'
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-      if(error) throw error;
-      await goToOnboarding();
+      if(mode === 'signup'){
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: { emailRedirectTo: window.location.href }
+        });
+        if(error) throw error;
+        // No session back yet means "Confirm email" is on for this project
+        // and this address hasn't clicked the link — stop here instead of
+        // continuing to onboarding. (If email confirmation isn't required,
+        // signUp already returns a live session and this is skipped.)
+        if(!data.session){
+          showVerifyPanel(email);
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create account';
+          return;
+        }
+        await goToOnboarding();
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+        await goToOnboarding();
+      }
     } catch(err){
       showError(friendlyError(err));
       submitBtn.disabled = false;
       submitBtn.textContent = mode === 'signup' ? 'Create account' : 'Log in';
     }
+  });
+
+  resendBtn.addEventListener('click', async () => {
+    clearError();
+    resendBtn.disabled = true;
+    resendBtn.textContent = 'Sending…';
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: verifyEmail.textContent,
+        options: { emailRedirectTo: window.location.href }
+      });
+      if(error) throw error;
+      resendBtn.textContent = 'Sent!';
+      setTimeout(() => { resendBtn.textContent = 'Resend email'; resendBtn.disabled = false; }, 3000);
+    } catch(err){
+      showError(friendlyError(err));
+      resendBtn.disabled = false;
+      resendBtn.textContent = 'Resend email';
+    }
+  });
+
+  document.getElementById('backToSignup').addEventListener('click', () => {
+    clearError();
+    hideVerifyPanel();
+    applyMode();
   });
 
   googleBtn.addEventListener('click', async () => {
