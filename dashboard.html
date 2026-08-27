@@ -251,6 +251,25 @@
   .required-note{color:var(--red); font-size:11px; margin:-10px 0 14px;}
   .modal-actions{display:flex; gap:10px; margin-top:6px;}
 
+  .options-section{border-top:1px solid var(--line); padding-top:16px; margin-top:2px;}
+  .options-section > label{margin-bottom:2px;}
+  .options-hint{font-size:12px; color:var(--body); margin:0 0 12px; line-height:1.5;}
+  .option-group-card{border:1.5px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; background:var(--cream);}
+  .og-row{display:flex; gap:8px; margin-bottom:8px;}
+  .og-row input[type="text"]{margin-bottom:0; flex:1;}
+  .og-settings{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;}
+  .og-settings label{display:flex; align-items:center; gap:5px; font-size:12px; margin-bottom:0; white-space:nowrap;}
+  .og-settings input[type="checkbox"]{width:auto; margin:0;}
+  .og-settings input[type="number"]{width:56px; margin-bottom:0; padding:6px 8px;}
+  .choice-row{display:flex; gap:6px; align-items:center; margin-bottom:6px;}
+  .choice-row input[type="text"]{flex:1; margin-bottom:0; padding:8px 10px; font-size:13px;}
+  .choice-row input[type="number"]{width:76px; margin-bottom:0; padding:8px 10px; font-size:13px;}
+  .choice-row .toggle-switch{flex-shrink:0;}
+  .choice-remove, .og-remove{border:none; background:none; color:var(--red); cursor:pointer; font-size:18px; line-height:1; padding:4px; flex-shrink:0;}
+  .add-choice-btn{border:1.5px dashed var(--line); background:none; border-radius:8px; padding:7px 10px; font-size:12.5px; font-weight:600; color:var(--body); cursor:pointer; width:100%;}
+  .add-choice-btn:hover{border-color:var(--red); color:var(--red);}
+  .options-saving-note{font-size:11.5px; color:var(--body); margin:0 0 12px; font-style:italic;}
+
   .photo-note{
     background:rgba(217,164,65,0.1); border:1px solid rgba(217,164,65,0.3); border-radius:10px;
     padding:11px 14px; font-size:12px; color:var(--amber); margin-bottom:18px;
@@ -559,6 +578,14 @@
       <label>Allergen information</label>
       <textarea id="itemAllergens" placeholder="e.g. Contains nuts, dairy, gluten. Required — cannot be left blank." required></textarea>
       <p class="required-note">Required — every item must list allergens before it can be saved.</p>
+
+      <div class="options-section" id="optionsSection" style="display:none;">
+        <label>Options (sizes, extras)</label>
+        <p class="options-hint">e.g. a "Size" group with Small/Medium/Large, or an "Extras" group with Extra cheese, Extra sauce. Each choice can add to the price. Changes here save immediately.</p>
+        <div id="optionGroupsList"></div>
+        <button type="button" class="add-choice-btn" id="addOptionGroupBtn" style="border-style:solid;">+ Add option group</button>
+      </div>
+      <p class="options-saving-note" id="optionsNewItemNote" style="display:none;">Save this item first, then reopen it to add sizes or extras.</p>
 
       <div class="modal-actions">
         <button type="submit" class="btn btn-primary" id="itemSaveBtn" style="flex:1;">Save item</button>
@@ -1126,6 +1153,9 @@ document.getElementById('addItemBtn').addEventListener('click', () => {
   modalTitle.textContent = 'Add menu item';
   itemForm.reset();
   document.getElementById('currentPhotoPreview').style.display = 'none';
+  document.getElementById('optionsSection').style.display = 'none';
+  document.getElementById('optionsNewItemNote').style.display = 'block';
+  optionGroups = [];
   itemModalOverlay.classList.add('show');
 });
 
@@ -1150,9 +1180,154 @@ function openEditModal(id){
   } else {
     preview.style.display = 'none';
   }
+  document.getElementById('optionsSection').style.display = 'block';
+  document.getElementById('optionsNewItemNote').style.display = 'none';
+  optionGroups = [];
+  renderOptionGroups();
+  loadOptionGroups(id);
   itemModalOverlay.classList.add('show');
 }
 window.openEditModal = openEditModal;
+
+/* ============================================================
+   MENU ITEM OPTIONS — sizes, extras. Only editable once the item
+   has an id (menu_item_id is NOT NULL on option_groups), so this
+   section only shows in the edit modal, not the add-item flow.
+   Every field change writes straight to Supabase — there's no
+   separate "save options" step.
+   ============================================================ */
+let optionGroups = []; // [{ ...option_groups row, choices: [option_choices row] }]
+
+async function loadOptionGroups(menuItemId){
+  try {
+    const { data: groups, error: gErr } = await supabase
+      .from('option_groups').select('*').eq('menu_item_id', menuItemId).order('sort_order');
+    if(gErr) throw gErr;
+    const groupIds = (groups || []).map(g => g.id);
+    let choices = [];
+    if(groupIds.length){
+      const { data, error: cErr } = await supabase
+        .from('option_choices').select('*').in('option_group_id', groupIds).order('sort_order');
+      if(cErr) throw cErr;
+      choices = data || [];
+    }
+    optionGroups = (groups || []).map(g => ({ ...g, choices: choices.filter(c => c.option_group_id === g.id) }));
+    renderOptionGroups();
+  } catch(err){
+    document.getElementById('optionGroupsList').innerHTML = '<p style="font-size:12.5px; color:var(--red); margin:0 0 10px;">Couldn\'t load options.</p>';
+  }
+}
+
+function renderOptionGroups(){
+  const list = document.getElementById('optionGroupsList');
+  if(optionGroups.length === 0){
+    list.innerHTML = '<p style="font-size:12.5px; color:var(--body); margin:0 0 10px;">No option groups yet — this item is a single price with no choices.</p>';
+    return;
+  }
+  list.innerHTML = optionGroups.map(g => `
+    <div class="option-group-card">
+      <div class="og-row">
+        <input type="text" value="${escapeHtml(g.name)}" placeholder="Group name, e.g. Size" onchange="updateGroupField('${g.id}','name', this.value)">
+        <button type="button" class="og-remove" title="Delete group" onclick="deleteOptionGroup('${g.id}')">&times;</button>
+      </div>
+      <div class="og-settings">
+        <label><input type="checkbox" ${g.is_required ? 'checked' : ''} onchange="updateGroupField('${g.id}','is_required', this.checked)"> Required</label>
+        <label>Min <input type="number" min="0" value="${g.min_choices}" onchange="updateGroupField('${g.id}','min_choices', parseInt(this.value)||0)"></label>
+        <label>Max <input type="number" min="1" value="${g.max_choices}" onchange="updateGroupField('${g.id}','max_choices', Math.max(1, parseInt(this.value)||1))"></label>
+      </div>
+      ${g.choices.map(c => `
+        <div class="choice-row">
+          <input type="text" value="${escapeHtml(c.name)}" placeholder="Choice name" onchange="updateChoiceField('${c.id}','name', this.value)">
+          <input type="number" step="0.01" value="${(c.price_delta_pence/100).toFixed(2)}" title="Price change (£)" onchange="updateChoiceField('${c.id}','price_delta_pence', Math.round(parseFloat(this.value||0)*100))">
+          <label class="toggle-switch" title="Available">
+            <input type="checkbox" ${c.is_available ? 'checked' : ''} onchange="updateChoiceField('${c.id}','is_available', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <button type="button" class="choice-remove" title="Delete choice" onclick="deleteChoice('${c.id}')">&times;</button>
+        </div>
+      `).join('')}
+      <button type="button" class="add-choice-btn" onclick="addChoice('${g.id}')">+ Add choice</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('addOptionGroupBtn').addEventListener('click', async () => {
+  if(!editingId) return;
+  try {
+    const { data, error } = await supabase.from('option_groups').insert({
+      menu_item_id: editingId, name: 'New group', sort_order: optionGroups.length
+    }).select().single();
+    if(error) throw error;
+    optionGroups.push({ ...data, choices: [] });
+    renderOptionGroups();
+  } catch(err){
+    showToast('Could not add option group.');
+  }
+});
+
+window.updateGroupField = async (groupId, field, value) => {
+  const g = optionGroups.find(g => g.id === groupId);
+  if(!g) return;
+  g[field] = value;
+  try {
+    const { error } = await supabase.from('option_groups').update({ [field]: value }).eq('id', groupId);
+    if(error) throw error;
+  } catch(err){
+    showToast('Could not save that change.');
+  }
+};
+
+window.deleteOptionGroup = async (groupId) => {
+  if(!confirm('Delete this option group and all its choices? This can\'t be undone.')) return;
+  try {
+    const { error } = await supabase.from('option_groups').delete().eq('id', groupId);
+    if(error) throw error;
+    optionGroups = optionGroups.filter(g => g.id !== groupId);
+    renderOptionGroups();
+  } catch(err){
+    showToast('Could not delete option group.');
+  }
+};
+
+window.addChoice = async (groupId) => {
+  const g = optionGroups.find(g => g.id === groupId);
+  if(!g) return;
+  try {
+    const { data, error } = await supabase.from('option_choices').insert({
+      option_group_id: groupId, name: 'New choice', sort_order: g.choices.length
+    }).select().single();
+    if(error) throw error;
+    g.choices.push(data);
+    renderOptionGroups();
+  } catch(err){
+    showToast('Could not add choice.');
+  }
+};
+
+window.updateChoiceField = async (choiceId, field, value) => {
+  let choice = null;
+  for(const g of optionGroups){ choice = g.choices.find(c => c.id === choiceId); if(choice) break; }
+  if(!choice) return;
+  choice[field] = value;
+  try {
+    const { error } = await supabase.from('option_choices').update({ [field]: value }).eq('id', choiceId);
+    if(error) throw error;
+  } catch(err){
+    showToast('Could not save that change.');
+  }
+};
+
+window.deleteChoice = async (choiceId) => {
+  if(!confirm('Delete this choice?')) return;
+  try {
+    const { error } = await supabase.from('option_choices').delete().eq('id', choiceId);
+    if(error) throw error;
+    for(const g of optionGroups){ g.choices = g.choices.filter(c => c.id !== choiceId); }
+    renderOptionGroups();
+  } catch(err){
+    showToast('Could not delete choice.');
+  }
+};
 
 itemForm.addEventListener('submit', async (e) => {
   e.preventDefault();

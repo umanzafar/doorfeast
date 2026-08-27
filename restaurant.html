@@ -175,6 +175,45 @@
   .checkout-btn:disabled{opacity:0.5; cursor:not-allowed;}
   .min-order-note{font-size:12px; color:var(--red); text-align:center; margin-top:8px;}
 
+  /* ============ OPTIONS MODAL (sizes / extras) ============ */
+  .opt-overlay{
+    position:fixed; inset:0; background:rgba(38,34,32,0.5); z-index:250;
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .opt-overlay.show{display:flex;}
+  .opt-modal{
+    background:var(--cream); border-radius:20px; width:min(440px, 100%); max-height:86vh;
+    display:flex; flex-direction:column; box-shadow:0 20px 50px -20px rgba(0,0,0,0.4);
+  }
+  .opt-head{padding:20px 22px; border-bottom:1px solid var(--line); background:var(--card); border-radius:20px 20px 0 0; display:flex; justify-content:space-between; align-items:flex-start; gap:12px;}
+  .opt-head h2{font-size:17px;}
+  .opt-head p{margin:6px 0 0; font-size:12.5px; color:var(--body);}
+  .opt-close{border:none; background:none; font-size:22px; cursor:pointer; color:var(--body); line-height:1; flex-shrink:0;}
+  .opt-body{flex:1; overflow-y:auto; padding:6px 22px 8px;}
+  .opt-group{padding:16px 0; border-bottom:1px solid var(--line);}
+  .opt-group:last-child{border-bottom:none;}
+  .opt-group-title{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
+  .opt-group-name{font-family:'Poppins',sans-serif; font-weight:700; font-size:14.5px;}
+  .opt-group-rule{font-size:11.5px; color:var(--body);}
+  .opt-group-rule.required{color:var(--red); font-weight:600;}
+  .opt-choice{
+    display:flex; align-items:center; gap:10px; padding:9px 0; cursor:pointer; font-size:14px;
+  }
+  .opt-choice input{width:17px; height:17px; accent-color:var(--red); flex-shrink:0;}
+  .opt-choice-name{flex:1;}
+  .opt-choice-price{font-size:12.5px; color:var(--body); font-weight:600;}
+  .opt-foot{padding:16px 22px 20px; border-top:1px solid var(--line); background:var(--card); border-radius:0 0 20px 20px;}
+  .opt-qty-row{display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:14px;}
+  .opt-qty-row .mi-qty-val{font-size:16px;}
+  .opt-add-btn{
+    display:block; width:100%; text-align:center; border:none; border-radius:999px;
+    background:var(--red); color:#fff; font-weight:700; font-size:15px; padding:14px; cursor:pointer;
+  }
+  .opt-add-btn:hover{background:var(--red-dark);}
+  .opt-add-btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .bl-options{font-size:12px; color:var(--body); margin:2px 0 4px;}
+  .bl-qty-row{display:flex; align-items:center; gap:8px; margin-top:6px;}
+
   @media (max-width:520px){
     .r-header, .menu-wrap{padding-left:18px; padding-right:18px;}
   }
@@ -232,6 +271,27 @@
   </div>
 </div>
 
+<div class="opt-overlay" id="optOverlay">
+  <div class="opt-modal">
+    <div class="opt-head">
+      <div>
+        <h2 id="optItemName"></h2>
+        <p id="optItemDesc" style="display:none;"></p>
+      </div>
+      <button class="opt-close" id="optClose">&times;</button>
+    </div>
+    <div class="opt-body" id="optBody"></div>
+    <div class="opt-foot">
+      <div class="opt-qty-row">
+        <button class="mi-qty-btn" id="optQtyMinus">−</button>
+        <span class="mi-qty-val" id="optQtyVal">1</span>
+        <button class="mi-qty-btn" id="optQtyPlus">+</button>
+      </div>
+      <button class="opt-add-btn" id="optAddBtn" disabled>Add to basket</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -253,6 +313,30 @@ let menu = []; // [{ category, items: [...] }]
 let basket = {};
 let orderType = 'collection';
 let BASKET_KEY = 'doorfeast_basket';
+
+// Sizes/extras for a batch of menu items. Only available choices are
+// shown to customers; a group left with zero available choices (e.g.
+// every size sold out) is dropped rather than shown empty.
+async function loadOptionGroupsFor(itemIds){
+  if(!itemIds.length) return {};
+  const { data: groups } = await supabase
+    .from('option_groups').select('*').in('menu_item_id', itemIds).order('sort_order');
+  const groupIds = (groups || []).map(g => g.id);
+  let choices = [];
+  if(groupIds.length){
+    const { data } = await supabase
+      .from('option_choices').select('*').in('option_group_id', groupIds).eq('is_available', true).order('sort_order');
+    choices = data || [];
+  }
+  const byItem = {};
+  for(const g of (groups || [])){
+    const groupChoices = choices.filter(c => c.option_group_id === g.id);
+    if(groupChoices.length === 0) continue;
+    if(!byItem[g.menu_item_id]) byItem[g.menu_item_id] = [];
+    byItem[g.menu_item_id].push({ ...g, choices: groupChoices });
+  }
+  return byItem;
+}
 
 /* ============================================================
    LOAD REAL DATA
@@ -301,9 +385,13 @@ async function loadRestaurant(){
     supabase.from('menu_items').select('*').eq('restaurant_id', r.id).order('sort_order')
   ]);
 
+  const optionGroupsByItem = await loadOptionGroupsFor((items || []).map(i => i.id));
+
   menu = (cats || []).map(cat => ({
     category: cat.name,
-    items: (items || []).filter(i => i.category_id === cat.id)
+    items: (items || [])
+      .filter(i => i.category_id === cat.id)
+      .map(i => ({ ...i, optionGroups: optionGroupsByItem[i.id] || [] }))
   })).filter(cat => cat.items.length > 0);
 
   renderHeader();
@@ -401,9 +489,33 @@ function renderMenu(){
   `).join('');
 }
 
+function basketQtyForItem(itemId){
+  let total = 0;
+  for(const key in basket){ if(basket[key].itemId === itemId) total += basket[key].qty; }
+  return total;
+}
+
 function renderMenuItem(item){
-  const qty = basket[item.id] ? basket[item.id].qty : 0;
+  const hasOptions = item.optionGroups && item.optionGroups.length > 0;
+  const qty = hasOptions ? basketQtyForItem(item.id) : (basket[item.id] ? basket[item.id].qty : 0);
   const allergens = (item.allergens || []).join(', ');
+
+  let actionHtml;
+  if(!item.is_available){
+    actionHtml = `<button class="mi-add-btn" disabled>Sold out</button>`;
+  } else if(hasOptions){
+    actionHtml = `<button class="mi-add-btn" onclick="openOptionsModal('${item.id}')">${qty > 0 ? qty + ' added · Add' : 'Add'}</button>`;
+  } else if(qty === 0){
+    actionHtml = `<button class="mi-add-btn" onclick="addItem('${item.id}')">Add</button>`;
+  } else {
+    actionHtml = `
+      <div class="mi-qty-row">
+        <button class="mi-qty-btn" onclick="decrementLine('${item.id}')">−</button>
+        <span class="mi-qty-val">${qty}</span>
+        <button class="mi-qty-btn" onclick="incrementLine('${item.id}')">+</button>
+      </div>`;
+  }
+
   return `
     <div class="menu-item ${item.is_available ? '' : 'unavailable'}">
       <div class="mi-info">
@@ -413,15 +525,8 @@ function renderMenuItem(item){
         ${item.is_available ? '' : '<span class="mi-soldout-tag">Sold out</span>'}
       </div>
       <div class="mi-actions">
-        <span class="mi-price">${formatGBP(item.price_pence)}</span>
-        ${!item.is_available ? `<button class="mi-add-btn" disabled>Sold out</button>` :
-          qty === 0 ? `<button class="mi-add-btn" onclick="addItem('${item.id}')">Add</button>` :
-          `<div class="mi-qty-row">
-             <button class="mi-qty-btn" onclick="decrementItem('${item.id}')">−</button>
-             <span class="mi-qty-val">${qty}</span>
-             <button class="mi-qty-btn" onclick="addItem('${item.id}')">+</button>
-           </div>`
-        }
+        <span class="mi-price">${formatGBP(item.price_pence)}${hasOptions ? '+' : ''}</span>
+        ${actionHtml}
       </div>
     </div>
   `;
@@ -441,7 +546,17 @@ function findItem(id){
    "active" so the profile panel / checkout know which basket to read.
    ============================================================ */
 function readBasket(){
-  try { return JSON.parse(localStorage.getItem(BASKET_KEY) || '{}'); }
+  try {
+    const raw = JSON.parse(localStorage.getItem(BASKET_KEY) || '{}');
+    // Migrate baskets saved before option-group support: a bare
+    // { qty, name, price_pence } keyed by item id.
+    for(const key in raw){
+      if(raw[key].itemId === undefined) raw[key].itemId = key;
+      if(raw[key].unitPrice === undefined) raw[key].unitPrice = raw[key].price_pence || 0;
+      if(raw[key].options === undefined) raw[key].options = [];
+    }
+    return raw;
+  }
   catch(e){ return {}; }
 }
 function saveBasket(){
@@ -449,27 +564,48 @@ function saveBasket(){
   localStorage.setItem('doorfeast_active_restaurant_id', restaurant.id);
 }
 
-function addItem(id){
-  const item = findItem(id);
+// Every basket entry is keyed by a "line key": the item id alone for a
+// plain item, or `${itemId}::${sorted choice ids}` once options are
+// involved — different size/extra combos of the same item are separate
+// lines so they can carry their own qty and price.
+function addItemWithOptions(itemId, options, qty){
+  const item = findItem(itemId);
   if(!item || !item.is_available) return;
-  if(!basket[id]) basket[id] = { qty: 0, name: item.name, price_pence: item.price_pence };
-  basket[id].qty += 1;
+  const opts = options || [];
+  const lineKey = opts.length ? `${itemId}::${opts.map(o => o.id).slice().sort().join(',')}` : itemId;
+  if(!basket[lineKey]){
+    const unitPrice = item.price_pence + opts.reduce((sum, o) => sum + o.price_delta_pence, 0);
+    basket[lineKey] = { itemId, qty: 0, name: item.name, unitPrice, options: opts };
+  }
+  basket[lineKey].qty += qty;
   saveBasket();
   renderMenu();
   renderBasket();
 }
 
-function decrementItem(id){
-  if(!basket[id]) return;
-  basket[id].qty -= 1;
-  if(basket[id].qty <= 0) delete basket[id];
+function addItem(id){
+  addItemWithOptions(id, [], 1);
+}
+
+function incrementLine(lineKey){
+  if(!basket[lineKey]) return;
+  basket[lineKey].qty += 1;
   saveBasket();
   renderMenu();
   renderBasket();
 }
 
-function removeItem(id){
-  delete basket[id];
+function decrementLine(lineKey){
+  if(!basket[lineKey]) return;
+  basket[lineKey].qty -= 1;
+  if(basket[lineKey].qty <= 0) delete basket[lineKey];
+  saveBasket();
+  renderMenu();
+  renderBasket();
+}
+
+function removeItem(lineKey){
+  delete basket[lineKey];
   saveBasket();
   renderMenu();
   renderBasket();
@@ -478,9 +614,9 @@ function removeItem(id){
 function basketTotals(){
   let subtotal = 0;
   let count = 0;
-  for(const id in basket){
-    subtotal += basket[id].price_pence * basket[id].qty;
-    count += basket[id].qty;
+  for(const key in basket){
+    subtotal += basket[key].unitPrice * basket[key].qty;
+    count += basket[key].qty;
   }
   const deliveryFee = orderType === 'delivery' ? (restaurant.delivery_fee_pence || 0) : 0;
   const total = subtotal + deliveryFee;
@@ -530,15 +666,25 @@ function renderBasket(){
   if(count === 0){
     basketBody.innerHTML = '<div class="basket-empty">Your basket is empty — add something tasty from the menu.</div>';
   } else {
-    basketBody.innerHTML = Object.keys(basket).map(id => `
+    basketBody.innerHTML = Object.keys(basket).map(key => {
+      const line = basket[key];
+      const optsText = (line.options || []).map(o => o.name).join(', ');
+      return `
       <div class="basket-line">
-        <div>
-          <div class="bl-name">${basket[id].qty} × ${escapeHtml(basket[id].name)}</div>
-          <div class="bl-price">${formatGBP(basket[id].price_pence * basket[id].qty)}</div>
-          <button class="bl-remove" onclick="removeItem('${id}')">Remove</button>
+        <div style="flex:1;">
+          <div class="bl-name">${escapeHtml(line.name)}</div>
+          ${optsText ? `<div class="bl-options">${escapeHtml(optsText)}</div>` : ''}
+          <div class="bl-price">${formatGBP(line.unitPrice * line.qty)}</div>
+          <div class="bl-qty-row">
+            <button class="mi-qty-btn" onclick="decrementLine('${key}')">−</button>
+            <span class="mi-qty-val">${line.qty}</span>
+            <button class="mi-qty-btn" onclick="incrementLine('${key}')">+</button>
+            <button class="bl-remove" onclick="removeItem('${key}')" style="margin-left:8px;">Remove</button>
+          </div>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   renderOrderTypeToggle();
@@ -557,7 +703,8 @@ function renderBasket(){
 }
 
 window.addItem = addItem;
-window.decrementItem = decrementItem;
+window.incrementLine = incrementLine;
+window.decrementLine = decrementLine;
 window.removeItem = removeItem;
 window.setOrderType = setOrderType;
 
@@ -571,6 +718,132 @@ basketOverlay.addEventListener('click', (e) => { if(e.target === basketOverlay) 
 
 checkoutBtn.addEventListener('click', () => {
   window.location.href = 'checkout.html';
+});
+
+/* ============================================================
+   OPTIONS MODAL — sizes / extras picker, shown before an item with
+   option groups can be added to the basket.
+   ============================================================ */
+const optOverlay = document.getElementById('optOverlay');
+const optItemName = document.getElementById('optItemName');
+const optItemDesc = document.getElementById('optItemDesc');
+const optBody = document.getElementById('optBody');
+const optQtyVal = document.getElementById('optQtyVal');
+const optAddBtn = document.getElementById('optAddBtn');
+
+let optModalItemId = null;
+let optModalQty = 1;
+let optModalSelections = {}; // groupId -> Set of selected choice ids
+
+function openOptionsModal(itemId){
+  const item = findItem(itemId);
+  if(!item) return;
+  optModalItemId = itemId;
+  optModalQty = 1;
+  optModalSelections = {};
+  for(const g of item.optionGroups) optModalSelections[g.id] = new Set();
+
+  optItemName.textContent = item.name;
+  if(item.description){
+    optItemDesc.textContent = item.description;
+    optItemDesc.style.display = 'block';
+  } else {
+    optItemDesc.style.display = 'none';
+  }
+  optQtyVal.textContent = optModalQty;
+  renderOptModalBody();
+  optOverlay.classList.add('show');
+}
+window.openOptionsModal = openOptionsModal;
+
+function renderOptModalBody(){
+  const item = findItem(optModalItemId);
+  optBody.innerHTML = item.optionGroups.map(g => {
+    const selected = optModalSelections[g.id];
+    const multi = g.max_choices > 1;
+    const ruleText = g.is_required
+      ? (multi ? `Required — choose up to ${g.max_choices}` : 'Required')
+      : (multi ? `Optional — choose up to ${g.max_choices}` : 'Optional');
+    return `
+      <div class="opt-group">
+        <div class="opt-group-title">
+          <span class="opt-group-name">${escapeHtml(g.name)}</span>
+          <span class="opt-group-rule ${g.is_required ? 'required' : ''}">${ruleText}</span>
+        </div>
+        ${g.choices.map(c => `
+          <label class="opt-choice">
+            <input type="${multi ? 'checkbox' : 'radio'}" name="optgroup-${g.id}"
+              ${selected.has(c.id) ? 'checked' : ''}
+              onchange="toggleOptChoice('${g.id}','${c.id}', this.checked)">
+            <span class="opt-choice-name">${escapeHtml(c.name)}</span>
+            ${c.price_delta_pence ? `<span class="opt-choice-price">${c.price_delta_pence > 0 ? '+' : '−'}${formatGBP(Math.abs(c.price_delta_pence))}</span>` : ''}
+          </label>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+  updateOptAddBtn();
+}
+
+window.toggleOptChoice = (groupId, choiceId, checked) => {
+  const item = findItem(optModalItemId);
+  const g = item.optionGroups.find(g => g.id === groupId);
+  const selected = optModalSelections[groupId];
+  if(g.max_choices <= 1){
+    selected.clear();
+    if(checked) selected.add(choiceId);
+  } else if(checked){
+    if(selected.size < g.max_choices) selected.add(choiceId);
+    // else: silently ignored — re-render below restores the checkbox to unchecked
+  } else {
+    selected.delete(choiceId);
+  }
+  renderOptModalBody();
+};
+
+function updateOptAddBtn(){
+  const item = findItem(optModalItemId);
+  let valid = true;
+  let deltaTotal = 0;
+  for(const g of item.optionGroups){
+    const selected = optModalSelections[g.id];
+    const minNeeded = Math.max(g.min_choices || 0, g.is_required ? 1 : 0);
+    if(selected.size < minNeeded) valid = false;
+    for(const cid of selected){
+      const choice = g.choices.find(c => c.id === cid);
+      if(choice) deltaTotal += choice.price_delta_pence;
+    }
+  }
+  const unitPrice = item.price_pence + deltaTotal;
+  optAddBtn.disabled = !valid;
+  optAddBtn.textContent = `Add to basket · ${formatGBP(unitPrice * optModalQty)}`;
+}
+
+document.getElementById('optQtyMinus').addEventListener('click', () => {
+  if(optModalQty > 1) optModalQty -= 1;
+  optQtyVal.textContent = optModalQty;
+  updateOptAddBtn();
+});
+document.getElementById('optQtyPlus').addEventListener('click', () => {
+  optModalQty += 1;
+  optQtyVal.textContent = optModalQty;
+  updateOptAddBtn();
+});
+
+document.getElementById('optClose').addEventListener('click', () => optOverlay.classList.remove('show'));
+optOverlay.addEventListener('click', (e) => { if(e.target === optOverlay) optOverlay.classList.remove('show'); });
+
+optAddBtn.addEventListener('click', () => {
+  const item = findItem(optModalItemId);
+  const options = [];
+  for(const g of item.optionGroups){
+    for(const cid of optModalSelections[g.id]){
+      const choice = g.choices.find(c => c.id === cid);
+      if(choice) options.push({ id: choice.id, name: choice.name, price_delta_pence: choice.price_delta_pence });
+    }
+  }
+  addItemWithOptions(optModalItemId, options, optModalQty);
+  optOverlay.classList.remove('show');
 });
 
 loadRestaurant();
