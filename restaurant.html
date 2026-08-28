@@ -40,34 +40,33 @@
     padding:9px 16px;
   }
 
-  /* ============ RESTAURANT HEADER ============ */
-  .r-cover{
-    position:relative; height:200px; max-width:900px; margin:0 auto;
+  /* ============ BREADCRUMB ============ */
+  .r-crumbs{
+    max-width:900px; margin:0 auto; padding:16px 24px 0;
+    font-size:13px; color:var(--body); display:flex; align-items:center; gap:6px; flex-wrap:wrap;
   }
-  .r-cover-img{
-    height:100%;
-    background:linear-gradient(135deg, var(--gold), var(--red));
-    background-size:cover; background-position:center;
-  }
-  @media (min-width:920px){ .r-cover-img{ border-radius:0 0 20px 20px; overflow:hidden; } }
-  .r-cover-logo{
-    position:absolute; left:24px; bottom:-30px; z-index:2;
-    width:84px; height:84px; border-radius:18px;
-    border:4px solid var(--cream); background:var(--card);
-    box-shadow:0 8px 18px -6px rgba(38,34,32,0.35);
-    background-size:cover; background-position:center;
-    display:flex; align-items:center; justify-content:center;
-    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:30px;
-  }
-  .r-cover-logo.no-photo{background:linear-gradient(135deg, var(--gold), var(--red));}
+  .r-crumbs a{font-weight:600; color:var(--body);}
+  .r-crumbs a:hover{color:var(--red);}
+  .r-crumbs .crumb-sep{color:var(--line);}
+  .r-crumbs .crumb-current{font-weight:600; color:var(--ink);}
+
+  /* ============ RESTAURANT HEADER — compact, no banner photo ============ */
   .r-header{
-    max-width:900px; margin:0 auto; padding:46px 24px 20px;
-    display:flex; justify-content:space-between; gap:16px;
+    max-width:900px; margin:0 auto; padding:16px 24px 20px;
+    display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;
   }
-  .r-header h1{font-size:clamp(24px,4vw,32px); margin-bottom:8px; display:inline;}
-  .r-name-row{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
-  .r-desc{font-size:13.5px; color:var(--body); line-height:1.5; margin:0 0 12px; max-width:560px;}
-  .r-meta{display:flex; flex-wrap:wrap; gap:10px 18px; font-size:13.5px; color:var(--body); margin-bottom:14px;}
+  .r-thumb{
+    width:92px; height:92px; border-radius:16px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--gold), var(--red)); background-size:cover; background-position:center;
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-family:'Poppins',sans-serif; font-weight:800; font-size:32px;
+  }
+  .r-header-info{flex:1; min-width:220px;}
+  .r-tags{font-size:13px; color:var(--body); margin-bottom:6px;}
+  .r-header-info h1{font-size:clamp(21px,3.4vw,28px); margin-bottom:8px; line-height:1.2;}
+  .r-desc{font-size:13px; color:var(--body); line-height:1.5; margin:0 0 10px; max-width:560px;}
+  .r-meta{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; color:var(--body); margin-bottom:12px;}
   .r-badges{display:flex; flex-wrap:wrap; gap:8px;}
   .r-badge{
     font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px;
@@ -75,15 +74,30 @@
   }
   .r-badge.closed{background:rgba(38,34,32,0.08); color:var(--body);}
   .r-badge.open-now{background:rgba(46,125,70,0.1); color:var(--green);}
+  .r-badge.rating-new{background:rgba(217,164,65,0.14); color:var(--amber);}
   .r-fav-btn{
-    flex-shrink:0; width:40px; height:40px; border-radius:50%; border:1.5px solid var(--line);
-    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    color:var(--body); transition:.15s;
+    flex-shrink:0; display:flex; align-items:center; gap:8px; border:1.5px solid var(--line); background:#fff;
+    border-radius:999px; padding:11px 18px; font-size:13.5px; font-weight:700; color:var(--ink);
+    cursor:pointer; transition:.15s;
   }
   .r-fav-btn:hover{border-color:var(--red); color:var(--red);}
-  .r-fav-btn svg{width:19px; height:19px;}
+  .r-fav-btn svg{width:17px; height:17px; flex-shrink:0;}
   .r-fav-btn.active{border-color:var(--red); color:var(--red);}
   .r-fav-btn.active svg{fill:var(--red);}
+  @media (max-width:560px){ .r-fav-btn{width:100%; justify-content:center;} }
+
+  /* ============ CATEGORY QUICK-NAV — a row across the top of the menu,
+     not a sidebar. Clicking a pill scrolls to that section. ============ */
+  .cat-tabs-wrap{border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--card);}
+  .cat-tabs{
+    max-width:900px; margin:0 auto; display:flex; gap:8px; overflow-x:auto; padding:12px 24px;
+  }
+  .cat-tab{
+    flex-shrink:0; border:1.5px solid var(--line); background:#fff; border-radius:999px;
+    padding:8px 16px; font-size:13px; font-weight:600; color:var(--body); cursor:pointer; white-space:nowrap;
+  }
+  .cat-tab:hover{border-color:var(--red); color:var(--red);}
+  .cat-tab.active{background:var(--red); border-color:var(--red); color:#fff;}
 
   /* ============ DEALS ============ */
   .deals-wrap{max-width:900px; margin:0 auto; padding:20px 24px 0;}
@@ -98,7 +112,7 @@
 
   /* ============ MENU ============ */
   .menu-wrap{max-width:900px; margin:0 auto; padding:0 24px 60px;}
-  .menu-category{margin-top:34px;}
+  .menu-category{margin-top:34px; scroll-margin-top:70px;}
   .menu-category h2{font-size:19px; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--line);}
   .menu-item{
     display:flex; justify-content:space-between; gap:16px;
@@ -278,27 +292,36 @@
 <div class="preview-banner" id="previewBanner" style="display:none;">👁 You're viewing this as the owner — this page isn't public yet.</div>
 
 <div id="pageBody">
-  <div class="r-cover" id="rCoverWrap" style="display:none;">
-    <div class="r-cover-img" id="rCoverImg"></div>
-    <div class="r-cover-logo no-photo" id="rCoverLogo"></div>
+  <div class="r-crumbs" id="rCrumbs" style="display:none;">
+    <a href="index.html">Stoke-on-Trent</a>
+    <span class="crumb-sep">›</span>
+    <a href="index.html">Restaurants</a>
+    <span class="crumb-sep">›</span>
+    <span class="crumb-current" id="rCrumbName"></span>
   </div>
+
   <div class="r-header" id="rHeaderWrap" style="display:none;">
-    <div>
-      <div class="r-name-row">
-        <h1 id="rName">Loading…</h1>
-      </div>
+    <div class="r-thumb no-photo" id="rThumb"></div>
+    <div class="r-header-info">
+      <div class="r-tags" id="rTags"></div>
+      <h1 id="rName">Loading…</h1>
       <p class="r-desc" id="rDesc" style="display:none;"></p>
       <div class="r-meta" id="rMeta"></div>
       <div class="r-badges" id="rBadges"></div>
     </div>
-    <button class="r-fav-btn" id="favBtn" style="display:none;" title="Save to favourites">
+    <button class="r-fav-btn" id="favBtn" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+      <span id="favBtnLabel">Add to favourites</span>
     </button>
   </div>
 
   <div class="deals-wrap" id="dealsWrap" style="display:none;">
     <h3>Available deals</h3>
     <div class="deals-row" id="dealsRow"></div>
+  </div>
+
+  <div class="cat-tabs-wrap" id="catTabsWrap" style="display:none;">
+    <div class="cat-tabs" id="catTabs"></div>
   </div>
 
   <div class="menu-wrap" id="menuWrap"></div>
@@ -488,6 +511,7 @@ async function loadRestaurant(){
   renderFavButton();
   renderDeals();
   renderMenu();
+  renderCatTabs();
   renderBasket();
   document.documentElement.classList.remove('auth-pending');
 }
@@ -523,23 +547,25 @@ function formatOpeningHours(hours){
 }
 
 function renderHeader(){
-  document.getElementById('rCoverWrap').style.display = 'block';
+  document.getElementById('rCrumbs').style.display = 'flex';
+  document.getElementById('rCrumbName').textContent = restaurant.name;
   document.getElementById('rHeaderWrap').style.display = 'flex';
   document.title = restaurant.name + ' — DoorFeast';
   document.getElementById('rName').textContent = restaurant.name;
 
-  if(restaurant.cover_url){
-    document.getElementById('rCoverImg').style.backgroundImage = `url('${restaurant.cover_url}')`;
+  // No cover-photo banner — a compact thumbnail instead, foodpanda-style.
+  const thumb = document.getElementById('rThumb');
+  if(restaurant.logo_url){
+    thumb.classList.remove('no-photo');
+    thumb.style.backgroundImage = `url('${restaurant.logo_url}')`;
+    thumb.textContent = '';
+  } else {
+    thumb.classList.add('no-photo');
+    thumb.style.backgroundImage = '';
+    thumb.textContent = (restaurant.name || '?').charAt(0).toUpperCase();
   }
 
-  const logoBadge = document.getElementById('rCoverLogo');
-  if(restaurant.logo_url){
-    logoBadge.classList.remove('no-photo');
-    logoBadge.style.backgroundImage = `url('${restaurant.logo_url}')`;
-  } else {
-    logoBadge.classList.add('no-photo');
-    logoBadge.textContent = (restaurant.name || '?').charAt(0).toUpperCase();
-  }
+  document.getElementById('rTags').textContent = restaurant.cuisine || '';
 
   const descEl = document.getElementById('rDesc');
   if(restaurant.description){
@@ -552,7 +578,6 @@ function renderHeader(){
   if(restaurant.does_delivery) feeParts.push(restaurant.delivery_fee_pence ? `Delivery ${formatGBP(restaurant.delivery_fee_pence)}` : 'Free delivery');
   if(restaurant.does_delivery && restaurant.min_order_pence) feeParts.push(`Min order ${formatGBP(restaurant.min_order_pence)}`);
   document.getElementById('rMeta').innerHTML = `
-    <span>${escapeHtml(restaurant.cuisine || '')}</span>
     <span>${escapeHtml(restaurant.address || '')}</span>
     ${hoursText ? `<span>${escapeHtml(hoursText)}</span>` : ''}
     ${feeParts.map(p => `<span>${escapeHtml(p)}</span>`).join('')}
@@ -566,6 +591,8 @@ function renderHeader(){
     const openLabel = nextOpeningLabel(restaurant.opening_hours);
     badgesHtml += `<span class="r-badge closed">${openLabel ? 'Closed · Opens ' + openLabel : 'Closed now'}</span>`;
   }
+  // No reviews system yet — "New" instead of a fabricated rating number.
+  badgesHtml += `<span class="r-badge rating-new">★ New</span>`;
   if(restaurant.does_delivery) badgesHtml += `<span class="r-badge">Delivery</span>`;
   if(restaurant.does_collection) badgesHtml += `<span class="r-badge">Collection</span>`;
   if(!restaurant.does_delivery && !restaurant.does_collection) badgesHtml += `<span class="r-badge closed">Ordering not set up yet</span>`;
@@ -639,6 +666,7 @@ const favBtn = document.getElementById('favBtn');
 function renderFavButton(){
   favBtn.style.display = 'flex';
   favBtn.classList.toggle('active', isFavorited);
+  document.getElementById('favBtnLabel').textContent = isFavorited ? 'Saved' : 'Add to favourites';
   favBtn.title = isFavorited ? 'Remove from favourites' : 'Save to favourites';
 }
 
@@ -705,12 +733,34 @@ function renderMenu(){
     menuWrap.innerHTML = `<div class="not-found" style="margin:60px auto;"><p>This restaurant hasn't added any menu items yet.</p></div>`;
     return;
   }
-  menuWrap.innerHTML = menu.map(cat => `
-    <div class="menu-category">
+  menuWrap.innerHTML = menu.map((cat, i) => `
+    <div class="menu-category" id="cat-${i}">
       <h2>${escapeHtml(cat.category)}</h2>
       ${cat.items.map(item => renderMenuItem(item)).join('')}
     </div>
   `).join('');
+}
+
+// A row of pills across the top of the menu — one per category — instead
+// of a sidebar. Click-to-scroll only; no scroll-spy highlighting, kept
+// simple since this is a single-restaurant page, not a filterable list.
+function renderCatTabs(){
+  const wrap = document.getElementById('catTabsWrap');
+  if(menu.length <= 1){
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+  document.getElementById('catTabs').innerHTML = menu.map((cat, i) => `
+    <button type="button" class="cat-tab" data-cat="${i}">${escapeHtml(cat.category)}</button>
+  `).join('');
+  document.querySelectorAll('.cat-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('cat-' + tab.dataset.cat).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 }
 
 function basketQtyForItem(itemId){
