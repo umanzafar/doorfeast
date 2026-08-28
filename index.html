@@ -368,11 +368,16 @@
   .results-prompt svg{width:48px; height:48px; margin:0 auto 14px; opacity:0.4;}
 
   .results-heading{
-    display:flex; align-items:baseline; justify-content:space-between;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
     margin-bottom:20px;
   }
   .results-heading h2{font-size:20px;}
   .results-heading span{font-size:13px; color:var(--body);}
+  .open-filter{
+    display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; color:var(--ink);
+    cursor:pointer; user-select:none;
+  }
+  .open-filter input{width:16px; height:16px; accent-color:var(--red); cursor:pointer;}
 
   .restaurant-grid{
     display:grid;
@@ -733,17 +738,23 @@
 <!-- ============ RESULTS SECTION ============ -->
 <section class="results-section">
 
-  <!-- STATE 1: before search -->
+  <!-- STATE 1: no restaurants at all (rare — only if none are live yet, or the initial load failed) -->
   <div class="results-prompt" id="stateEmpty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-    <p>Enter your postcode above to see what's nearby.</p>
+    <p>No takeaways are live yet — check back soon.</p>
   </div>
 
   <!-- STATE 2: results found -->
   <div id="stateResults" style="display:none;">
     <div class="results-heading">
-      <h2 id="resultsTitle">Takeaways near you</h2>
-      <span id="resultsCount"></span>
+      <div>
+        <h2 id="resultsTitle">Takeaways in Stoke-on-Trent</h2>
+        <span id="resultsCount"></span>
+      </div>
+      <label class="open-filter">
+        <input type="checkbox" id="openOnlyToggle">
+        Open now only
+      </label>
     </div>
     <div class="restaurant-grid" id="restaurantGrid"></div>
 
@@ -1033,12 +1044,47 @@ function isOpenNow(hours){
   return false;
 }
 
+// Only meaningful when isOpenNow() is false. Scans today through the next
+// 6 days for the next day that actually opens, so a closed badge can say
+// "Closed · Opens today at 5pm" or "Closed · Opens Tue at 12pm" instead of
+// a bare "Closed now".
+const DAY_LABELS_SHORT = { sun:'Sun', mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat' };
+function minutesToLabel(m){
+  const h = Math.floor(m / 60) % 24;
+  const mm = m % 60;
+  const period = h < 12 ? 'am' : 'pm';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}${mm ? ':' + String(mm).padStart(2, '0') : ''}${period}`;
+}
+function nextOpeningLabel(hours){
+  if(!hours || typeof hours !== 'object') return null;
+  const now = new Date();
+  const nowM = now.getHours() * 60 + now.getMinutes();
+  for(let i = 0; i < 7; i++){
+    const dayIndex = (now.getDay() + i) % 7;
+    const range = parseRange(hours[DOW[dayIndex]]);
+    if(!range) continue;
+    if(i === 0 && range.openM <= nowM) continue; // today's opening already passed
+    const dayLabel = i === 0 ? 'today' : DAY_LABELS_SHORT[DOW[dayIndex]];
+    return `${dayLabel} at ${minutesToLabel(range.openM)}`;
+  }
+  return null;
+}
+
 function renderCard(r){
   const card = document.createElement('a');
   card.className = 'r-card' + (r.openNow === false ? ' is-closed' : '');
   card.href = 'restaurant.html?slug=' + encodeURIComponent(r.slug);
-  const statusBadge = r.openNow === true ? `<span class="r-status open">Open now</span>`
-    : r.openNow === false ? `<span class="r-status">Closed now</span>` : '';
+
+  let statusBadge = '';
+  if(r.openNow === true){
+    statusBadge = `<span class="r-status open">Open now</span>`;
+  } else if(r.openNow === false){
+    const openLabel = nextOpeningLabel(r.opening_hours);
+    statusBadge = `<span class="r-status">${openLabel ? 'Closed · Opens ' + openLabel : 'Closed now'}</span>`;
+  }
+
+  const metaDistance = r.distanceLabel ? `<span class="dot-sep"></span>${r.distanceLabel}` : '';
   card.innerHTML = `
     <div class="cover" ${r.cover_url ? `style="background-image:url('${r.cover_url}')"` : ''}>
       ${statusBadge}
@@ -1046,27 +1092,59 @@ function renderCard(r){
     </div>
     <div class="body">
       <div class="name">${r.name}</div>
-      <div class="meta">${r.cuisine || ''}<span class="dot-sep"></span>${r.distanceLabel}</div>
+      <div class="meta">${r.cuisine || ''}${metaDistance}</div>
       <div class="rating">New</div>
     </div>`;
   return card;
 }
 
-function renderResults(list, postcode){
+let openOnlyFilter = false;
+let lastClosedCount = 0;
+
+function renderResults(list, title){
   const withStatus = list.map(r => ({ ...r, openNow: isOpenNow(r.opening_hours) }));
   const open = withStatus.filter(r => r.openNow !== false);
   const closed = withStatus.filter(r => r.openNow === false);
+  lastClosedCount = closed.length;
 
   restaurantGrid.innerHTML = '';
   open.forEach(r => restaurantGrid.appendChild(renderCard(r)));
 
   closedGrid.innerHTML = '';
   closed.forEach(r => closedGrid.appendChild(renderCard(r)));
-  closedSection.style.display = closed.length > 0 ? 'block' : 'none';
+  closedSection.style.display = (!openOnlyFilter && closed.length > 0) ? 'block' : 'none';
 
-  resultsTitle.textContent = `Takeaways near ${postcode.toUpperCase()}`;
+  resultsTitle.textContent = title;
   resultsCount.textContent = `${list.length} found`;
   showState('results');
+}
+
+document.getElementById('openOnlyToggle').addEventListener('change', (e) => {
+  openOnlyFilter = e.target.checked;
+  closedSection.style.display = (!openOnlyFilter && lastClosedCount > 0) ? 'block' : 'none';
+});
+
+// Shown immediately on page load — this is a single-town pilot, so making
+// customers search a postcode just to see what's around isn't worth the
+// friction. The postcode search below still works, and switches this to a
+// distance-sorted "near you" view instead.
+async function loadDefaultResults(){
+  try {
+    const { data: restaurants, error } = await supabase
+      .from('restaurants')
+      .select('name, slug, cuisine, logo_url, cover_url, opening_hours')
+      .eq('is_live', true);
+    if(error) throw error;
+
+    const list = (restaurants || []).sort((a, b) => a.name.localeCompare(b.name));
+    if(list.length === 0){
+      showState('empty');
+      return;
+    }
+    renderResults(list, 'Takeaways in Stoke-on-Trent');
+  } catch(err){
+    showState('empty');
+  }
 }
 
 async function handleSearch(){
@@ -1106,7 +1184,7 @@ async function handleSearch(){
     if(withDistance.length === 0){
       showState('nocoverage');
     } else {
-      renderResults(withDistance, postcode);
+      renderResults(withDistance, `Takeaways near ${postcode.toUpperCase()}`);
     }
 
   } catch(err){
@@ -1119,6 +1197,7 @@ async function handleSearch(){
 }
 
 postcodeBtn.addEventListener('click', handleSearch);
+loadDefaultResults();
 postcodeInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') handleSearch(); });
 
 /* ============ NOTIFY ME (out of coverage) ============ */

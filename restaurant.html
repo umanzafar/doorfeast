@@ -560,8 +560,12 @@ function renderHeader(){
 
   const openNow = isOpenNow(restaurant.opening_hours);
   let badgesHtml = '';
-  if(openNow === true) badgesHtml += `<span class="r-badge open-now">Open now</span>`;
-  else if(openNow === false) badgesHtml += `<span class="r-badge closed">Closed now</span>`;
+  if(openNow === true){
+    badgesHtml += `<span class="r-badge open-now">Open now</span>`;
+  } else if(openNow === false){
+    const openLabel = nextOpeningLabel(restaurant.opening_hours);
+    badgesHtml += `<span class="r-badge closed">${openLabel ? 'Closed · Opens ' + openLabel : 'Closed now'}</span>`;
+  }
   if(restaurant.does_delivery) badgesHtml += `<span class="r-badge">Delivery</span>`;
   if(restaurant.does_collection) badgesHtml += `<span class="r-badge">Collection</span>`;
   if(!restaurant.does_delivery && !restaurant.does_collection) badgesHtml += `<span class="r-badge closed">Ordering not set up yet</span>`;
@@ -600,6 +604,31 @@ function isOpenNow(hours){
   if(yesterday && yesterday.closeM <= yesterday.openM && nowM < yesterday.closeM) return true;
 
   return false;
+}
+
+// Only meaningful when isOpenNow() is false — same helper as index.html's
+// homepage cards, duplicated per this project's one-file-per-page rule.
+const DAY_LABELS_SHORT = { sun:'Sun', mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat' };
+function minutesToLabel(m){
+  const h = Math.floor(m / 60) % 24;
+  const mm = m % 60;
+  const period = h < 12 ? 'am' : 'pm';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}${mm ? ':' + String(mm).padStart(2, '0') : ''}${period}`;
+}
+function nextOpeningLabel(hours){
+  if(!hours || typeof hours !== 'object') return null;
+  const now = new Date();
+  const nowM = now.getHours() * 60 + now.getMinutes();
+  for(let i = 0; i < 7; i++){
+    const dayIndex = (now.getDay() + i) % 7;
+    const range = parseRange(hours[DOW[dayIndex]]);
+    if(!range) continue;
+    if(i === 0 && range.openM <= nowM) continue;
+    const dayLabel = i === 0 ? 'today' : DAY_LABELS_SHORT[DOW[dayIndex]];
+    return `${dayLabel} at ${minutesToLabel(range.openM)}`;
+  }
+  return null;
 }
 
 /* ============================================================
